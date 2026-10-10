@@ -26,7 +26,7 @@ export type TranscriptTurn = {
   speaker: "interviewer" | "candidate";
   phase: "interview" | "candidate_questions";
   text: string;
-  questionId?: string;
+  questionId?: string | undefined;
 };
 
 export type MetricScore = { score: number; feedback: string };

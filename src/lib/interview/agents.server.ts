@@ -101,7 +101,8 @@ function fallbackQuestions(job: ParsedJob, type: InterviewType, count: number, r
     out.push({ id: `q${i + 1}`, kind: tech ? "technical" : "behavioral", text, skill: tech ? skill : null });
   }
   const opener = job.title ? `Thanks for joining. Why are you interested in the ${job.title} role?` : "Thanks for joining. Tell me briefly about yourself.";
-  return [{ id: "q0", kind: "behavioral", text: opener, skill: null }, ...out].slice(0, count);
+  const first: InterviewQuestion = { id: "q0", kind: "behavioral", text: opener, skill: null };
+  return [first, ...out].slice(0, count);
 }
 
 export async function generateQuestions(job: ParsedJob, type: InterviewType, length: InterviewLength, roast: boolean) {
