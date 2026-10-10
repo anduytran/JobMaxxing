@@ -9,6 +9,7 @@ import { getLatestResumeReview } from "@/lib/resume.functions";
 import type { StoredReview } from "@/lib/resume";
 import { MAX_POSES } from "@/components/Max";
 import { cn } from "@/lib/utils";
+import gymScene from "@/assets/max/gym-scene.svg";
 
 const MAX_ART: Record<string, string> = { setup: MAX_POSES.resume, resume: MAX_POSES.resume, interview: MAX_POSES.interview, skills: MAX_POSES.skills, hunt: MAX_POSES.hunt, branding: MAX_POSES.dap, social: MAX_POSES.dap };
 const QUEST_LINK: Record<string, "/setup" | "/interview" | "/quests" | "/skills" | "/market"> = { setup: "/setup", resume: "/setup", interview: "/interview", skills: "/skills", hunt: "/market" };
@@ -85,24 +86,9 @@ function SceneBackdrop({ kind }: { kind: string }) {
     );
   }
   if (kind === "skills") {
-    const plates = ["h-16 w-4", "h-12 w-3", "h-9 w-3"];
     return (
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div className="relative h-64 w-[22rem]">
-          <div className="absolute inset-y-0 left-4 w-2.5 rounded bg-foreground/15" />
-          <div className="absolute inset-y-0 right-4 w-2.5 rounded bg-foreground/15" />
-          {[16, 40, 64].map((top) => (
-            <div key={top} className="absolute inset-x-0 flex items-center justify-between px-1" style={{ top: `${top}%` }}>
-              <div className="absolute inset-x-2 h-1.5 rounded bg-foreground/20" />
-              {[0, 1].map((side) => (
-                <div key={side} className={cn("relative flex items-center gap-0.5", side && "flex-row-reverse")}>
-                  {plates.map((p) => <span key={p} className={`${p} rounded-sm bg-foreground/25`} />)}
-                </div>
-              ))}
-            </div>
-          ))}
-          <div className="absolute -bottom-2 inset-x-0 h-2 rounded bg-foreground/15" />
-        </div>
+      <div className="absolute inset-0 overflow-hidden">
+        <img src={gymScene} alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover opacity-90" draggable={false} />
       </div>
     );
   }
