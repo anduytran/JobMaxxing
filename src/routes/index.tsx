@@ -77,14 +77,14 @@ function SceneBackdrop({ kind }: { kind: string }) {
     return (
       <div className="absolute inset-0 overflow-hidden">
         {/* Sized so the ring's hole (~25% of width, centre at ~41% height) frames the 160px Max at card centre. */}
-        <img src={billboardScene} alt="" aria-hidden className="absolute left-1/2 w-[620px] max-w-none -translate-x-1/2" style={{ top: "calc(50% - 250px)" }} draggable={false} />
+        <img src={billboardScene} alt="" aria-hidden className="absolute left-1/2 w-[930px] max-w-none -translate-x-1/2" style={{ top: "calc(50% - 375px)" }} draggable={false} />
       </div>
     );
   }
   if (kind === "skills") {
     return (
       <div className="absolute inset-0 overflow-hidden">
-        <img src={gymScene} alt="" aria-hidden className="absolute inset-x-0 bottom-20 w-full opacity-90" draggable={false} />
+        <img src={gymScene} alt="" aria-hidden style={{ backgroundColor: "#FDF7E7" /* matches the gym art wall */ }} className="absolute inset-0 h-full w-full object-contain object-bottom" draggable={false} />
       </div>
     );
   }
@@ -222,7 +222,7 @@ function Dashboard() {
         <motion.div key={featured?.id ?? "none"} initial={reducedMotion ? false : { opacity: 0, x: 28 * dir }} animate={sceneReady ? { opacity: 1, x: 0 } : { opacity: 0, x: reducedMotion ? 0 : 28 * dir }} transition={{ duration: 0.45 }} className="pointer-events-none absolute inset-y-0 right-0 hidden w-1/2 md:block">
           <SceneBackdrop kind={featKey} />
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="mascot-float">{featured ? <img key={featArt} src={featArt} alt={`Max ready for: ${featured.title}`} width={816} height={816} decoding="sync" className="h-40 w-40 object-contain" /> : <Mascot className="h-40 w-40" />}</div>
+            <div className="mascot-float">{featured ? <img key={featArt} src={featArt} alt={`Max ready for: ${featured.title}`} width={816} height={816} decoding="sync" className="h-60 w-60 object-contain" /> : <Mascot className="h-60 w-60" />}</div>
           </div>
           <div className="absolute left-10 top-6 flex -rotate-6 items-center gap-2 rounded-xl bg-card px-4 py-3 text-sm shadow-md"><Zap className="h-4 w-4" />+{featured?.xp ?? 150} XP</div>
           <div className={`absolute right-8 top-8 rotate-6 rounded-2xl bg-card p-3 shadow-md ${scene.chip}`}><scene.icon className="h-6 w-6" /></div>
