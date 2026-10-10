@@ -162,7 +162,7 @@ function Dashboard() {
   useEffect(() => { [gymScene, billboardScene, meadowScene, ...Object.values(MAX_POSES)].forEach((s) => { const i = new Image(); i.src = s; }); }, []);
   const sceneReady = readyKey === sceneKey;
   const featLink = QUEST_LINK[featKey] ?? "/quests";
-  const scene = SCENES[featKey] ?? (featKey === "setup" ? SCENES.resume : DEFAULT_SCENE);
+  const scene = SCENES[featKey] ?? (featKey === "setup" ? SCENES["resume"] : undefined) ?? DEFAULT_SCENE;
   const reducedMotion = useReducedMotion();
   const [tip, setTip] = useState(0);
   const tips = [
