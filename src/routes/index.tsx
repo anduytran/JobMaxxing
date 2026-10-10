@@ -4,7 +4,7 @@ import { ArrowRight, Check, ChevronLeft, ChevronRight, Clock, Code2, FileText, F
 import { levelTitle, useGame, XP_PER_LEVEL } from "@/lib/game";
 import { Mascot } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { getLatestResumeReview } from "@/lib/resume.functions";
 import meadowScene from "@/assets/max/meadow.svg";
 import type { StoredReview } from "@/lib/resume";
@@ -164,6 +164,22 @@ function Dashboard() {
   const featLink = QUEST_LINK[featKey] ?? "/quests";
   const scene = SCENES[featKey] ?? (featKey === "setup" ? SCENES["resume"] : undefined) ?? DEFAULT_SCENE;
   const reducedMotion = useReducedMotion();
+  const headRef = useRef<HTMLHeadingElement>(null);
+  const subRef = useRef<HTMLParagraphElement>(null);
+  // Slide the headline and its line in with the Web Animations API. The nodes stay
+  // mounted, so switching quests replaces the text instead of stacking a new headline.
+  useEffect(() => {
+    if (reducedMotion || !featured) return;
+    headRef.current?.animate(
+      [{ opacity: 0, transform: `translateX(${-16 * dir}px)` }, { opacity: 1, transform: "none" }],
+      { duration: 300, easing: "ease-out" },
+    );
+    subRef.current?.animate(
+      [{ opacity: 0, transform: `translateX(${-10 * dir}px)` }, { opacity: 1, transform: "none" }],
+      { duration: 300, delay: 50, easing: "ease-out" },
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [featured?.id, dir, reducedMotion]);
   const [tip, setTip] = useState(0);
   const tips = [
     "You don't have to have it all figured out. You just have to take the next step.",
@@ -190,15 +206,11 @@ function Dashboard() {
         <div className="relative z-10 max-w-xl md:max-w-[46%]">
           <p className="flex items-center gap-2 whitespace-nowrap text-xs font-semibold uppercase tracking-[0.2em] text-foreground/70"><span className="h-1.5 w-1.5 rounded-full bg-foreground/60" />{featured ? `Today's featured quest · ${featured.category}` : "Today's featured quest"}</p>
           {featured ? (
-            <h2 key={featured.id} className="mt-5 text-4xl font-bold leading-[1.08] text-balance md:text-5xl">{featured.title}</h2>
+            <h2 ref={headRef} className="mt-5 text-4xl font-bold leading-[1.08] text-balance md:text-5xl">{featured.title}</h2>
           ) : (
             <h2 className="mt-5 text-4xl font-bold leading-tight md:text-5xl">You've got potential.<br />Let's put it to work.</h2>
           )}
-          {featured ? (
-            <motion.p key={featured.id} initial={reducedMotion ? false : { opacity: 0, x: -10 * dir }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.3, delay: 0.05 }} className="mt-4 text-muted-foreground">{scene.blurb}</motion.p>
-          ) : (
-            <p className="mt-4 text-muted-foreground">{DEFAULT_SCENE.blurb}</p>
-          )}
+          <p ref={subRef} className="mt-4 text-muted-foreground">{scene.blurb}</p>
           {featured ? (<>
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <Button asChild className="h-auto rounded-xl px-7 py-4 text-base"><Link to={featLink}>
