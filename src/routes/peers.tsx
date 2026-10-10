@@ -7,9 +7,9 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/peers")({
   head: () => ({
     meta: [
-      { title: "Peer Interviews — DevUp" },
+      { title: "Peer Interviews — JobMaxxing" },
       { name: "description", content: "Swap mock interviews with a real person and grow confident together." },
-      { property: "og:title", content: "Peer Interviews — DevUp" },
+      { property: "og:title", content: "Peer Interviews — JobMaxxing" },
       { property: "og:description", content: "Swap mock interviews with a real person and grow confident together." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

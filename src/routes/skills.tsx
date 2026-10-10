@@ -7,9 +7,9 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/skills")({
   head: () => ({
     meta: [
-      { title: "Skill Tree — DevUp" },
+      { title: "Skill Tree — JobMaxxing" },
       { name: "description", content: "Unlock skills as you complete quests, interviews and resume fixes." },
-      { property: "og:title", content: "Skill Tree — DevUp" },
+      { property: "og:title", content: "Skill Tree — JobMaxxing" },
       { property: "og:description", content: "Unlock skills as you complete quests, interviews and resume fixes." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

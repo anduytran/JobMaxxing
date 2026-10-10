@@ -17,12 +17,12 @@ import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 export const Route = createFileRoute("/setup")({
   head: () => ({
     meta: [
-      { title: "Resume Lab — DevUp" },
+      { title: "Resume Lab — JobMaxxing" },
       {
         name: "description",
         content: "Upload your resume to get a grade, the fixes worth XP that raise it, and your profile fields filled in for you.",
       },
-      { property: "og:title", content: "Resume Lab — DevUp" },
+      { property: "og:title", content: "Resume Lab — JobMaxxing" },
       {
         property: "og:description",
         content: "Upload your resume to get a grade, the fixes worth XP that raise it, and your profile fields filled in for you.",
@@ -351,7 +351,7 @@ function GradeHeader({ review }: { review: ResumeReview }) {
         </div>
         {review.summary && <p className="mt-3 text-sm text-muted-foreground">{review.summary}</p>}
         <p className="mt-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-          {review.source === "raia" ? "graded by: DevUp Resume Agent" : "graded by: DevUp offline checker"}
+          {review.source === "raia" ? "graded by: JobMaxxing Resume Agent" : "graded by: JobMaxxing offline checker"}
         </p>
       </div>
     </div>

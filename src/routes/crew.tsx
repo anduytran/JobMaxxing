@@ -7,9 +7,9 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/crew")({
   head: () => ({
     meta: [
-      { title: "Job Maxxers — DevUp" },
+      { title: "Job Maxxers — JobMaxxing" },
       { name: "description", content: "Your crew of fellow job seekers cheering each other on." },
-      { property: "og:title", content: "Job Maxxers — DevUp" },
+      { property: "og:title", content: "Job Maxxers — JobMaxxing" },
       { property: "og:description", content: "Your crew of fellow job seekers cheering each other on." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

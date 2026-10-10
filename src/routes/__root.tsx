@@ -91,7 +91,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "DevUp" },
+      { title: "JobMaxxing" },
       { name: "description", content: "Gamified career progression platform." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

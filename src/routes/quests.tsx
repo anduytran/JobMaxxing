@@ -5,9 +5,9 @@ import { useGame } from "@/lib/game";
 export const Route = createFileRoute("/quests")({
   head: () => ({
     meta: [
-      { title: "Quests — DevUp" },
+      { title: "Quests — JobMaxxing" },
       { name: "description", content: "Complete career quests to earn XP and level up." },
-      { property: "og:title", content: "Quests — DevUp" },
+      { property: "og:title", content: "Quests — JobMaxxing" },
       { property: "og:description", content: "Complete career quests to earn XP and level up." },
     ],
   }),
