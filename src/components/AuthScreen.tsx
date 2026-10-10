@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { signIn, signUp } from "@/lib/auth.functions";
-import wave from "@/assets/max/clean-max-wave.svg";
+import { MAX_POSES } from "@/components/Max";
 
 const FEATURES = [
   { icon: FileSearch, title: "Resume Lab", text: "An AI recruiter grades your resume, rewrites weak bullets and checks it against applicant tracking systems." },
@@ -54,7 +54,7 @@ export function AuthScreen() {
       </header>
       <main className="page-arrival mx-auto grid max-w-6xl items-center gap-10 px-6 pb-16 pt-6 lg:grid-cols-[1.2fr_1fr]">
         <section>
-          <img src={wave} alt="Max, the JobMaxxing briefcase, waving" className="mascot-personality h-28 w-28" />
+          <img src={MAX_POSES.wave} alt="Max, the JobMaxxing briefcase, waving" className="mascot-personality h-28 w-28" />
           <h1 className="mt-4 text-4xl font-bold leading-tight md:text-6xl">Level up your career, one quest at a time.</h1>
           <p className="mt-4 max-w-xl text-lg text-muted-foreground">
             Upload your resume, practice interviews with an AI recruiter, and find roles that actually fit — earning XP for every step.
