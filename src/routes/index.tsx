@@ -189,16 +189,10 @@ function Dashboard() {
           <h2 className="mt-5 text-4xl font-bold leading-tight md:text-5xl">You've got potential.<br />Let's put it to work.</h2>
           <p className="mt-4 text-muted-foreground">Your dream role is closer than you think. Build your skills, sharpen your story, and make your next move.</p>
           {featured ? (<>
-            <div className="mt-6 flex items-center justify-between gap-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Today's featured quest · {featured.category}</p>
-              <span className="min-w-12 shrink-0 text-center text-xs tabular-nums text-muted-foreground">{featIdx + 1} / {openCount}</span>
-            </div>
-            <motion.p key={featured.id} initial={reducedMotion ? false : { opacity: 0, x: -16 * dir }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.3 }} className="mt-1 text-2xl font-semibold">{featured.title}</motion.p>
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <Button asChild className="h-auto rounded-xl px-7 py-4 text-base"><Link to={featLink}>
                 Start this quest <ArrowRight className="h-5 w-5" />
               </Link></Button>
-              <Button variant="ghost" className="h-auto rounded-xl px-4 py-4 text-muted-foreground" onClick={surprise}>Pick another</Button>
             </div>
             {openCount > 1 && (
               <div className="mt-5 flex flex-wrap items-center gap-2">
