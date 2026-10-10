@@ -109,7 +109,7 @@ export function GameProvider({
   };
 
   const value: Game = {
-    name, title, xp, quests, roast, lastGain,
+    name, title, xp, quests, roast, reducedMotion, lastGain,
     level: Math.floor(xp / XP_PER_LEVEL) + 1,
     levelXp: xp % XP_PER_LEVEL,
     setProfile: async (n, t) => {

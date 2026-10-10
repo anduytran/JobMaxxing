@@ -212,6 +212,21 @@
 .reward-particle:nth-child(3) { animation-delay: 180ms; }
 .reward-particle:nth-child(4) { animation-delay: 60ms; }
 
+/* The in-app "reduce motion" switch mirrors the OS preference above. */
+html.reduce-motion *, html.reduce-motion *::before, html.reduce-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  animation-delay: 0ms !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+html.reduce-motion .page-arrival > div > * { animation: none; }
+html.reduce-motion .hover-lift:hover, html.reduce-motion .hover-pop:hover, html.reduce-motion .hover-pop:active,
+html.reduce-motion .hover-slide:hover, html.reduce-motion .power-move:hover,
+html.reduce-motion .tactile-control:hover:not(:disabled), html.reduce-motion .tactile-control:active:not(:disabled) { transform: none; }
+html.reduce-motion .reward-particle { display: none; }
+html.reduce-motion .animate-bob, html.reduce-motion .animate-flame, html.reduce-motion .mascot-float { animation: none; }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
