@@ -6,12 +6,14 @@ import { currentUser, requireUser } from "./auth.server";
 // Shared shapes
 // ---------------------------------------------------------------------------
 
+export type QuestPeriod = "once" | "daily" | "weekly";
 export type Quest = {
   id: string;
   title: string;
   xp: number;
   category: string;
   done: boolean;
+  period: QuestPeriod;
 };
 
 export type StudentInfo = { school?: string; degree?: string; major?: string; gradYear?: string };
@@ -29,6 +31,7 @@ export type GameState = {
   title: string;
   xp: number;
   roast: boolean;
+  reducedMotion: boolean;
   quests: Quest[];
 };
 
