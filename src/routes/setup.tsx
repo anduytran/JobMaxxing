@@ -27,6 +27,8 @@ export const Route = createFileRoute("/setup")({
         property: "og:description",
         content: "Upload your resume to get a grade, the fixes worth XP that raise it, and your profile fields filled in for you.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: Setup,

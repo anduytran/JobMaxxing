@@ -1,8 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { ArrowRight, Check, ChevronRight, Clock, FileText, Flame, Mic, Users, Zap } from "lucide-react";
 import { levelTitle, useGame, XP_PER_LEVEL } from "@/lib/game";
 import { Mascot } from "@/components/AppShell";
+import { Button } from "@/components/ui/button";
+import { useState } from "react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -27,6 +29,14 @@ function Dashboard() {
   const done = quests.filter((q) => q.done).length;
   const pct = (levelXp / XP_PER_LEVEL) * 100;
   const resumeScore = (details.resume as { score?: number } | undefined)?.score;
+  const reducedMotion = useReducedMotion();
+  const [tip, setTip] = useState(0);
+  const tips = [
+    "You don't have to have it all figured out. You just have to take the next step.",
+    "A good interview is a conversation, not a performance. Take a breath. You've got this.",
+    "That thing you think is 'just part of the job'? It might be your best resume story.",
+    "Some days, one small step is plenty. Progress still counts.",
+  ];
 
   return (
     <div className="mx-auto max-w-6xl space-y-8">
@@ -34,7 +44,7 @@ function Dashboard() {
         <div>
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">Let's make your next move count</p>
           <h1 className="mt-2 text-4xl font-bold md:text-5xl">Looking good, {first} <span className="text-accent">✦</span></h1>
-          <p className="mt-2 text-lg text-muted-foreground">Small steps today. Big career energy tomorrow.</p>
+          <p className="mt-2 text-lg text-muted-foreground">{done > 0 ? `${done} quests behind you. Take a moment to appreciate that.` : "Glad you're here. Let's start with one small win."}</p>
         </div>
         <div className="panel flex items-center gap-3 px-5 py-3 text-sm transition-shadow hover:shadow-md">
           <Flame className="animate-flame h-5 w-5 text-primary" /><b>{done} quests done</b><span className="border-l pl-3 text-muted-foreground">Keep it going!</span>
@@ -46,16 +56,16 @@ function Dashboard() {
           <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-foreground/70"><span className="h-1.5 w-1.5 rounded-full bg-foreground/60" />Your next chapter starts here</p>
           <h2 className="mt-5 text-4xl font-bold leading-tight md:text-5xl">You've got potential.<br />Let's put it to work.</h2>
           <p className="mt-4 text-muted-foreground">Your dream role is closer than you think. Build your skills, sharpen your story, and make your next move.</p>
-          <Link to="/interview" className="mt-8 inline-flex items-center gap-3 rounded-xl bg-primary px-7 py-4 font-semibold text-primary-foreground shadow-sm transition hover:opacity-90">
+          <Button asChild className="mt-8 h-auto rounded-xl px-7 py-4 text-base"><Link to="/interview">
             Start a mock interview <ArrowRight className="h-5 w-5" />
-          </Link>
+          </Link></Button>
           <p className="mt-4 flex items-center gap-2 text-sm text-muted-foreground"><Clock className="h-4 w-4" />15 minutes to a more confident you</p>
         </div>
         <div className="pointer-events-none absolute -right-10 top-6 hidden h-[420px] w-[420px] rounded-full border border-success/30 md:block" />
         <div className="absolute bottom-0 right-16 hidden items-end gap-0 md:flex">
           {[90, 160, 260].map((h, i) => <div key={i} className="w-28 rounded-t-md bg-success/40" style={{ height: h }} />)}
         </div>
-        <motion.div animate={{ y: [0, -8, 0] }} transition={{ repeat: Infinity, duration: 3 }} className="absolute right-16 top-0 hidden md:block"><Mascot className="h-40 w-40" /></motion.div>
+        <div className="mascot-float absolute right-16 top-0 hidden md:block"><Mascot className="h-40 w-40" /></div>
         <div className="absolute right-64 top-16 hidden -rotate-6 items-center gap-2 rounded-xl bg-card px-4 py-3 text-sm shadow-md md:flex"><Zap className="h-4 w-4" />+150 XP</div>
         <div className="absolute bottom-12 right-10 hidden items-center gap-2 rounded-xl bg-card px-4 py-3 text-sm shadow-md md:flex"><Check className="h-4 w-4 text-success" />One step closer.</div>
       </section>
@@ -81,7 +91,7 @@ function Dashboard() {
             <svg viewBox="0 0 100 100" className="h-full w-full -rotate-90">
               <circle cx="50" cy="50" r="44" fill="none" stroke="var(--muted)" strokeWidth="5" />
               <motion.circle cx="50" cy="50" r="44" fill="none" stroke="var(--success)" strokeWidth="5" strokeLinecap="round"
-                strokeDasharray={276.5} initial={{ strokeDashoffset: 276.5 }} animate={{ strokeDashoffset: 276.5 * (1 - pct / 100) }} transition={{ duration: 1 }} />
+                strokeDasharray={276.5} initial={reducedMotion ? false : { strokeDashoffset: 276.5 }} animate={{ strokeDashoffset: 276.5 * (1 - pct / 100) }} transition={{ duration: 1 }} />
             </svg>
             <div className="absolute inset-0 grid place-content-center">
               <div className="text-xs tracking-[0.3em] text-muted-foreground">LEVEL</div>
@@ -111,7 +121,7 @@ function Dashboard() {
                     <div className="mt-1 text-xs uppercase tracking-widest text-muted-foreground">{q.category}</div>
                   </div>
                   <span className="flex items-center gap-1 rounded-lg border border-accent/40 bg-accent/10 px-3 py-1.5 text-sm"><Zap className="h-4 w-4" />+{q.xp} XP</span>
-                  <button onClick={() => completeQuest(q.id)} aria-label={`Complete ${q.title}`} className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-success"><Check className="h-5 w-5" /></button>
+                  <Button variant="ghost" size="icon" onClick={() => completeQuest(q.id)} aria-label={`Complete ${q.title}`} title={`Complete ${q.title}`} className="shrink-0 rounded-lg text-muted-foreground hover:bg-muted hover:text-success"><Check className="h-5 w-5" /></Button>
                 </div>
               );
             })}
@@ -129,8 +139,8 @@ function Dashboard() {
       </section>
 
       <div className="flex items-center gap-5 rounded-2xl border bg-hero/60 p-6">
-        <Mascot className="h-20 w-20" />
-        <div><div className="font-semibold">Max says</div><p className="text-muted-foreground">You don't have to have it all figured out. You just have to take the next step.</p></div>
+        <Button variant="ghost" aria-label="Another thought from Max" title="Another thought from Max" className="h-20 w-20 shrink-0 p-0 hover:bg-transparent" onClick={() => setTip((t) => (t + 1) % tips.length)}><Mascot className="h-20 w-20" /></Button>
+        <div className="min-w-0"><div className="font-semibold">Max says</div><motion.p key={tip} initial={reducedMotion ? false : { opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="min-h-12 text-muted-foreground" aria-live="polite">{tips[tip]}</motion.p></div>
       </div>
     </div>
   );
@@ -144,7 +154,7 @@ function Bar({ pct, cls }: { pct: number; cls: string }) {
 }
 function Power({ to, icon: Icon, tag, title, body, cta, cls }: { to: "/setup" | "/peers"; icon: typeof Zap; tag: string; title: string; body: string; cta: string; cls: string }) {
   return (
-    <Link to={to} className={`group rounded-2xl border p-8 transition hover:shadow-md ${cls}`}>
+    <Link to={to} className={`power-move group rounded-2xl border p-8 ${cls}`}>
       <div className="flex justify-between"><Icon className="h-8 w-8 text-muted-foreground" /><span className="text-[10px] tracking-[0.2em] text-muted-foreground">{tag}</span></div>
       <h3 className="mt-8 text-2xl font-semibold">{title}</h3>
       <p className="mt-3 text-muted-foreground">{body}</p>

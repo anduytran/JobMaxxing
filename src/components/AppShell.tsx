@@ -1,6 +1,6 @@
 import { Link, useLocation, useRouter, useRouterState } from "@tanstack/react-router";
 import { signOut } from "@/lib/auth.functions";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, MotionConfig, useReducedMotion } from "framer-motion";
 import {
   LayoutGrid, FileText, Mic, Users, Radar, LineChart, Network, UsersRound, Swords, Settings, Menu, LogOut, Zap, ArrowRight, Flame, CircleHelp,
 } from "lucide-react";
@@ -8,6 +8,7 @@ import { useState, type ReactNode } from "react";
 import { useGame, levelTitle } from "@/lib/game";
 import { cn } from "@/lib/utils";
 import mascot from "@/assets/mascot.png";
+import { Button } from "@/components/ui/button";
 
 type Item = { to: string; label: string; icon: typeof LayoutGrid; badge?: string };
 const GROUPS: { label: string; items: Item[] }[] = [
@@ -30,7 +31,7 @@ const GROUPS: { label: string; items: Item[] }[] = [
 const ALL = GROUPS.flatMap((g) => g.items).concat({ to: "/settings", label: "Settings", icon: Settings });
 
 export function Mascot({ className }: { className?: string }) {
-  return <img src={mascot} alt="" width={816} height={816} className={cn("object-contain", className)} />;
+  return <img src={mascot} alt="" width={816} height={816} className={cn("mascot-personality object-contain", className)} />;
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -40,11 +41,12 @@ export function AppShell({ children }: { children: ReactNode }) {
   const navigating = useRouterState({ select: (s) => s.status === "pending" });
   const [signingOut, setSigningOut] = useState(false);
   const [open, setOpen] = useState(false);
+  const reducedMotion = useReducedMotion();
   const current = ALL.find((i) => i.to === loc.pathname)?.label ?? "Workspace";
   const initials = name.split(/\s+/).map((p) => p[0]).join("").slice(0, 2).toUpperCase() || "ME";
 
   return (
-    <div className="flex min-h-screen">
+    <MotionConfig reducedMotion="user"><div className="flex min-h-screen">
       {navigating && <div role="progressbar" aria-label="Loading page" className="fixed inset-x-0 top-0 z-50 h-0.5 animate-pulse bg-primary" />}
       <aside className={cn(
         "fixed inset-y-0 left-0 z-40 flex w-72 flex-col overflow-y-auto border-r bg-sidebar px-4 py-7 transition-transform md:translate-x-0",
@@ -93,16 +95,16 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
           <div className="mt-3 flex gap-2 text-xs">
             <Link to="/settings" onClick={() => setOpen(false)} className="flex items-center gap-1 rounded-lg px-2 py-1 text-muted-foreground hover:bg-muted"><Settings className="h-3.5 w-3.5" />Settings</Link>
-            <button className="ml-auto flex items-center gap-1 rounded-lg px-2 py-1 text-primary hover:bg-muted disabled:opacity-60" disabled={signingOut}
+            <Button variant="ghost" size="sm" className="ml-auto flex h-auto items-center gap-1 rounded-lg px-2 py-1 text-primary hover:bg-muted disabled:opacity-60" disabled={signingOut}
               onClick={async () => { setSigningOut(true); try { await signOut(); await router.invalidate(); } finally { setSigningOut(false); } }}>
-              <LogOut className="h-3.5 w-3.5" />{signingOut ? "Signing out…" : "Sign out"}</button>
+              <LogOut className="h-3.5 w-3.5" />{signingOut ? "Signing out…" : "Sign out"}</Button>
           </div>
         </div>
       </aside>
 
       <div className="flex-1 md:pl-72">
         <header className="sticky top-0 z-30 flex h-20 items-center gap-4 border-b bg-card/90 px-4 backdrop-blur md:px-10">
-          <button className="md:hidden" onClick={() => setOpen(!open)} aria-label="Menu"><Menu /></button>
+          <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setOpen(!open)} aria-label="Menu"><Menu /></Button>
           <div className="hidden items-center gap-3 text-[15px] sm:flex">
             <span className="text-muted-foreground">Workspace</span><span className="text-muted-foreground">›</span><span>{current}</span>
           </div>
@@ -121,19 +123,30 @@ export function AppShell({ children }: { children: ReactNode }) {
             <div className="grid h-10 w-10 place-items-center rounded-full bg-sidebar-accent text-sm font-semibold">{initials}</div>
           </div>
         </header>
-        <motion.main key={loc.pathname} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="p-4 md:px-10 md:py-10">
+        <motion.main key={loc.pathname} initial={reducedMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="page-arrival p-4 md:px-10 md:py-10">
           {children}
           <footer className="mx-auto mt-16 flex max-w-6xl justify-between border-t pt-6 text-xs text-muted-foreground">
             <span>Made for your next chapter.</span><span>Privacy · Terms · AI-powered. Human-centered.</span>
           </footer>
         </motion.main>
       </div>
-      <button aria-label="Help" className="hover-pop fixed bottom-6 right-6 z-40 grid h-11 w-11 place-items-center rounded-full border bg-card shadow-md hover:bg-muted">
+      <Button variant="outline" size="icon" aria-label="Help" title="Help" className="hover-pop fixed bottom-6 right-6 z-40 grid h-11 w-11 place-items-center rounded-full border bg-card shadow-md hover:bg-muted">
         <CircleHelp className="h-5 w-5" />
-      </button>
-    </div>
+      </Button>
+      <AnimatePresence>
+        {lastGain && <motion.div key={lastGain.key} initial={{ opacity: 0, y: 20, scale: 0.95 }} animate={{ opacity: [0, 1, 1, 0], y: reducedMotion ? 0 : [20, 0, 0, -8] }} transition={{ duration: 3.5, times: [0, 0.1, 0.8, 1] }} className="pointer-events-none fixed bottom-6 left-4 right-20 z-50 mx-auto flex max-w-sm items-center gap-3 rounded-xl border bg-card p-4 shadow-md md:left-72">
+          <div className="relative grid h-10 w-10 shrink-0 place-items-center rounded-full bg-success/20 text-foreground">
+            <CheckReward />
+            <div aria-hidden="true" className="absolute inset-0 flex justify-between">{["bg-primary", "bg-success", "bg-accent", "bg-primary"].map((color, i) => <span key={i} className={cn("reward-particle h-2 w-1 rounded-sm", color)} />)}</div>
+          </div>
+          <div><p className="text-sm font-semibold">A little closer. Nice work!</p><p className="text-xs text-muted-foreground">+{lastGain.amount} XP · Keep that momentum.</p></div>
+        </motion.div>}
+      </AnimatePresence>
+    </div></MotionConfig>
   );
 }
+
+function CheckReward() { return <Zap className="h-5 w-5 text-primary" />; }
 
 export function PanelHead({ title, level }: { title: string; level: number }) {
   return (

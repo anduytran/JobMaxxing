@@ -90,6 +90,8 @@
   --grid-line: transparent;
   --hero: oklch(0.945 0.015 115);
   --lavender: oklch(0.95 0.02 285);
+  --shadow-hover: 0 14px 36px -14px oklch(0.3 0.02 60 / 22%);
+  --shadow-control: 0 5px 12px -6px oklch(0.3 0.02 60 / 25%);
 }
 
 .roast {
@@ -110,7 +112,7 @@
     background-size: 40px 40px;
     transition: background-color .4s;
   }
-  h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.02em; }
+  h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: 0; }
 }
 
 @utility panel {
@@ -136,7 +138,7 @@
   transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.25s;
   &:hover {
     transform: translateY(-3px);
-    box-shadow: 0 14px 36px -14px oklch(0.3 0.02 60 / 22%);
+    box-shadow: var(--shadow-hover);
   }
 }
 @utility hover-pop {
@@ -163,3 +165,63 @@
 @utility animate-bob { animation: bob 3s ease-in-out infinite; }
 @keyframes flame-flicker { 0%, 100% { transform: scale(1) } 50% { transform: scale(1.15) rotate(-4deg) } }
 @utility animate-flame { animation: flame-flicker 1.4s ease-in-out infinite; transform-origin: bottom center; }
+
+/* A little personality, without getting in the way. */
+@keyframes arrive {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.page-arrival > div > * {
+  animation: arrive 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.page-arrival > div > :nth-child(2) { animation-delay: 60ms; }
+.page-arrival > div > :nth-child(3) { animation-delay: 110ms; }
+.page-arrival > div > :nth-child(4) { animation-delay: 160ms; }
+.page-arrival > div > :nth-child(n+5) { animation-delay: 210ms; }
+
+.tactile-control {
+  transition: transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1), background-color 180ms, box-shadow 180ms;
+}
+@media (hover: hover) {
+  .tactile-control:hover:not(:disabled) { transform: translateY(-2px); box-shadow: var(--shadow-control); }
+  .tactile-control:hover > svg:last-child { translate: 2px 0; }
+  .mascot-personality:hover { animation: mascot-hello 650ms ease-in-out; }
+}
+.tactile-control:active:not(:disabled) { transform: translateY(0) scale(0.97); }
+.tactile-control > svg { transition: translate 180ms; }
+.mascot-personality { transform-origin: center bottom; }
+@keyframes mascot-hello {
+  0%, 100% { rotate: 0deg; }
+  20% { rotate: -9deg; }
+  45% { rotate: 8deg; }
+  70% { rotate: -5deg; }
+}
+.mascot-float { animation: bob 4s ease-in-out infinite; }
+.power-move { transition: transform 250ms, box-shadow 250ms; }
+.power-move:hover { transform: translateY(-4px); box-shadow: var(--shadow-hover); }
+.power-move:hover svg { rotate: -7deg; }
+.power-move svg { transition: rotate 250ms, translate 250ms; }
+.power-move:hover svg:last-child { translate: 4px 0; }
+@keyframes reward-particle {
+  from { opacity: 0; transform: translateY(12px) rotate(0deg); }
+  20% { opacity: 1; }
+  to { opacity: 0; transform: translateY(-65px) rotate(160deg); }
+}
+.reward-particle { animation: reward-particle 1.2s ease-out both; }
+.reward-particle:nth-child(2) { animation-delay: 90ms; }
+.reward-particle:nth-child(3) { animation-delay: 180ms; }
+.reward-particle:nth-child(4) { animation-delay: 60ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .page-arrival > div > * { animation: none; }
+  .hover-lift:hover, .hover-pop:hover, .hover-pop:active, .hover-slide:hover,
+  .power-move:hover, .tactile-control:hover:not(:disabled), .tactile-control:active:not(:disabled) { transform: none; }
+  .reward-particle { display: none; }
+}

@@ -15,6 +15,8 @@ export const Route = createFileRoute("/settings")({
       { name: "description", content: "Edit your JobMaxxing profile and preferences." },
       { property: "og:title", content: "Settings — JobMaxxing" },
       { property: "og:description", content: "Edit your JobMaxxing profile and preferences." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: SettingsPage,
