@@ -68,3 +68,7 @@
 - [x] Top nav trimmed to Home · Collection · Career · Store; the diamond Lock In tab is gone from desktop and mobile.
 - [x] The featured card's primary button now reads "Lock In" on both the quest slide and the mock interview slide; verified in the browser with no console errors and a clean build.
 - [ ] The Interview / Resume Lab / Job Radar page at /lock-in now has no button pointing to it, so Job Radar cannot be reached by clicking anything — decide whether to link it from the top bar or the dashboard.
+
+## Quest expiration clocks
+- [x] Daily and weekly countdowns ("Daily expiration in 1h 3m 51s", "Weekly expiration in 1d 1h 3m") on the Quest Log and in the mission briefing group headers, from the same UTC midnight / Monday boundaries the server resets on.
+- [x] Verified in the browser: both clocks render, tick down each second, and the fresh board is pulled in when one runs out; no console errors, build clean.
