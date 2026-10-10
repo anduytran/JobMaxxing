@@ -926,7 +926,7 @@
 <path d="" fill="#000000" transform="translate(0,0)"/>
 <!-- Hand-drawn detail strokes; coordinates follow the original artwork. -->
 <g id="restored-linework" transform="translate(0 -20) scale(2)" fill="none" stroke="#943B21" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">
-  <path d="M172 338 L166 271 C162 239 183 217 214 215 L483 192 C509 189 531 208 534 233 L546 409 C549 443 531 466 500 471 L243 490 C205 493 181 473 178 440 Z"/>
+  <path d="M172 338 L166 271 C162 239 183 217 214 215 L483 192 C509 189 531 208 534 233 L546 409 C547 443 531 466 500 471 L243 489 C209 490 185 470 182 438 Z"/>
   <path d="M268 210 L267 187 C265 164 284 145 305 143 L373 139 C399 137 421 157 423 183 L424 198 M295 208 L294 187 C293 176 301 166 313 166 L371 162 C385 161 395 169 397 182 L398 200"/>
   <path d="M169 319 L316 305 M387 289 L538 276" stroke-width="2.2"/>
   <path d="M108 196 C105 248 119 301 170 338 M139 194 C135 238 143 279 165 295 M107 172 C115 182 120 181 123 173 M123 173 C129 178 134 174 138 172" stroke-width="3"/>
