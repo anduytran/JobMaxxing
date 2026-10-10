@@ -13,6 +13,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { GameProvider } from "../lib/game";
+import { loadGame } from "../lib/devup.functions";
 import { AppShell } from "../components/AppShell";
 import { Toaster } from "../components/ui/sonner";
 
