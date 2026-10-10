@@ -4,7 +4,17 @@ import { ArrowRight, Check, ChevronRight, Clock, FileText, Flame, Mic, Users, Za
 import { levelTitle, useGame, XP_PER_LEVEL } from "@/lib/game";
 import { Mascot } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { getLatestResumeReview } from "@/lib/resume.functions";
+import type { StoredReview } from "@/lib/resume";
+import maxResume from "@/assets/max-resume.png";
+import maxInterview from "@/assets/max-interview.png";
+import maxSkills from "@/assets/max-skills.png";
+import maxHunt from "@/assets/max-hunt.png";
+import maxBranding from "@/assets/max-branding.png";
+
+const MAX_ART: Record<string, string> = { setup: maxResume, resume: maxResume, interview: maxInterview, skills: maxSkills, hunt: maxHunt, branding: maxBranding, social: maxBranding };
+const QUEST_LINK: Record<string, "/setup" | "/interview" | "/quests" | "/skills" | "/market"> = { setup: "/setup", resume: "/setup", interview: "/interview", skills: "/skills", hunt: "/market" };
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -28,7 +38,16 @@ function Dashboard() {
   const open = quests.filter((q) => !q.done);
   const done = quests.filter((q) => q.done).length;
   const pct = (levelXp / XP_PER_LEVEL) * 100;
-  const resumeScore = (details.resume as { score?: number } | undefined)?.score;
+  const [review, setReview] = useState<StoredReview | null>(null);
+  useEffect(() => { getLatestResumeReview().then((r) => { if (r.ok) setReview(r.review); }).catch(() => {}); }, []);
+  const resumeScore = review?.score ?? (details.resume as { score?: number } | undefined)?.score;
+  const resumeQuests = (review?.suggestions ?? []).filter((s) => !s.applied);
+  const [seed, setSeed] = useState(0);
+  useEffect(() => { setSeed(Math.random()); }, []);
+  const featured = useMemo(() => (open.length ? open[Math.floor(seed * open.length) % open.length] : null), [open, seed]);
+  const featKey = featured?.category?.toLowerCase() ?? "interview";
+  const featArt = MAX_ART[featKey] ?? maxInterview;
+  const featLink = QUEST_LINK[featKey] ?? "/quests";
   const reducedMotion = useReducedMotion();
   const [tip, setTip] = useState(0);
   const tips = [
@@ -56,25 +75,36 @@ function Dashboard() {
           <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-foreground/70"><span className="h-1.5 w-1.5 rounded-full bg-foreground/60" />Your next chapter starts here</p>
           <h2 className="mt-5 text-4xl font-bold leading-tight md:text-5xl">You've got potential.<br />Let's put it to work.</h2>
           <p className="mt-4 text-muted-foreground">Your dream role is closer than you think. Build your skills, sharpen your story, and make your next move.</p>
-          <Button asChild className="mt-8 h-auto rounded-xl px-7 py-4 text-base"><Link to="/interview">
-            Start a mock interview <ArrowRight className="h-5 w-5" />
-          </Link></Button>
-          <p className="mt-4 flex items-center gap-2 text-sm text-muted-foreground"><Clock className="h-4 w-4" />15 minutes to a more confident you</p>
+          {featured ? (<>
+            <p className="mt-6 text-xs font-semibold uppercase tracking-[0.2em] text-primary">Today's featured quest · {featured.category}</p>
+            <p className="mt-1 text-2xl font-semibold">{featured.title}</p>
+            <div className="mt-6 flex flex-wrap items-center gap-3">
+              <Button asChild className="h-auto rounded-xl px-7 py-4 text-base"><Link to={featLink}>
+                Start this quest <ArrowRight className="h-5 w-5" />
+              </Link></Button>
+              <Button variant="outline" className="h-auto rounded-xl px-5 py-4" onClick={() => setSeed(Math.random())}>Pick another</Button>
+            </div>
+          </>) : (
+            <Button asChild className="mt-8 h-auto rounded-xl px-7 py-4 text-base"><Link to="/interview">
+              Start a mock interview <ArrowRight className="h-5 w-5" />
+            </Link></Button>
+          )}
+          <p className="mt-4 flex items-center gap-2 text-sm text-muted-foreground"><Clock className="h-4 w-4" />{featured ? `+${featured.xp} XP waiting for you` : "15 minutes to a more confident you"}</p>
         </div>
         <div className="pointer-events-none absolute -right-10 top-6 hidden h-[420px] w-[420px] rounded-full border border-success/30 md:block" />
         <div className="absolute bottom-0 right-16 hidden items-end gap-0 md:flex">
           {[90, 160, 260].map((h, i) => <div key={i} className="w-28 rounded-t-md bg-success/40" style={{ height: h }} />)}
         </div>
-        <div className="mascot-float absolute right-16 top-0 hidden md:block"><Mascot className="h-40 w-40" /></div>
-        <div className="absolute right-64 top-16 hidden -rotate-6 items-center gap-2 rounded-xl bg-card px-4 py-3 text-sm shadow-md md:flex"><Zap className="h-4 w-4" />+150 XP</div>
+        <div className="mascot-float absolute right-16 top-0 hidden md:block">{featured ? <img key={featArt} src={featArt} alt={`Max ready for: ${featured.title}`} width={816} height={816} className="h-48 w-48 object-contain" /> : <Mascot className="h-40 w-40" />}</div>
+        <div className="absolute right-64 top-16 hidden -rotate-6 items-center gap-2 rounded-xl bg-card px-4 py-3 text-sm shadow-md md:flex"><Zap className="h-4 w-4" />+{featured?.xp ?? 150} XP</div>
         <div className="absolute bottom-12 right-10 hidden items-center gap-2 rounded-xl bg-card px-4 py-3 text-sm shadow-md md:flex"><Check className="h-4 w-4 text-success" />One step closer.</div>
       </section>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_1fr_1fr_1.4fr]">
         <Stat icon={FileText} label="Resume score">
-          <div className="text-4xl font-bold">{resumeScore ?? "—"}<span className="text-xl font-normal text-muted-foreground"> / 100</span></div>
+          <div className="text-4xl font-bold">{review && <span className="mr-2 rounded-md bg-success/20 px-2 text-2xl">{review.grade}</span>}{resumeScore ?? "—"}<span className="text-xl font-normal text-muted-foreground"> / 100</span></div>
           <Bar pct={resumeScore ?? 0} cls="bg-success" />
-          <Link to="/setup" className="mt-3 block text-sm text-muted-foreground hover:text-primary">{resumeScore ? "Getting stronger with every edit" : "Upload your resume →"}</Link>
+          <Link to="/setup" className="mt-3 block text-sm text-muted-foreground hover:text-primary">{review ? (resumeQuests.length ? `${resumeQuests.length} resume quests to level it up →` : "All resume quests done. Nice!") : resumeScore ? "Getting stronger with every edit" : "Upload your resume →"}</Link>
         </Stat>
         <Stat icon={Mic} label="Quests open">
           <div className="text-4xl font-bold">{String(open.length).padStart(2, "0")}</div>
@@ -106,16 +136,16 @@ function Dashboard() {
 
         <section className="lg:col-span-3">
           <div className="mb-1 flex items-center justify-between">
-            <h2 className="flex items-center gap-3 text-2xl font-semibold">Your daily quests <span className="rounded-md bg-muted px-2 text-sm font-normal">{Math.min(open.length, 3)}</span></h2>
+            <h2 className="flex items-center gap-3 text-2xl font-semibold">Your quests <span className="rounded-md bg-muted px-2 text-sm font-normal">{open.length + resumeQuests.length}</span></h2>
             <Link to="/quests" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary">View all quests <ArrowRight className="h-4 w-4" /></Link>
           </div>
           <p className="mb-5 text-muted-foreground">A little progress, a little XP. A lot of possibility.</p>
           <div className="panel divide-y overflow-hidden">
             {open.slice(0, 3).map((q) => {
-              const Icon = CAT_ICON[q.category?.toLowerCase()] ?? Zap;
+              const art = MAX_ART[q.category?.toLowerCase()];
               return (
                 <div key={q.id} className="group flex items-center gap-5 p-5 transition-colors hover:bg-muted/60">
-                  <div className="grid h-14 w-14 shrink-0 place-items-center rounded-xl bg-sidebar-accent text-primary transition-transform group-hover:scale-110"><Icon className="h-6 w-6" /></div>
+                  {art ? <img src={art} alt="" loading="lazy" width={816} height={816} className="h-14 w-14 shrink-0 rounded-xl bg-sidebar-accent object-contain p-1 transition-transform group-hover:scale-110" /> : <div className="grid h-14 w-14 shrink-0 place-items-center rounded-xl bg-sidebar-accent text-primary"><Zap className="h-6 w-6" /></div>}
                   <div className="min-w-0 flex-1">
                     <div className="font-semibold">{q.title}</div>
                     <div className="mt-1 text-xs uppercase tracking-widest text-muted-foreground">{q.category}</div>
@@ -125,7 +155,18 @@ function Dashboard() {
                 </div>
               );
             })}
-            {open.length === 0 && <div className="p-6 text-muted-foreground">All quests cleared. Legendary.</div>}
+            {resumeQuests.slice(0, 2).map((s) => (
+              <Link key={s.id} to="/setup" className="group flex items-center gap-5 p-5 transition-colors hover:bg-muted/60">
+                <img src={maxResume} alt="" loading="lazy" width={816} height={816} className="h-14 w-14 shrink-0 rounded-xl bg-sidebar-accent object-contain p-1 transition-transform group-hover:scale-110" />
+                <div className="min-w-0 flex-1">
+                  <div className="font-semibold">{s.title}</div>
+                  <div className="mt-1 line-clamp-1 text-xs text-muted-foreground"><span className="uppercase tracking-widest">Resume quest</span> · {s.detail}</div>
+                </div>
+                <span className="flex items-center gap-1 rounded-lg border border-accent/40 bg-accent/10 px-3 py-1.5 text-sm"><Zap className="h-4 w-4" />+{s.xp} XP</span>
+                <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
+              </Link>
+            ))}
+            {open.length === 0 && resumeQuests.length === 0 && <div className="p-6 text-muted-foreground">All quests cleared. Legendary.</div>}
           </div>
         </section>
       </div>
