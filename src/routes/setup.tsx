@@ -235,7 +235,7 @@ function Setup() {
             <span className="truncate">scan://{fileName}</span>
             {busy && (
               <span className="flex shrink-0 items-center gap-2">
-                <Loader2 className="h-3 w-3 animate-spin" /> working
+                <Loader2 className="h-3 w-3 animate-spin" /> working {seconds}s
               </span>
             )}
           </div>
