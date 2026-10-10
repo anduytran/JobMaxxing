@@ -17,7 +17,7 @@ import {
   LENGTHS, type AgentStatus, type InterviewGrade, type InterviewLength, type InterviewQuestion,
   type InterviewType, type ParsedJob, type TranscriptTurn,
 } from "@/lib/interview/types";
-import { createBrowserVoice, type VoiceAgent } from "@/lib/interview/voice";
+import { createBrowserVoice, createElevenLabsVoice, type VoiceAgent } from "@/lib/interview/voice";
 import { cn } from "@/lib/utils";
 
 
@@ -62,7 +62,14 @@ function Interview() {
   const voice = useRef<VoiceAgent | null>(null);
   const scroller = useRef<HTMLDivElement>(null);
 
-  useEffect(() => { voice.current = createBrowserVoice(); return () => voice.current?.stop(); }, []);
+  const [convId, setConvId] = useState<string | null>(null);
+  const [thinking, setThinking] = useState(false);
+  useEffect(() => {
+    voice.current = agents.voice === "elevenlabs"
+      ? createElevenLabsVoice(async (t) => (await speakInterviewLine({ data: { text: t } })).audio)
+      : createBrowserVoice();
+    return () => voice.current?.stop();
+  }, [agents.voice]);
   useEffect(() => { scroller.current?.scrollTo({ top: 1e6, behavior: "smooth" }); }, [turns]);
 
   const say = (t: string, phase: TranscriptTurn["phase"], questionId?: string) => {
@@ -92,8 +99,10 @@ function Interview() {
     setBusy(true);
     try {
       const qs = await generateInterviewQuestions({ data: { job, type, length, roast } });
+      const live = await startLiveInterview({ data: { job, type, length, roast, plan: qs } }).catch(() => null);
+      setConvId(live?.conversationId ?? null);
       setQuestions(qs); setQi(0); setTurns([]); setLeft(LENGTHS[length].seconds); setStage("live");
-      say(qs[0]!.text, "interview", qs[0]!.id);
+      say(live?.reply ?? qs[0]!.text, "interview", qs[0]!.id);
     } catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
   };
 
@@ -102,20 +111,38 @@ function Interview() {
     say(`${lead} Before we wrap up — do you have any questions for me?`, "candidate_questions");
   };
 
-  const answer = (a: string) => {
+  const answer = async (a: string) => {
     const v = a.trim();
-    if (!v) return;
+    if (!v || thinking) return;
     setText("");
     if (stage === "live") {
       const q = questions[qi];
       setTurns((x) => [...x, { speaker: "candidate", phase: "interview", text: v, questionId: q?.id }]);
       const next = qi + 1;
-      // Guardrail: question budget.
-      if (next >= questions.length) return toTail("Thanks, that covers my questions.");
+      const last = next >= questions.length;
+      if (convId) {
+        // The Question agent writes the next spoken line from the running conversation.
+        setThinking(true);
+        const reply = await sendInterviewTurn({ data: { conversationId: convId, text: v, phase: "interview", secondsLeft: left, lastQuestion: last } }).catch(() => null);
+        setThinking(false);
+        if (reply) {
+          // Guardrail: question budget — the agent was told to wrap up and invite questions.
+          if (last) { setStage("your_questions"); return say(reply, "candidate_questions"); }
+          setQi(next);
+          return say(reply, "interview", questions[next]?.id);
+        }
+      }
+      if (last) return toTail("Thanks, that covers my questions.");
       setQi(next);
       say(questions[next]!.text, "interview", questions[next]!.id);
     } else if (stage === "your_questions") {
       setTurns((x) => [...x, { speaker: "candidate", phase: "candidate_questions", text: v }]);
+      if (convId) {
+        setThinking(true);
+        const reply = await sendInterviewTurn({ data: { conversationId: convId, text: v, phase: "candidate_questions", secondsLeft: 0, lastQuestion: true } }).catch(() => null);
+        setThinking(false);
+        if (reply) return say(reply, "candidate_questions");
+      }
       say(roast ? "Fair question. I'll note it. Anything else, or are we done?" : "Great question — the team would love to dig into that. Anything else?", "candidate_questions");
     }
   };
@@ -140,7 +167,7 @@ function Interview() {
     } catch (e) { toast.error((e as Error).message); setStage("your_questions"); }
   };
 
-  const reset = () => { setStage("setup"); setGrade(null); setTurns([]); setJob(null); setAck(false); };
+  const reset = () => { setConvId(null); setStage("setup"); setGrade(null); setTurns([]); setJob(null); setAck(false); };
 
   return (
     <div className="mx-auto max-w-6xl space-y-4">
