@@ -25,24 +25,20 @@ export function agentStatus(): AgentStatus {
   };
 }
 
-/** Send one message to a Raia agent and parse its JSON reply. Returns null on any failure. */
+/** Send one prompt to a Raia agent and parse its JSON reply. Returns null on any failure.
+ *  Uses the stateless /external/prompts endpoint — no conversation user required. */
 async function askRaia<T>(secretEnv: string, message: string, context: string): Promise<T | null> {
   const secret = key(secretEnv);
   if (!secret) return null;
-  const headers = { "Agent-Secret-Key": secret, "Content-Type": "application/json" };
   try {
-    const conv = await fetch(`${RAIA}/conversations`, {
-      method: "POST", headers,
-      body: JSON.stringify({ title: "DevUp mock interview", conversationUserId: "devup-demo-user" }),
+    const res = await fetch(`${RAIA}/prompts`, {
+      method: "POST",
+      headers: { "Agent-Secret-Key": secret, "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt: context ? `${context}\n\n${message}` : message }),
     });
-    if (!conv.ok) { console.error("Raia conversation failed", conv.status, await conv.text()); return null; }
-    const { id } = (await conv.json()) as { id: string };
-    const res = await fetch(`${RAIA}/conversations/${id}/messages`, {
-      method: "POST", headers, body: JSON.stringify({ message, context }),
-    });
-    if (!res.ok) { console.error("Raia message failed", res.status, await res.text()); return null; }
-    const body = (await res.json()) as { message?: string; content?: string };
-    const text = body.message ?? body.content ?? "";
+    if (!res.ok) { console.error("Raia prompt failed", res.status, await res.text()); return null; }
+    const body = (await res.json()) as { response?: string };
+    const text = body.response ?? "";
     return JSON.parse(text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1)) as T;
   } catch (err) {
     console.error("Raia agent error", err);
