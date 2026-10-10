@@ -69,6 +69,75 @@ const DEFAULT_SCENE: Scene = {
   phrase: "One step closer.",
 };
 
+// Illustrated backdrop behind Max for the featured quest; one scene per quest type.
+function SceneBackdrop({ kind }: { kind: string }) {
+  if (kind === "branding" || kind === "social") {
+    return (
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="absolute bottom-0 left-1/2 flex w-72 -translate-x-1/2 justify-between px-12">
+          <div className="h-40 w-3 rounded-t bg-foreground/15" /><div className="h-40 w-3 rounded-t bg-foreground/15" />
+        </div>
+        <div className="relative -mt-6 flex h-56 w-80 flex-col justify-between rounded-2xl border-4 border-foreground/15 bg-card/80 p-4">
+          <div className="flex gap-1.5">{[0, 1, 2, 3, 4].map((i) => <span key={i} className="h-2 w-2 rounded-full bg-accent/70" />)}</div>
+          <p className="text-center text-[10px] font-bold uppercase tracking-[0.4em] text-primary/60">JobMaxxing · Now hiring you</p>
+        </div>
+      </div>
+    );
+  }
+  if (kind === "skills") {
+    const plates = ["h-16 w-4", "h-12 w-3", "h-9 w-3"];
+    return (
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="relative h-64 w-[22rem]">
+          <div className="absolute inset-y-0 left-4 w-2.5 rounded bg-foreground/15" />
+          <div className="absolute inset-y-0 right-4 w-2.5 rounded bg-foreground/15" />
+          {[16, 40, 64].map((top) => (
+            <div key={top} className="absolute inset-x-0 flex items-center justify-between px-1" style={{ top: `${top}%` }}>
+              <div className="absolute inset-x-2 h-1.5 rounded bg-foreground/20" />
+              {[0, 1].map((side) => (
+                <div key={side} className={cn("relative flex items-center gap-0.5", side && "flex-row-reverse")}>
+                  {plates.map((p) => <span key={p} className={`${p} rounded-sm bg-foreground/25`} />)}
+                </div>
+              ))}
+            </div>
+          ))}
+          <div className="absolute -bottom-2 inset-x-0 h-2 rounded bg-foreground/15" />
+        </div>
+      </div>
+    );
+  }
+  if (kind === "hunt") {
+    const blades = Array.from({ length: 34 }, (_, i) => ({ h: 28 + ((i * 37) % 46), r: ((i * 53) % 30) - 15 }));
+    return (
+      <div className="absolute inset-0">
+        <div className="absolute inset-x-0 bottom-0 flex items-end justify-around px-2">
+          {blades.map((b, i) => (
+            <span key={i} className={cn("w-2 origin-bottom rounded-t-full", i % 3 ? "bg-success/45" : "bg-success/70")} style={{ height: `${b.h * 1.6}px`, transform: `rotate(${b.r}deg)` }} />
+          ))}
+        </div>
+        <div className="absolute inset-x-0 bottom-0 h-6 bg-success/30" />
+      </div>
+    );
+  }
+  if (kind === "interview") {
+    return (
+      <div className="absolute inset-0 flex justify-center">
+        <div className="h-full w-80 bg-gradient-to-b from-primary/25 to-transparent [clip-path:polygon(40%_0,60%_0,100%_100%,0_100%)]" />
+        <div className="absolute bottom-8 h-6 w-72 rounded-[50%] bg-primary/15" />
+      </div>
+    );
+  }
+  return (
+    <div className="absolute inset-0 flex items-center justify-center">
+      {[-8, 4, -2].map((r, i) => (
+        <div key={i} className="absolute h-60 w-48 rounded-xl border border-foreground/10 bg-card/70" style={{ transform: `rotate(${r}deg) translate(${i * 10}px, ${i * 6}px)` }}>
+          <div className="mt-6 space-y-2 px-5">{[80, 60, 70, 50].map((w) => <div key={w} className="h-1.5 rounded bg-foreground/10" style={{ width: `${w}%` }} />)}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function Dashboard() {
   const { name, level, levelXp, xp, quests, completeQuest, details } = useGame();
   const first = name.split(" ")[0] || "there";
@@ -156,16 +225,17 @@ function Dashboard() {
           )}
           <p className="mt-4 flex items-center gap-2 text-sm text-muted-foreground"><Clock className="h-4 w-4" />{featured ? `+${featured.xp} XP waiting for you` : "15 minutes to a more confident you"}</p>
         </div>
-        <motion.div key={featured?.id ?? "none"} initial={reducedMotion ? false : { opacity: 0, x: 28 * dir }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.45 }} className="pointer-events-none absolute inset-0 hidden md:block">
-          <div className={`absolute -right-10 top-6 h-[420px] w-[420px] rounded-full border ${scene.ring}`} />
-          <div className={`absolute right-24 top-16 h-72 w-72 rounded-full ${scene.bg}`} />
-          <div className="mascot-float absolute right-16 top-0">{featured ? <img key={featArt} src={featArt} alt={`Max ready for: ${featured.title}`} width={816} height={816} className="h-48 w-48 object-contain" /> : <Mascot className="h-40 w-40" />}</div>
-          <div className={`absolute right-56 top-24 rotate-6 rounded-2xl bg-card p-3 shadow-md ${scene.chip}`}><scene.icon className="h-6 w-6" /></div>
-          {scene.props.map(([label, pos]) => (
-            <div key={label} className={`absolute ${pos} rounded-xl bg-card/90 px-3 py-1.5 text-xs font-medium shadow-sm`}>{label}</div>
+        <motion.div key={featured?.id ?? "none"} initial={reducedMotion ? false : { opacity: 0, x: 28 * dir }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.45 }} className="pointer-events-none absolute inset-y-0 right-0 hidden w-1/2 md:block">
+          <SceneBackdrop kind={featKey} />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="mascot-float">{featured ? <img key={featArt} src={featArt} alt={`Max ready for: ${featured.title}`} width={816} height={816} className="h-56 w-56 object-contain" /> : <Mascot className="h-44 w-44" />}</div>
+          </div>
+          <div className="absolute left-6 top-6 flex -rotate-6 items-center gap-2 rounded-xl bg-card px-4 py-3 text-sm shadow-md"><Zap className="h-4 w-4" />+{featured?.xp ?? 150} XP</div>
+          <div className={`absolute right-8 top-8 rotate-6 rounded-2xl bg-card p-3 shadow-md ${scene.chip}`}><scene.icon className="h-6 w-6" /></div>
+          {scene.props.slice(0, 2).map(([label], i) => (
+            <div key={label} className={cn("absolute rounded-xl bg-card/90 px-3 py-1.5 text-xs font-medium shadow-sm", i === 0 ? "left-8 top-1/2 -rotate-3" : "right-8 top-1/2 rotate-3")}>{label}</div>
           ))}
-          <div className="absolute right-64 top-16 flex -rotate-6 items-center gap-2 rounded-xl bg-card px-4 py-3 text-sm shadow-md"><Zap className="h-4 w-4" />+{featured?.xp ?? 150} XP</div>
-          <div className="absolute bottom-12 right-10 flex items-center gap-2 rounded-xl bg-card px-4 py-3 text-sm shadow-md"><Check className="h-4 w-4 text-success" />{scene.phrase}</div>
+          <div className="absolute bottom-6 right-8 flex items-center gap-2 rounded-xl bg-card px-4 py-3 text-sm shadow-md"><Check className="h-4 w-4 text-success" />{scene.phrase}</div>
         </motion.div>
       </section>
 
