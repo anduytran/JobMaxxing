@@ -5,12 +5,16 @@ import type {
   AgentStatus, InterviewGrade, InterviewLength, InterviewQuestion, InterviewType, ParsedJob, TranscriptTurn,
 } from "./types";
 import { LENGTHS } from "./types";
+import {
+  GRADES, gradeFromScore, type Grade, type ResumeFields, type ResumeReview, type ResumeSuggestion,
+} from "../resume";
 
 const RAIA = "https://api.raia2.com/external";
 const ENV = {
   parser: "RAIA_JOB_PARSER_AGENT_SECRET_KEY",
   questions: "RAIA_QUESTION_AGENT_SECRET_KEY",
   grader: "RAIA_GRADER_AGENT_SECRET_KEY",
+  resume: "RAIA_RESUME_AGENT_SECRET_KEY",
   voice: "ELEVENLABS_API_KEY",
 } as const;
 
@@ -26,8 +30,10 @@ export function agentStatus(): AgentStatus {
 }
 
 /** Send one prompt to a Raia agent and parse its JSON reply. Returns null on any failure.
- *  Uses the stateless /external/prompts endpoint — no conversation user required. */
-async function askRaia<T>(secretEnv: string, message: string, context: string): Promise<T | null> {
+ *  Uses the stateless /external/prompts endpoint — no conversation user required.
+ *  A slow agent must not hang the caller: the request is cut off at `timeoutMs`
+ *  (grading a resume realistically takes 20-30 s) and the caller falls back. */
+async function askRaia<T>(secretEnv: string, message: string, context: string, timeoutMs = 45_000): Promise<T | null> {
   const secret = key(secretEnv);
   if (!secret) return null;
   try {
@@ -35,6 +41,7 @@ async function askRaia<T>(secretEnv: string, message: string, context: string): 
       method: "POST",
       headers: { "Agent-Secret-Key": secret, "Content-Type": "application/json" },
       body: JSON.stringify({ prompt: context ? `${context}\n\n${message}` : message }),
+      signal: AbortSignal.timeout(timeoutMs),
     });
     if (!res.ok) { console.error("Raia prompt failed", res.status, await res.text()); return null; }
     const body = (await res.json()) as { response?: string };
@@ -289,4 +296,159 @@ export async function synthesize(text: string): Promise<string | null> {
   let bin = "";
   for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
   return btoa(bin);
+}
+
+// ---------- Resume grading ----------
+// The Resume Agent returns a recruiter's grade plus the specific edits worth XP.
+// When it is unreachable an offline rubric keeps the upload screen useful.
+
+const RESUME_GUARDRAILS =
+  "GUARDRAILS: judge only what the resume states. Never invent employers, dates, titles, metrics or skills, and never infer age, health, " +
+  "nationality, religion, marital status, disability or gender — return null for anything not stated. Never ask for or repeat sensitive data " +
+  "(SSN, home address, date of birth, passport or visa numbers, bank details). Be blunt about weaknesses, never insulting or derogatory.";
+
+const RESUME_SCHEMA =
+  'Reply with JSON only: {"grade":"S"|"A"|"B"|"C"|"D"|"F","score":0-100,"summary":"2-3 sentences",' +
+  '"suggestions":[{"id":"kebab-case","title":"short imperative","detail":"what to change and why, with a rewrite example",' +
+  '"category":"impact"|"keywords"|"formatting"|"structure"|"credibility","xp":25-500}],' +
+  '"fields":{"name":null,"email":null,"phone":null,"location":null,"title":null,"linkedin":null,"github":null,' +
+  '"yearsExperience":null,"skills":[],"experience":[{"company":null,"role":null,"start":null,"end":null}],' +
+  '"education":[{"school":null,"degree":null,"year":null}]}}';
+
+const str = (v: unknown, max: number): string | null => {
+  if (typeof v !== "string") return null;
+  const s = v.trim();
+  return s ? s.slice(0, max) : null;
+};
+
+const num = (v: unknown, min: number, max: number): number | null => {
+  const n = typeof v === "number" ? v : Number(v);
+  return Number.isFinite(n) ? Math.max(min, Math.min(max, Math.round(n))) : null;
+};
+
+const strList = (v: unknown, max: number, cap: number): string[] =>
+  Array.isArray(v) ? [...new Set(v.map((x) => str(x, max)).filter((x): x is string => !!x))].slice(0, cap) : [];
+
+/** Trust nothing the agent returns: clamp every number, drop empty suggestions, keep ids usable. */
+function normalizeReview(ai: any, source: "raia" | "fallback"): ResumeReview | null {
+  const score = num(ai?.score, 0, 100);
+  if (score === null) return null;
+  const grade = (GRADES as string[]).includes(String(ai?.grade)) ? (ai.grade as Grade) : gradeFromScore(score);
+  const seen = new Set<string>();
+  const suggestions: ResumeSuggestion[] = (Array.isArray(ai?.suggestions) ? ai.suggestions : [])
+    .slice(0, 12)
+    .map((raw: any, i: number) => {
+      const s = raw ?? {};
+      return {
+        id: str(s.id, 60)?.toLowerCase().replace(/[^a-z0-9_-]/g, "-") ?? `s${i + 1}`,
+        title: str(s.title, 140) ?? "Improve this section",
+        detail: str(s.detail, 900) ?? "",
+        category: str(s.category, 24)?.toLowerCase() ?? "other",
+        xp: num(s.xp, 25, 500) ?? 50,
+        applied: false,
+      };
+    })
+    .filter((s: any) => (seen.has(s.id) ? false : (seen.add(s.id), true)));
+  const f = ai?.fields ?? {};
+  const experience = (Array.isArray(f.experience) ? f.experience : [])
+    .slice(0, 12)
+    .map((raw: any) => {
+      const e = raw ?? {};
+      return { company: str(e.company, 120), role: str(e.role, 120), start: str(e.start, 20), end: str(e.end, 20) };
+    })
+    .filter((e: any) => e.company || e.role);
+  const education = (Array.isArray(f.education) ? f.education : [])
+    .slice(0, 8)
+    .map((raw: any) => {
+      const e = raw ?? {};
+      return { school: str(e.school, 140), degree: str(e.degree, 140), year: str(e.year, 12) };
+    })
+    .filter((e: any) => e.school || e.degree);
+  return {
+    grade,
+    score,
+    summary: str(ai?.summary, 1200) ?? "",
+    suggestions,
+    fields: {
+      name: str(f.name, 80), email: str(f.email, 254), phone: str(f.phone, 40), location: str(f.location, 120),
+      title: str(f.title, 120), linkedin: str(f.linkedin, 200), github: str(f.github, 200),
+      yearsExperience: num(f.yearsExperience, 0, 60),
+      skills: strList(f.skills, 40, 60),
+      experience,
+      education,
+    },
+    source,
+  };
+}
+
+export async function reviewResume(text: string): Promise<ResumeReview> {
+  const ai = await askRaia<Record<string, unknown>>(ENV.resume, text,
+    "You are the DevUp Resume Agent. Grade the resume below the way a recruiter would, then list the specific edits that would raise it. " +
+      "Every suggestion must be something the candidate can act on now, and worth XP when they do it. " +
+      `${RESUME_GUARDRAILS} ${RESUME_SCHEMA}\n\nRESUME:`,
+    // A full read of a real resume is the slowest of these calls; measured 18-28 s
+    // on a warm endpoint and well over a minute when the org key is busy.
+    75_000);
+  return (ai && normalizeReview(ai, "raia")) ?? fallbackReview(text);
+}
+
+type RubricRow = { ok: boolean; label: string; detail: string; category: string; xp: number };
+
+function fallbackReview(text: string): ResumeReview {
+  const lower = text.toLowerCase();
+  const bullets = (text.match(/^\s*[-*•▪o]\s+/gm) ?? []).length;
+  const quantified = (text.match(/\b\d+(\.\d+)?\s*(%|x|k|m|million|users|requests|ms|hours|days|weeks)\b/gi) ?? []).length;
+  const verbs = (text.match(/\b(built|led|shipped|designed|improved|reduced|automated|migrated|launched|scaled|delivered|implemented|created|owned|wrote)\b/gi) ?? []).length;
+  const words = text.split(/\s+/).filter(Boolean).length;
+  const rows: RubricRow[] = [
+    { ok: /[^\s@]+@[^\s@]+\.[^\s@]/.test(text), label: "Add a contact email", category: "credibility", xp: 40,
+      detail: "Recruiters reply by email. Put it on the first line next to your name, as plain text so parsers can read it." },
+    { ok: /linkedin\.com|github\.com|https?:\/\//i.test(text), label: "Add a profile or portfolio link", category: "credibility", xp: 60,
+      detail: "One link that shows your work (LinkedIn, GitHub, or a personal site) turns a claim into evidence." },
+    { ok: /(skills|technologies|tech stack|proficien)/i.test(lower), label: "Add a dedicated skills section", category: "keywords", xp: 120,
+      detail: "List the tools you actually use as their own section — applicant tracking systems match on these words before a human reads anything." },
+    { ok: /(experience|work history|employment)/i.test(lower), label: "Add a work experience section", category: "structure", xp: 150,
+      detail: "Role, company, dates, then two or three bullets per role, newest first." },
+    { ok: /(education|bachelor|b\.?s\.?c?|university|degree|diploma)/i.test(lower), label: "Add an education section", category: "structure", xp: 80,
+      detail: "School, degree and graduation year. Keep it short once you have more than two years of work." },
+    { ok: bullets >= 6, label: "Break your experience into bullet points", category: "formatting", xp: 100,
+      detail: "A recruiter spends about six seconds on a first pass. Six to eight short bullets per role scan; a paragraph does not." },
+    { ok: quantified >= 3, label: "Put numbers on your impact", category: "impact", xp: 250,
+      detail: "At least three bullets should carry a figure — users, latency, cost, error rate, time saved. 'Cut dashboard load time 40%' beats 'worked on the dashboard'." },
+    { ok: verbs >= 5, label: "Start bullets with a strong action verb", category: "impact", xp: 120,
+      detail: "Built, led, migrated, reduced. Drop 'helped', 'assisted' and 'worked on' — they hide what you actually did." },
+    { ok: words >= 250 && words <= 900, label: "Right-size the length", category: "formatting", xp: 60,
+      detail: "Roughly one page per decade of experience. Cut anything that does not earn its line." },
+  ];
+  const missing = rows.filter((r) => !r.ok);
+  const score = clamp(100 - missing.reduce((a, r) => a + r.xp / 5, 0));
+  return {
+    grade: gradeFromScore(score),
+    score,
+    summary: missing.length
+      ? `Offline check found ${missing.length} gap${missing.length > 1 ? "s" : ""}: ${missing.map((m) => m.label.toLowerCase()).join(", ")}. Work through them in order — the ones about proof move the grade most.`
+      : "This resume passes every offline check: contact details, a skills section, quantified impact and a scannable layout. The next gain is a second opinion from the Resume Agent.",
+    suggestions: missing.map((m, i) => ({ id: `f${i + 1}`, title: m.label, detail: m.detail, category: m.category, xp: m.xp, applied: false })),
+    fields: fallbackFields(text),
+    source: "fallback",
+  };
+}
+
+function fallbackFields(text: string): ResumeFields {
+  const lines = text.split(/\n/).map((l) => l.trim()).filter(Boolean);
+  const first = lines[0] ?? "";
+  const lower = text.toLowerCase();
+  return {
+    name: first && first.length < 40 ? first : null,
+    email: text.match(/[^\s@]+@[^\s@]+\.[^\s@]/)?.[0] ?? null,
+    phone: text.match(/\+?\d[\d\s().-]{7,}\d/)?.[0]?.trim() ?? null,
+    location: text.match(/\b[A-Z][a-z]+,\s*[A-Z]{2}\b/)?.[0] ?? null,
+    title: null,
+    linkedin: text.match(/linkedin\.com\/[^\s|,]+/i)?.[0] ?? null,
+    github: text.match(/github\.com\/[^\s|,]+/i)?.[0] ?? null,
+    yearsExperience: null,
+    skills: SKILLS.filter((s) => lower.includes(s.toLowerCase())),
+    experience: [],
+    education: [],
+  };
 }
