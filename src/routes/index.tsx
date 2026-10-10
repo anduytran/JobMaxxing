@@ -241,9 +241,9 @@ function Dashboard() {
             <div className="absolute left-4 top-12 flex -rotate-6 items-center gap-2 rounded-xl bg-card px-4 py-3 text-sm shadow-md"><Zap className="h-4 w-4" />+{featured?.xp ?? 150} XP</div>
             <div className={`absolute right-4 top-12 rotate-6 rounded-2xl bg-card p-3 shadow-md ${scene.chip}`}><scene.icon className="h-6 w-6" /></div>
             {scene.props.slice(0, 2).map(([label], i) => (
-              <div key={label} className={cn("absolute rounded-xl bg-card/90 px-3 py-1.5 text-xs font-medium shadow-sm", i === 0 ? "right-4 top-40 -rotate-3" : "left-4 bottom-40 rotate-3")}>{label}</div>
+              <div key={label} className={cn("absolute rounded-xl bg-card/90 px-3 py-1.5 text-xs font-medium shadow-sm", i === 0 ? "right-4 top-40 -rotate-3" : "left-4 bottom-44 rotate-3")}>{label}</div>
             ))}
-            <div className="absolute bottom-12 right-4 flex items-center gap-2 rounded-xl bg-card px-4 py-3 text-sm shadow-md"><Check className="h-4 w-4 text-success" />{scene.phrase}</div>
+            <div className="absolute bottom-12 left-4 flex items-center gap-2 rounded-xl bg-card px-4 py-3 text-sm shadow-md"><Check className="h-4 w-4 text-success" />{scene.phrase}</div>
           </motion.div>
           {total > 1 && (
             <span className="absolute bottom-5 left-1/2 z-20 -translate-x-1/2 rounded-full border bg-card/90 px-3 py-1 text-xs font-medium tabular-nums text-muted-foreground shadow-sm">{featIdx + 1} / {total}</span>
