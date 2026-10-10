@@ -2,7 +2,7 @@ import { Link, useLocation, useRouter, useRouterState } from "@tanstack/react-ro
 import { signOut } from "@/lib/auth.functions";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  LayoutGrid, FileText, Mic, Users, Radar, LineChart, Network, UsersRound, Swords, Settings, Menu, LogOut, Zap, ArrowRight, Flame, CircleHelp,
+  LayoutGrid, FileText, Mic, Users, Radar, LineChart, Network, UsersRound, Swords, Settings, Menu, LogOut,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { useGame, levelTitle } from "@/lib/game";
@@ -11,21 +11,21 @@ import mascot from "@/assets/mascot.png";
 
 type Item = { to: string; label: string; icon: typeof LayoutGrid; badge?: string };
 const GROUPS: { label: string; items: Item[] }[] = [
-  { label: "Your career, levelled up", items: [
+  { label: "Practice", items: [
     { to: "/", label: "Dashboard", icon: LayoutGrid },
     { to: "/setup", label: "Resume Lab", icon: FileText },
-    { to: "/interview", label: "AI Mock Interview", icon: Mic },
-    { to: "/peers", label: "Peer Interviews", icon: Users },
-  ] },
-  { label: "Opportunities", items: [
-    { to: "/market", label: "Job Radar", icon: Radar, badge: "New" },
-    { to: "/progress", label: "Career Progress", icon: LineChart },
-  ] },
-  { label: "Growth", items: [
+    { to: "/interview", label: "Mock Interview", icon: Mic },
     { to: "/quests", label: "Quests", icon: Swords },
-    { to: "/skills", label: "Skill Tree", icon: Network },
   ] },
-  { label: "Your crew", items: [{ to: "/crew", label: "Job Maxxers", icon: UsersRound, badge: "3" }] },
+  { label: "Track", items: [
+    { to: "/progress", label: "Progress", icon: LineChart },
+    { to: "/skills", label: "Skills", icon: Network },
+  ] },
+  { label: "Preview", items: [
+    { to: "/market", label: "Job Radar", icon: Radar, badge: "Soon" },
+    { to: "/peers", label: "Peer Interviews", icon: Users, badge: "Soon" },
+    { to: "/crew", label: "Job Maxxers", icon: UsersRound, badge: "Soon" },
+  ] },
 ];
 const ALL = GROUPS.flatMap((g) => g.items).concat({ to: "/settings", label: "Settings", icon: Settings });
 
@@ -34,7 +34,7 @@ export function Mascot({ className }: { className?: string }) {
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const { level, lastGain, name } = useGame();
+  const { level, lastGain, name, xp } = useGame();
   const loc = useLocation();
   const router = useRouter();
   const navigating = useRouterState({ select: (s) => s.status === "pending" });
