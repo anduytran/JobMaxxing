@@ -330,7 +330,10 @@ function GradeHeader({ review }: { review: ResumeReview }) {
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline justify-between gap-3">
           <div>
-            <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Resume grade</p>
+            <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+              Resume grade
+              {review.source !== "agent" && <span className="ml-2 normal-case tracking-normal">· built-in checker</span>}
+            </p>
             <p className={cn("font-display text-lg font-bold", meta.text)}>{meta.label}</p>
           </div>
           <p className="font-display text-3xl font-bold">
