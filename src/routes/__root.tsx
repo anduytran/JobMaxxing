@@ -134,7 +134,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      {false && (
+      {initial && !initial.ok && "signedOut" in initial && initial.signedOut ? (
         <><AuthScreen /><Toaster /></>
       ) : (
       <GameProvider initial={initial}>
