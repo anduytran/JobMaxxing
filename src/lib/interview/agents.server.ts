@@ -6,7 +6,8 @@ import type {
 } from "./types";
 import { LENGTHS } from "./types";
 import {
-  GRADES, gradeFromScore, type Grade, type ResumeFields, type ResumeReview, type ResumeSuggestion,
+  GRADES, gradeFromScore, XP_RULES, type AtsCheck, type Grade, type ResumeFields, type ResumeLine, type ResumeReview,
+  type ResumeSection, type ResumeSuggestion, type SuggestionType,
 } from "../resume";
 
 const RAIA = "https://api.raia2.com/external";
@@ -33,14 +34,17 @@ export function agentStatus(): AgentStatus {
  *  Uses the stateless /external/prompts endpoint — no conversation user required.
  *  A slow agent must not hang the caller: the request is cut off at `timeoutMs`
  *  (grading a resume realistically takes 20-30 s) and the caller falls back. */
-async function askRaia<T>(secretEnv: string, message: string, context: string, timeoutMs = 45_000): Promise<T | null> {
+async function askRaia<T>(
+  secretEnv: string, message: string, context: string, timeoutMs = 45_000,
+  files?: { fileName: string; storagePath: string }[],
+): Promise<T | null> {
   const secret = key(secretEnv);
   if (!secret) return null;
   try {
     const res = await fetch(`${RAIA}/prompts`, {
       method: "POST",
       headers: { "Agent-Secret-Key": secret, "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt: context ? `${context}\n\n${message}` : message }),
+      body: JSON.stringify({ prompt: context ? `${context}\n\n${message}` : message, ...(files?.length ? { files } : {}) }),
       signal: AbortSignal.timeout(timeoutMs),
     });
     if (!res.ok) { console.error("Raia prompt failed", res.status, await res.text()); return null; }
@@ -309,12 +313,42 @@ const RESUME_GUARDRAILS =
 
 const RESUME_SCHEMA =
   'Reply with JSON only: {"grade":"S"|"A"|"B"|"C"|"D"|"F","score":0-100,"summary":"2-3 sentences",' +
-  '"suggestions":[{"id":"kebab-case","title":"quest title: 2-6 words, Title Case, imperative, e.g. \\"Add a Quantitative Figure\\", \\"Fix Employment Dates\\"",' +
-  '"detail":"quest description: 1-3 sentences on what to change and why, with a rewrite example",' +
-  '"category":"impact"|"keywords"|"formatting"|"structure"|"credibility","xp":25-500}],' +
+  '"sections":[{"id":"s1","heading":"exact section heading","lines":[{"id":"s1l1","text":"exact line or bullet text, verbatim"}]}],' +
+  '"ats":{"score":0-100,"usesTablesOrColumns":false,"headers":{"experience":true,"education":true,"projects":false},"issues":["short ATS risk"]},' +
+  '"suggestions":[{"id":"kebab-case","type":"rewrite"|"metric"|"ats"|"general","lineId":"s1l2 or null",' +
+  '"title":"quest title: 2-6 words, Title Case, imperative, e.g. \\"Add a Quantitative Figure\\"",' +
+  '"detail":"1-2 sentences on what to change and why","before":"original line text or null",' +
+  '"after":"for type rewrite: the improved line, starting with a strong action verb, same facts — never invent numbers; else null",' +
+  '"question":"for type metric: the question that draws the number out, e.g. \\"Did you cut latency, and by how much?\\"; else null",' +
+  '"category":"impact"|"keywords"|"formatting"|"structure"|"credibility"}],' +
   '"fields":{"name":null,"email":null,"phone":null,"location":null,"title":null,"linkedin":null,"github":null,' +
-  '"yearsExperience":null,"skills":[],"experience":[{"company":null,"role":null,"start":null,"end":null}],' +
+  '"yearsExperience":null,"major":null,"degreeLevel":"Associate"|"Bachelors"|"Masters"|"PhD"|null,"graduationYear":null,"graduated":null,' +
+  '"qualifications":[],"skills":[],"frameworks":[],"experience":[{"company":null,"role":null,"start":null,"end":null}],' +
   '"education":[{"school":null,"degree":null,"year":null}]}}';
+
+const RESUME_TASK =
+  "You are the JobMaxxing Resume Agent. Read the attached resume (it may be a scanned image — read it visually). " +
+  "Compare it against the strong example resumes in your knowledge base, then grade it the way a recruiter would. " +
+  "1) Transcribe it into sections and lines verbatim (every bullet is its own line). " +
+  "2) ATS check: flag tables, multi-column layouts, text boxes, graphics or headers/footers that break parsers, and whether Experience, Education and Projects headings are clear. " +
+  "3) Action-verb analyzer: for each weak bullet (worked on, helped, responsible for) add a type \"rewrite\" suggestion with before/after. " +
+  "4) Metric gap detector: for each bullet without numbers or results add a type \"metric\" suggestion with a question. " +
+  "5) Normalize skills to canonical names (\"torch\", \"PyTorch 2.0\" → \"PyTorch\"; \"js\" → \"JavaScript\"); put libraries/frameworks in frameworks. ";
+
+// Canonical skill tags so "torch", "PyTorch 2.0" and "pytorch" count as one skill.
+const CANON: [RegExp, string][] = [
+  [/^(py)?torch(\s*\d.*)?$/i, "PyTorch"], [/^tensorflow(\s*\d.*)?$|^tf$/i, "TensorFlow"], [/^(js|javascript|ecmascript)$/i, "JavaScript"],
+  [/^(ts|typescript)$/i, "TypeScript"], [/^react(\.?js)?$/i, "React"], [/^node(\.?js)?$/i, "Node.js"], [/^next(\.?js)?$/i, "Next.js"],
+  [/^(golang|go)$/i, "Go"], [/^(postgres|postgresql|psql)$/i, "PostgreSQL"], [/^(k8s|kubernetes)$/i, "Kubernetes"],
+  [/^(c\+\+|cpp)$/i, "C++"], [/^(c#|csharp)$/i, "C#"], [/^python\s*3?$/i, "Python"], [/^aws|amazon web services$/i, "AWS"],
+  [/^(sklearn|scikit-?learn)$/i, "scikit-learn"], [/^(ml|machine learning)$/i, "Machine Learning"],
+];
+export function canonicalSkill(s: string): string {
+  const t = s.trim();
+  for (const [re, name] of CANON) if (re.test(t)) return name;
+  return t;
+}
+const canonList = (v: unknown, cap: number) => [...new Set(strList(v, 40, cap).map(canonicalSkill))];
 
 const str = (v: unknown, max: number): string | null => {
   if (typeof v !== "string") return null;
@@ -331,25 +365,58 @@ const strList = (v: unknown, max: number, cap: number): string[] =>
   Array.isArray(v) ? [...new Set(v.map((x) => str(x, max)).filter((x): x is string => !!x))].slice(0, cap) : [];
 
 /** Trust nothing the agent returns: clamp every number, drop empty suggestions, keep ids usable. */
+function normalizeSections(v: unknown): ResumeSection[] {
+  if (!Array.isArray(v)) return [];
+  return v.slice(0, 20).map((raw: any, si: number) => {
+    const id = `s${si + 1}`;
+    const lines = (Array.isArray(raw?.lines) ? raw.lines : []).slice(0, 60)
+      .map((l: any, li: number) => ({ id: str(l?.id, 20) ?? `${id}l${li + 1}`, text: str(typeof l === "string" ? l : l?.text, 600) ?? "" }))
+      .filter((l: ResumeLine) => l.text);
+    return { id: str(raw?.id, 20) ?? id, heading: str(raw?.heading, 80) ?? "Section", lines };
+  }).filter((s) => s.lines.length || s.heading);
+}
+
+function normalizeAts(a: any): AtsCheck | null {
+  if (!a || typeof a !== "object") return null;
+  const h = a.headers ?? {};
+  return {
+    score: num(a.score, 0, 100) ?? 70,
+    usesTablesOrColumns: a.usesTablesOrColumns === true,
+    headers: { experience: h.experience !== false, education: h.education !== false, projects: h.projects === true },
+    issues: strList(a.issues, 200, 8),
+  };
+}
+
+const TYPES: SuggestionType[] = ["rewrite", "metric", "ats", "general"];
+
 function normalizeReview(ai: any, source: "raia" | "fallback"): ResumeReview | null {
   const score = num(ai?.score, 0, 100);
   if (score === null) return null;
   const grade = (GRADES as string[]).includes(String(ai?.grade)) ? (ai.grade as Grade) : gradeFromScore(score);
+  const sections = normalizeSections(ai?.sections);
+  const lineIds = new Set(sections.flatMap((s) => s.lines.map((l) => l.id)));
   const seen = new Set<string>();
   const suggestions: ResumeSuggestion[] = (Array.isArray(ai?.suggestions) ? ai.suggestions : [])
-    .slice(0, 12)
+    .slice(0, 20)
     .map((raw: any, i: number) => {
       const s = raw ?? {};
+      const type = TYPES.includes(s.type) ? (s.type as SuggestionType) : "general";
+      const lineId = str(s.lineId, 20);
       return {
         id: str(s.id, 60)?.toLowerCase().replace(/[^a-z0-9_-]/g, "-") ?? `s${i + 1}`,
         title: str(s.title, 60) ?? "Improve this section",
         detail: str(s.detail, 900) ?? "",
-        category: str(s.category, 24)?.toLowerCase() ?? "other",
-        xp: num(s.xp, 25, 500) ?? 50,
+        category: str(s.category, 24)?.toLowerCase() ?? (type === "ats" ? "formatting" : "impact"),
+        xp: XP_RULES.perFix,
         applied: false,
+        type,
+        lineId: lineId && lineIds.has(lineId) ? lineId : null,
+        before: str(s.before, 600),
+        after: type === "rewrite" ? str(s.after, 600) : null,
+        question: type === "metric" ? str(s.question, 300) : null,
       };
     })
-    .filter((s: any) => (seen.has(s.id) ? false : (seen.add(s.id), true)));
+    .filter((s: ResumeSuggestion) => (seen.has(s.id) ? false : (seen.add(s.id), true)));
   const f = ai?.fields ?? {};
   const experience = (Array.isArray(f.experience) ? f.experience : [])
     .slice(0, 12)
@@ -370,11 +437,19 @@ function normalizeReview(ai: any, source: "raia" | "fallback"): ResumeReview | n
     score,
     summary: str(ai?.summary, 1200) ?? "",
     suggestions,
+    sections,
+    ats: normalizeAts(ai?.ats),
     fields: {
       name: str(f.name, 80), email: str(f.email, 254), phone: str(f.phone, 40), location: str(f.location, 120),
       title: str(f.title, 120), linkedin: str(f.linkedin, 200), github: str(f.github, 200),
       yearsExperience: num(f.yearsExperience, 0, 60),
-      skills: strList(f.skills, 40, 60),
+      skills: canonList(f.skills, 60),
+      frameworks: canonList(f.frameworks, 40),
+      qualifications: strList(f.qualifications, 160, 12),
+      major: str(f.major, 120),
+      degreeLevel: str(f.degreeLevel, 40),
+      graduationYear: str(f.graduationYear, 12),
+      graduated: typeof f.graduated === "boolean" ? f.graduated : null,
       experience,
       education,
     },
@@ -382,15 +457,76 @@ function normalizeReview(ai: any, source: "raia" | "fallback"): ResumeReview | n
   };
 }
 
-export async function reviewResume(text: string): Promise<ResumeReview> {
-  const ai = await askRaia<Record<string, unknown>>(ENV.resume, text,
-    "You are the JobMaxxing Resume Agent. Grade the resume below the way a recruiter would, then list the specific edits that would raise it. " +
-      "Every suggestion must be something the candidate can act on now, and worth XP when they do it. " +
-      `${RESUME_GUARDRAILS} ${RESUME_SCHEMA}\n\nRESUME:`,
+const sectionsText = (sections: ResumeSection[]) =>
+  sections.map((s) => `${s.heading}\n${s.lines.map((l) => `[${l.id}] ${l.text}`).join("\n")}`).join("\n\n");
+
+/** Upload the original file to Raia so the agent can read it (scans included). Returns null on failure. */
+async function uploadPromptFile(fileName: string, contentType: string, bytes: Uint8Array) {
+  const secret = key(ENV.resume);
+  if (!secret) return null;
+  try {
+    const res = await fetch(`${RAIA}/prompts/upload-url`, {
+      method: "POST",
+      headers: { "Agent-Secret-Key": secret, "Content-Type": "application/json" },
+      body: JSON.stringify({ fileName, contentType }),
+    });
+    if (!res.ok) { console.error("Raia upload-url failed", res.status, await res.text()); return null; }
+    const { signedUrl, storagePath } = (await res.json()) as { signedUrl: string; storagePath: string };
+    const put = await fetch(signedUrl, { method: "PUT", headers: { "Content-Type": contentType }, body: bytes as unknown as BodyInit });
+    if (!put.ok) { console.error("Raia file PUT failed", put.status); return null; }
+    return { fileName, storagePath };
+  } catch (err) {
+    console.error("Raia upload error", err);
+    return null;
+  }
+}
+
+/**
+ * Grade a resume. With a file the Resume Agent reads the original (so scanned
+ * resumes work); with only sections/text it grades the transcription. Falls back
+ * to the offline rubric when the agent is unreachable.
+ */
+export async function reviewResume(input: {
+  text?: string | undefined;
+  sections?: ResumeSection[] | undefined;
+  file?: { name: string; type: string; bytes: Uint8Array } | undefined;
+}): Promise<ResumeReview> {
+  const files = input.file ? await uploadPromptFile(input.file.name, input.file.type, input.file.bytes) : null;
+  const body = input.sections?.length
+    ? `RESUME (line ids in brackets — reuse them as-is in sections and lineId):\n${sectionsText(input.sections)}`
+    : files ? "RESUME: see the attached file." : `RESUME:\n${input.text ?? ""}`;
+  const ai = await askRaia<Record<string, unknown>>(ENV.resume, body,
+    `${RESUME_TASK}${RESUME_GUARDRAILS} ${RESUME_SCHEMA}`,
     // A full read of a real resume is the slowest of these calls; measured 18-28 s
     // on a warm endpoint and well over a minute when the org key is busy.
-    75_000);
-  return (ai && normalizeReview(ai, "raia")) ?? fallbackReview(text);
+    90_000, files ? [files] : undefined);
+  const review = ai && normalizeReview(ai, "raia");
+  if (review) {
+    // Keep the editor's ids stable when re-grading an edited version.
+    if (input.sections?.length && !review.sections?.length) review.sections = input.sections;
+    return review;
+  }
+  const text = input.text || (input.sections ? input.sections.map((s) => `${s.heading}\n${s.lines.map((l) => `- ${l.text}`).join("\n")}`).join("\n\n") : "");
+  const fb = fallbackReview(text);
+  fb.sections = input.sections?.length ? input.sections : fallbackSections(text);
+  return fb;
+}
+
+function fallbackSections(text: string): ResumeSection[] {
+  const out: ResumeSection[] = [];
+  let cur: ResumeSection = { id: "s1", heading: "Header", lines: [] };
+  for (const raw of text.split(/\n/)) {
+    const t = raw.replace(/^\s*[-*•▪]\s+/, "").trim();
+    if (!t) continue;
+    if (/^[A-Z][A-Z &/]{3,40}$/.test(t) || /^(experience|education|projects|skills|summary|work history)\b:?$/i.test(t)) {
+      if (cur.lines.length || out.length === 0) out.push(cur);
+      cur = { id: `s${out.length + 1}`, heading: t, lines: [] };
+      continue;
+    }
+    cur.lines.push({ id: `${cur.id}l${cur.lines.length + 1}`, text: t.slice(0, 600) });
+  }
+  out.push(cur);
+  return out.filter((s, i, a) => s.lines.length || a.length === 1);
 }
 
 type RubricRow = { ok: boolean; label: string; detail: string; category: string; xp: number };
@@ -429,7 +565,7 @@ function fallbackReview(text: string): ResumeReview {
     summary: missing.length
       ? `Offline check found ${missing.length} gap${missing.length > 1 ? "s" : ""}: ${missing.map((m) => m.label.toLowerCase()).join(", ")}. Work through them in order — the ones about proof move the grade most.`
       : "This resume passes every offline check: contact details, a skills section, quantified impact and a scannable layout. The next gain is a second opinion from the Resume Agent.",
-    suggestions: missing.map((m, i) => ({ id: `f${i + 1}`, title: m.label, detail: m.detail, category: m.category, xp: m.xp, applied: false })),
+    suggestions: missing.map((m, i) => ({ id: `f${i + 1}`, title: m.label, detail: m.detail, category: m.category, xp: XP_RULES.perFix, applied: false, type: (m.category === "formatting" ? "ats" : m.category === "impact" ? "metric" : "general") as SuggestionType })),
     fields: fallbackFields(text),
     source: "fallback",
   };
