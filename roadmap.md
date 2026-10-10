@@ -1,8 +1,9 @@
 # Roadmap
 
 ## Dashboard mastery cards
-- [ ] Revamp resume, quests, total XP, and career cards with clear objectives, real progress, choice, and encouraging feedback.
-- [ ] Verify card states and navigation; do not change progression or invent competitive data.
+- [x] Revamp resume, quests, total XP, and career cards with clear objectives, real progress, choice, and encouraging feedback.
+- [x] Verify four-column rendering, resume shuffle, daily/weekly controls, and link destinations in an isolated browser fixture; progression unchanged, no competitive data invented.
+- [ ] Verify dashboard cards with live account data — blocked by unavailable signed-in session.
 
 ## Resume score card
 - [x] Show the actual score, grade rank, next score target, and existing XP milestones.
