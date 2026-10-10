@@ -93,10 +93,25 @@ function Interview() {
   }, [stage]);
   useEffect(() => { if (stage === "live" && left <= 0) toTail("Looks like we're at time."); }, [left, stage]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const analyze = async () => {
+  // Job Radar hand-off: one-click practice for a radar role pre-fills the job
+  // description and runs the analysis immediately.
+  useEffect(() => {
+    if (!search.radar || radarBootstrapped.current) return;
+    radarBootstrapped.current = true;
+    radarJobId.current = search.radar;
+    const stored = sessionStorage.getItem("jobmaxxing:radar-jd") ?? "";
+    sessionStorage.removeItem("jobmaxxing:radar-jd");
+    if (stored.trim().length >= 40) {
+      setJd(stored);
+      setStage("setup");
+      void analyze(stored);
+    }
+  }, [search.radar]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const analyze = async (jdText: string = jd) => {
     setBusy(true);
     try {
-      const res = await parseJobDescription({ data: { jd } });
+      const res = await parseJobDescription({ data: { jd: jdText } });
       setJob(res);
       setMine(res.skills.filter((s) => details.skills.some((u) => u.toLowerCase() === s.toLowerCase()))); setStage("review");
     } catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
