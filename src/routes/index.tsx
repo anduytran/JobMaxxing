@@ -6,8 +6,7 @@ import { Mascot } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { useEffect, useMemo, useState } from "react";
 import { getLatestResumeReview } from "@/lib/resume.functions";
-import { DEFAULT_LAYOUT, getFeaturedLayouts, saveFeaturedLayout, type SceneLayout } from "@/lib/layout.functions";
-import { toast } from "sonner";
+import meadowScene from "@/assets/max/meadow.svg";
 import type { StoredReview } from "@/lib/resume";
 import { MAX_POSES } from "@/components/Max";
 import { cn } from "@/lib/utils";
@@ -91,15 +90,9 @@ function SceneBackdrop({ kind }: { kind: string }) {
     );
   }
   if (kind === "hunt") {
-    const blades = Array.from({ length: 34 }, (_, i) => ({ h: 28 + ((i * 37) % 46), r: ((i * 53) % 30) - 15 }));
     return (
-      <div className="absolute inset-0">
-        <div className="absolute inset-x-0 bottom-0 flex items-end justify-around px-2">
-          {blades.map((b, i) => (
-            <span key={i} className={cn("w-2 origin-bottom rounded-t-full", i % 3 ? "bg-success/45" : "bg-success/70")} style={{ height: `${b.h * 1.6}px`, transform: `rotate(${b.r}deg)` }} />
-          ))}
-        </div>
-        <div className="absolute inset-x-0 bottom-0 h-6 bg-success/30" />
+      <div className="absolute inset-0 overflow-hidden">
+        <img src={meadowScene} alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover object-bottom" draggable={false} />
       </div>
     );
   }
