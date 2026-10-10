@@ -2,7 +2,7 @@ import { Link, useLocation, useRouter, useRouterState } from "@tanstack/react-ro
 import { signOut } from "@/lib/auth.functions";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  LayoutGrid, FileText, Mic, Users, Radar, LineChart, Network, UsersRound, Swords, Settings, Menu, Search, Bell, LogOut,
+  LayoutGrid, FileText, Mic, Users, Radar, LineChart, Network, UsersRound, Swords, Settings, Menu, LogOut, Zap, ArrowRight, Flame, CircleHelp,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { useGame, levelTitle } from "@/lib/game";
@@ -74,7 +74,16 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
           ))}
         </nav>
-        <div className="mt-6 rounded-2xl border bg-background p-3 text-sm">
+        <div className="mt-6 rounded-2xl bg-muted/60 p-4">
+          <Zap className="h-5 w-5 text-primary" />
+          <p className="mt-2 text-sm font-semibold">A little boost. A big leap.</p>
+          <p className="mt-1 text-xs text-muted-foreground">Unlock your full career potential.</p>
+          <Link to="/settings" onClick={() => setOpen(false)} className="mt-3 flex items-center justify-between rounded-xl border bg-card px-4 py-2.5 text-sm font-medium hover:bg-muted">Explore Pro <ArrowRight className="h-4 w-4" /></Link>
+        </div>
+        <Link to="/settings" onClick={() => setOpen(false)} className="mt-4 flex items-center gap-3 rounded-xl px-3 py-2.5 text-[15px] text-foreground/80 hover:bg-muted">
+          <Settings className="h-[18px] w-[18px]" /> Settings
+        </Link>
+        <div className="mt-4 rounded-2xl border bg-background p-3 text-sm">
           <div className="flex items-center gap-3">
             <div className="grid h-9 w-9 place-items-center rounded-full bg-sidebar-accent text-xs font-semibold text-primary">{initials}</div>
             <div className="min-w-0 flex-1">
@@ -98,19 +107,17 @@ export function AppShell({ children }: { children: ReactNode }) {
             <span className="text-muted-foreground">Workspace</span><span className="text-muted-foreground">›</span><span>{current}</span>
           </div>
           <div className="ml-auto flex items-center gap-4">
-            <div className="hidden items-center gap-2 text-sm text-muted-foreground lg:flex">
-              <Search className="h-4 w-4" />Search anything…<kbd className="rounded-md border px-1.5 py-0.5 text-[11px]">⌘K</kbd>
-            </div>
-            <span className="relative rounded-full bg-sidebar-accent px-3 py-1 text-xs font-semibold text-primary">
-              Level {level}
+            <div className="relative flex items-center gap-3 rounded-2xl border bg-card px-4 py-2.5 text-sm">
+              <Flame className="h-5 w-5 text-primary" />
+              <span className="font-semibold">5 day streak</span>
+              <span className="hidden border-l pl-3 text-muted-foreground sm:inline">Keep it going!</span>
               <AnimatePresence>
                 {lastGain && (
                   <motion.span key={lastGain.key} initial={{ opacity: 1, y: 0 }} animate={{ opacity: 0, y: -28 }} transition={{ duration: 1.6 }}
                     className="absolute -top-2 right-0 font-bold text-success">+{lastGain.amount}</motion.span>
                 )}
               </AnimatePresence>
-            </span>
-            <Bell className="h-5 w-5 text-muted-foreground" />
+            </div>
             <div className="grid h-10 w-10 place-items-center rounded-full bg-sidebar-accent text-sm font-semibold">{initials}</div>
           </div>
         </header>
@@ -121,6 +128,18 @@ export function AppShell({ children }: { children: ReactNode }) {
           </footer>
         </motion.main>
       </div>
+      <button aria-label="Help" className="fixed bottom-6 right-6 z-40 grid h-11 w-11 place-items-center rounded-full border bg-card shadow-md hover:bg-muted">
+        <CircleHelp className="h-5 w-5" />
+      </button>
+    </div>
+  );
+}
+
+export function PanelHead({ title, level }: { title: string; level: number }) {
+  return (
+    <div className="flex items-center justify-between gap-4 px-8 pt-7 md:px-12">
+      <h2 className="text-xl font-bold">{title}</h2>
+      <span className="rounded-lg bg-sidebar-accent px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-primary">Level {level}</span>
     </div>
   );
 }

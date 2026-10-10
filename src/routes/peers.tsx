@@ -1,6 +1,8 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { ArrowRight, Users } from "lucide-react";
-import { PageHeader, Mascot } from "@/components/AppShell";
+import { PageHeader, PanelHead } from "@/components/AppShell";
+import { useGame } from "@/lib/game";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/peers")({
   head: () => ({
@@ -17,16 +19,21 @@ export const Route = createFileRoute("/peers")({
 });
 
 function Page() {
-  
+  const { level } = useGame();
   return (
     <div className="mx-auto max-w-6xl">
-      <PageHeader eyebrow="Practice together" title="Peer Interviews" sub="Swap mock interviews with a real person and grow confident together." />
-      <div className="panel flex flex-col items-center px-6 py-20 text-center">
-        <Users className="h-12 w-12 text-primary" />
-        <h2 className="mt-6 text-3xl font-bold md:text-4xl">Swap mock interviews with a real person and grow confident together.</h2>
-        <p className="mt-4 max-w-lg text-muted-foreground">Peer matching is coming soon — we'll pair you with someone at a similar level.</p>
-        <Link to="/quests" className="mt-8 inline-flex items-center gap-3 rounded-xl bg-primary px-7 py-4 font-semibold text-primary-foreground hover:opacity-90">Find an interview partner <ArrowRight className="h-5 w-5" /></Link>
-        <Mascot className="mt-10 h-24 w-24" />
+      <PageHeader eyebrow="Build your next chapter" title="Peer Interviews" sub="Turn your potential into progress, one step at a time." />
+      <div className="panel">
+        <PanelHead title="Make the most of peer interviews" level={level} />
+        <div className="flex flex-col items-center px-6 py-24 text-center">
+          <Users className="h-12 w-12 text-primary" strokeWidth={1.5} />
+          <h2 className="mt-8 text-3xl font-bold md:text-4xl">Your next interview buddy is waiting.</h2>
+          <p className="mt-4 max-w-lg text-muted-foreground">Schedule a practice session with a friend using an AI-generated interview script.</p>
+          <button onClick={() => toast.info("Peer scheduling is coming soon — we'll pair you with someone at a similar level.")}
+            className="mt-8 inline-flex items-center gap-3 rounded-xl bg-primary px-7 py-4 font-semibold text-primary-foreground hover:opacity-90">
+            Schedule an interview <ArrowRight className="h-5 w-5" />
+          </button>
+        </div>
       </div>
     </div>
   );

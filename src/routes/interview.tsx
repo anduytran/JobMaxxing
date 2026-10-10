@@ -37,12 +37,12 @@ export const Route = createFileRoute("/interview")({
   component: Interview,
 });
 
-type Stage = "setup" | "review" | "options" | "live" | "your_questions" | "grading" | "report";
+type Stage = "intro" | "setup" | "review" | "options" | "live" | "your_questions" | "grading" | "report";
 
 function Interview() {
   const agents = Route.useLoaderData() as AgentStatus;
   const { roast, setRoast, completeQuest, gainXp, details } = useGame();
-  const [stage, setStage] = useState<Stage>("setup");
+  const [stage, setStage] = useState<Stage>("intro");
   const [jd, setJd] = useState("");
   const [type, setType] = useState<InterviewType>("mixed");
   const [length, setLength] = useState<InterviewLength>("standard");
@@ -167,14 +167,16 @@ function Interview() {
     } catch (e) { toast.error((e as Error).message); setStage("your_questions"); }
   };
 
-  const reset = () => { setConvId(null); setStage("setup"); setGrade(null); setTurns([]); setJob(null); setAck(false); };
+  const reset = () => { setConvId(null); setStage("intro"); setGrade(null); setTurns([]); setJob(null); setAck(false); };
 
   return (
     <div className="mx-auto max-w-6xl space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-4xl font-bold md:text-5xl">AI Mock Interview</h1>
-          <Stepper stage={stage} />
+          <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">Build your next chapter</p>
+          <h1 className="mt-2 text-4xl font-bold md:text-5xl">AI Mock Interview</h1>
+          <p className="mt-2 text-lg text-muted-foreground">Turn your potential into progress, one step at a time.</p>
+          {stage !== "intro" && <Stepper stage={stage} />}
         </div>
         <label className={cn("flex cursor-pointer items-center gap-3 rounded-lg border-2 px-4 py-2 transition", roast ? "border-roast bg-roast/15 glow" : "border-accent/50 bg-accent/10")}>
           <Flame className={cn("h-5 w-5", roast ? "text-roast" : "text-accent")} />
@@ -183,7 +185,18 @@ function Interview() {
         </label>
       </div>
 
-      <AgentBadges agents={agents} />
+      {stage !== "intro" && <AgentBadges agents={agents} />}
+
+      {stage === "intro" && (
+        <section className="panel">
+          <div className="flex flex-col items-center px-6 py-24 text-center">
+            <Mic className="h-12 w-12 text-primary" strokeWidth={1.5} />
+            <h2 className="mt-8 text-3xl font-bold md:text-4xl">Confidence comes with practice.</h2>
+            <p className="mt-4 max-w-lg text-muted-foreground">Practice personalized technical or behavioral questions and get a sample feedback report.</p>
+            <Button size="lg" className="mt-8 px-7 py-6 text-base" onClick={() => setStage("setup")}>Start practicing</Button>
+          </div>
+        </section>
+      )}
 
       {stage === "setup" && (
         <section className="panel space-y-4 p-6">
