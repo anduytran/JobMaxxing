@@ -1,5 +1,10 @@
 # Roadmap
 
+## Quest titles always two lines
+- [x] Split each display quest title into two balanced lines for the featured headline and the top-bar quest menu; saved titles untouched.
+- [x] Verify representative titles render as exactly two lines with no clipping in a browser render; build clean.
+
+
 ## Dashboard trim
 - [x] Remove the quest card and the "Your quests" list from the dashboard; quests stay reachable from the top-bar menu, the featured card and /quests.
 - [x] Merge total XP and career rank into one Level & XP card (ring, XP total, level progress, rank progression).

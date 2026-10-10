@@ -12,7 +12,7 @@ import { MAX_POSES } from "@/components/Max";
 import { cn } from "@/lib/utils";
 import gymScene from "@/assets/max/gym-scene.svg";
 import billboardScene from "@/assets/max/billboard.svg";
-import { featuredQuestTitle } from "@/lib/quest-titles";
+import { questTitleLines } from "@/lib/quest-titles";
 import { ResumeScoreCard } from "@/components/ResumeScoreCard";
 import { XpCareerCard } from "@/components/DashboardProgressCards";
 
@@ -165,6 +165,7 @@ function Dashboard() {
   const sceneReady = readyKey === sceneKey;
   const featLink = QUEST_LINK[featKey] ?? "/quests";
   const scene = SCENES[featKey] ?? (featKey === "setup" ? SCENES["resume"] : undefined) ?? DEFAULT_SCENE;
+  const featLines = featured ? questTitleLines(featured.title) : ["", ""];
   const reducedMotion = useReducedMotion();
   const headRef = useRef<HTMLHeadingElement>(null);
   const subRef = useRef<HTMLParagraphElement>(null);
@@ -208,7 +209,7 @@ function Dashboard() {
         <div className="relative z-10 max-w-xl md:max-w-[46%]">
           <p className="flex items-center gap-2 whitespace-nowrap text-xs font-semibold uppercase tracking-[0.2em] text-foreground/70"><span className="h-1.5 w-1.5 rounded-full bg-foreground/60" />{featured ? `Today's featured quest · ${featured.category}` : "Today's featured quest"}</p>
           {featured ? (
-            <h2 ref={headRef} title={featured.title} className="mt-5 line-clamp-2 min-h-[2.2em] break-words text-2xl font-bold leading-[1.1] text-balance sm:text-3xl">{featuredQuestTitle(featured.title)}</h2>
+            <h2 ref={headRef} title={featured.title} className="mt-5 min-h-[2.2em] break-words text-2xl font-bold leading-[1.1] sm:text-3xl"><span className="block">{featLines[0]}</span><span className="block">{featLines[1]}</span></h2>
           ) : (
             <h2 className="mt-5 text-4xl font-bold leading-tight md:text-5xl">You've got potential.<br />Let's put it to work.</h2>
           )}

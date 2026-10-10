@@ -24,10 +24,24 @@ export function featuredQuestTitle(title: string): string {
   if (/^Read 3 .* job postings/i.test(title)) return "Explore Three Target Job Postings";
   if (/^Build a small project/i.test(title)) return "Build Your Next Role Project";
   if (/^Do a mock interview for/i.test(title)) return "Practice Your Target Role Interview";
+  if (/^Tailor .*bullet/i.test(title)) return "Tailor a Bullet for a Radar Role";
   const words = title.trim().replace(/[.!:;]+$/u, "").split(/\s+/u);
   if (words.length <= 5) return words.join(" ");
   const compact = title.replace(/\b(?:one of|in order to|from your experience|last week)\b/gi, "").trim().split(/\s+/u);
   const shortened = compact.slice(0, 5);
   while (shortened.length > 4 && /^(?:a|an|the|to|for|with|and|of|in|your)$/i.test(shortened[shortened.length - 1] ?? "")) shortened.pop();
   return shortened.join(" ");
+}
+
+/** Presentation-only: always returns the display title as two lines, balanced by length. */
+export function questTitleLines(title: string): [string, string] {
+  const words = featuredQuestTitle(title).split(/\s+/u).filter(Boolean);
+  if (words.length < 2) return [words[0] ?? "", ""];
+  let split = 1;
+  let best = Number.POSITIVE_INFINITY;
+  for (let i = 1; i < words.length; i++) {
+    const diff = Math.abs(words.slice(0, i).join(" ").length - words.slice(i).join(" ").length);
+    if (diff < best) { best = diff; split = i; }
+  }
+  return [words.slice(0, split).join(" "), words.slice(split).join(" ")];
 }

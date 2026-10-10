@@ -17,7 +17,7 @@
 
 - The top-bar QuestMenu derives capped daily and weekly lists from GameProvider without creating or modifying quests. Why: mission-menu presentation must preserve existing progression and reset rules.
 
-- Featured quest display titles use the browser-safe quest-titles helper while preserving full saved titles. Why: concise card copy must not rewrite user quests or require data migrations.
+- Featured quest display titles use the browser-safe quest-titles helper and always render as two lines while preserving full saved titles. Why: concise card copy must not rewrite user quests or require data migrations.
 
 - Max poses are centralized through MAX_POSES; uploaded mascot images use CDN asset pointers, and sign-in shares the same wave source. Why: one image mapping keeps artwork consistent everywhere without duplicating binary files.
 
