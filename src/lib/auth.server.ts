@@ -42,13 +42,13 @@ export async function startSession(userId: string) {
     [await sha256(token), userId, expires.toISOString()],
   );
   setCookie(SESSION_COOKIE, token, {
-    httpOnly: true, secure: true, sameSite: "lax", path: "/", expires,
+    httpOnly: true, secure: true, sameSite: "none", partitioned: true, path: "/", expires,
   });
 }
 
 export async function endSession() {
   const token = getCookie(SESSION_COOKIE);
-  deleteCookie(SESSION_COOKIE, { path: "/" });
+  deleteCookie(SESSION_COOKIE, { path: "/", secure: true, sameSite: "none", partitioned: true });
   if (token) await neonExecute("delete from public.devup_session where token_hash = $1", [await sha256(token)]);
 }
 
