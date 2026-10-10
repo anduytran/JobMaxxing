@@ -38,16 +38,17 @@ export function AuthScreen() {
           <div className="grid h-9 w-9 place-items-center rounded-md bg-primary text-primary-foreground glow clip-corner"><Zap className="h-5 w-5" /></div>
           <span className="font-display text-2xl font-bold tracking-wider">JOB<span className="text-primary">MAXXING</span></span>
         </div>
-        <h1 className="font-display text-xl">{mode === "in" ? "Sign in" : "Create your account"}</h1>
+        <h1 className="font-display text-xl">{mode === "in" ? "Good to see you again." : "Your next chapter starts here."}</h1>
+        <p className="text-sm text-muted-foreground">{mode === "in" ? "Pick up where you left off." : "One small step toward your next big move."}</p>
         {mode === "up" && (
           <div className="space-y-2"><Label htmlFor="name">Name</Label><Input id="name" value={name} onChange={(e) => setName(e.target.value)} /></div>
         )}
         <div className="space-y-2"><Label htmlFor="email">Email</Label><Input id="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required /></div>
         <div className="space-y-2"><Label htmlFor="pw">Password</Label><Input id="pw" type="password" autoComplete={mode === "in" ? "current-password" : "new-password"} minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} required /></div>
         <Button type="submit" className="w-full" disabled={busy}>{busy && <Loader2 className="animate-spin" />}{mode === "in" ? "Sign in" : "Sign up"}</Button>
-        <button type="button" className="w-full text-sm text-muted-foreground hover:text-foreground" onClick={() => setMode(mode === "in" ? "up" : "in")}>
+        <Button variant="ghost" type="button" className="w-full text-sm text-muted-foreground hover:text-foreground" onClick={() => setMode(mode === "in" ? "up" : "in")}>
           {mode === "in" ? "New here? Create an account" : "Have an account? Sign in"}
-        </button>
+        </Button>
       </form>
     </div>
   );
