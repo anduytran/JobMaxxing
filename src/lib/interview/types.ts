@@ -13,6 +13,8 @@ export type ParsedJob = {
   summary: string;
   skills: string[];
   qualifications: string[];
+  location: string | null;
+  specialNotes: string[];
 };
 
 export type InterviewQuestion = {
