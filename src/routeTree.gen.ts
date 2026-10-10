@@ -10,15 +10,24 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CrewRouteImport } from './routes/crew'
 import { Route as InterviewRouteImport } from './routes/interview'
 import { Route as MarketRouteImport } from './routes/market'
+import { Route as PeersRouteImport } from './routes/peers'
+import { Route as ProgressRouteImport } from './routes/progress'
 import { Route as QuestsRouteImport } from './routes/quests'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SetupRouteImport } from './routes/setup'
+import { Route as SkillsRouteImport } from './routes/skills'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CrewRoute = CrewRouteImport.update({
+  id: '/crew',
+  path: '/crew',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InterviewRoute = InterviewRouteImport.update({
@@ -29,6 +38,16 @@ const InterviewRoute = InterviewRouteImport.update({
 const MarketRoute = MarketRouteImport.update({
   id: '/market',
   path: '/market',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PeersRoute = PeersRouteImport.update({
+  id: '/peers',
+  path: '/peers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProgressRoute = ProgressRouteImport.update({
+  id: '/progress',
+  path: '/progress',
   getParentRoute: () => rootRouteImport,
 } as any)
 const QuestsRoute = QuestsRouteImport.update({
@@ -46,54 +65,99 @@ const SetupRoute = SetupRouteImport.update({
   path: '/setup',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SkillsRoute = SkillsRouteImport.update({
+  id: '/skills',
+  path: '/skills',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/crew': typeof CrewRoute
   '/interview': typeof InterviewRoute
   '/market': typeof MarketRoute
+  '/peers': typeof PeersRoute
+  '/progress': typeof ProgressRoute
   '/quests': typeof QuestsRoute
   '/settings': typeof SettingsRoute
   '/setup': typeof SetupRoute
+  '/skills': typeof SkillsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/crew': typeof CrewRoute
   '/interview': typeof InterviewRoute
   '/market': typeof MarketRoute
+  '/peers': typeof PeersRoute
+  '/progress': typeof ProgressRoute
   '/quests': typeof QuestsRoute
   '/settings': typeof SettingsRoute
   '/setup': typeof SetupRoute
+  '/skills': typeof SkillsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/crew': typeof CrewRoute
   '/interview': typeof InterviewRoute
   '/market': typeof MarketRoute
+  '/peers': typeof PeersRoute
+  '/progress': typeof ProgressRoute
   '/quests': typeof QuestsRoute
   '/settings': typeof SettingsRoute
   '/setup': typeof SetupRoute
+  '/skills': typeof SkillsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/interview' | '/market' | '/quests' | '/settings' | '/setup'
-  fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/interview' | '/market' | '/quests' | '/settings' | '/setup'
-  id:
-    | '__root__'
+  fullPaths:
     | '/'
+    | '/crew'
     | '/interview'
     | '/market'
+    | '/peers'
+    | '/progress'
     | '/quests'
     | '/settings'
     | '/setup'
+    | '/skills'
+  fileRoutesByTo: FileRoutesByTo
+  to:
+    | '/'
+    | '/crew'
+    | '/interview'
+    | '/market'
+    | '/peers'
+    | '/progress'
+    | '/quests'
+    | '/settings'
+    | '/setup'
+    | '/skills'
+  id:
+    | '__root__'
+    | '/'
+    | '/crew'
+    | '/interview'
+    | '/market'
+    | '/peers'
+    | '/progress'
+    | '/quests'
+    | '/settings'
+    | '/setup'
+    | '/skills'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CrewRoute: typeof CrewRoute
   InterviewRoute: typeof InterviewRoute
   MarketRoute: typeof MarketRoute
+  PeersRoute: typeof PeersRoute
+  ProgressRoute: typeof ProgressRoute
   QuestsRoute: typeof QuestsRoute
   SettingsRoute: typeof SettingsRoute
   SetupRoute: typeof SetupRoute
+  SkillsRoute: typeof SkillsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -103,6 +167,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/crew': {
+      id: '/crew'
+      path: '/crew'
+      fullPath: '/crew'
+      preLoaderRoute: typeof CrewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/interview': {
@@ -117,6 +188,20 @@ declare module '@tanstack/react-router' {
       path: '/market'
       fullPath: '/market'
       preLoaderRoute: typeof MarketRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/peers': {
+      id: '/peers'
+      path: '/peers'
+      fullPath: '/peers'
+      preLoaderRoute: typeof PeersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/progress': {
+      id: '/progress'
+      path: '/progress'
+      fullPath: '/progress'
+      preLoaderRoute: typeof ProgressRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/quests': {
@@ -140,16 +225,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SetupRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/skills': {
+      id: '/skills'
+      path: '/skills'
+      fullPath: '/skills'
+      preLoaderRoute: typeof SkillsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CrewRoute: CrewRoute,
   InterviewRoute: InterviewRoute,
   MarketRoute: MarketRoute,
+  PeersRoute: PeersRoute,
+  ProgressRoute: ProgressRoute,
   QuestsRoute: QuestsRoute,
   SettingsRoute: SettingsRoute,
   SetupRoute: SetupRoute,
+  SkillsRoute: SkillsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

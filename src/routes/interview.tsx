@@ -173,7 +173,7 @@ function Interview() {
     <div className="mx-auto max-w-6xl space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">AI Mock Interview</h1>
+          <h1 className="text-4xl font-bold md:text-5xl">AI Mock Interview</h1>
           <Stepper stage={stage} />
         </div>
         <label className={cn("flex cursor-pointer items-center gap-3 rounded-lg border-2 px-4 py-2 transition", roast ? "border-roast bg-roast/15 glow" : "border-accent/50 bg-accent/10")}>

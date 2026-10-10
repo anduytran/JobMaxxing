@@ -17,12 +17,12 @@ import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 export const Route = createFileRoute("/setup")({
   head: () => ({
     meta: [
-      { title: "Resume Setup — DevUp" },
+      { title: "Resume Lab — DevUp" },
       {
         name: "description",
         content: "Upload your resume to get a grade, the fixes worth XP that raise it, and your profile fields filled in for you.",
       },
-      { property: "og:title", content: "Resume Setup — DevUp" },
+      { property: "og:title", content: "Resume Lab — DevUp" },
       {
         property: "og:description",
         content: "Upload your resume to get a grade, the fixes worth XP that raise it, and your profile fields filled in for you.",
@@ -190,7 +190,7 @@ function Setup() {
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Resume Setup</h1>
+        <h1 className="text-4xl font-bold md:text-5xl">Resume Lab</h1>
         <p className="text-muted-foreground">
           Upload your resume to get a grade, the fixes worth XP that raise it, and your profile fields filled in for you.
         </p>

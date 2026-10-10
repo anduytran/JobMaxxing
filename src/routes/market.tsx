@@ -31,7 +31,7 @@ function Market() {
     <div className="mx-auto max-w-5xl space-y-6">
       <div>
         <p className="font-mono text-xs uppercase tracking-widest text-primary">Target role · Full-Stack Engineer</p>
-        <h1 className="text-3xl font-bold">Skill Gap Analysis</h1>
+        <h1 className="text-4xl font-bold md:text-5xl">Job Radar</h1>
         <p className="text-muted-foreground">Powered by simulated market data from 12,400 job postings.</p>
       </div>
       <div className="panel p-6">
