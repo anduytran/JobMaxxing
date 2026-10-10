@@ -41,8 +41,9 @@ function Interview() {
   const { roast, setRoast, completeQuest, gainXp } = useGame();
   const [stage, setStage] = useState<Stage>("setup");
   const [jd, setJd] = useState("");
-  const [type, setType] = useState<InterviewType>("mixed");
-  const [length, setLength] = useState<InterviewLength>("standard");
+  // Type/length selection comes later in the flow — fixed defaults for now.
+  const type: InterviewType = "mixed";
+  const length: InterviewLength = "standard";
   const [job, setJob] = useState<ParsedJob | null>(null);
   const [questions, setQuestions] = useState<InterviewQuestion[]>([]);
   const [qi, setQi] = useState(0);
@@ -261,19 +262,6 @@ function Interview() {
 }
 
 const fmt = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
-
-function Choice<T extends string>({ label, value, onChange, options }: { label: string; value: T; onChange: (v: T) => void; options: [T, string][] }) {
-  return (
-    <div>
-      <div className="mb-2 font-mono text-xs text-muted-foreground">{label.toUpperCase()}</div>
-      <div className="flex flex-wrap gap-2">
-        {options.map(([v, l]) => (
-          <Button key={v} type="button" size="sm" variant={value === v ? "default" : "outline"} onClick={() => onChange(v)}>{l}</Button>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 function Metric({ label, m }: { label: string; m: { score: number; feedback: string } }) {
   return (
