@@ -5,6 +5,8 @@
 - [x] Place quest arrows at the left and right card edges; source checks and build passed.
 - [x] Verify signed-in card navigation visually — arrows sit outside both card edges, counter centred at the bottom, quest title is the headline, no "Pick another"; no console errors.
 - [x] Move the featured quest label and title into the card headline; label stays on one line.
+- [x] Replace the fixed hero sentence with a line written for the featured quest's type (skills, interview, resume, job hunt, branding).
+- [x] Stop headline nodes stacking when clicking through quests; one headline updates in place and animates without remounting.
 
 ## Motion and personality
 - [x] Add personable mascot interactions, staggered entrances, and tactile controls.
