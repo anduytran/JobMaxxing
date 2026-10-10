@@ -1,63 +1,51 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { TrendingUp, Plus, Check } from "lucide-react";
-import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { Button } from "@/components/ui/button";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { ArrowRight } from "lucide-react";
+import { PageHeader, PanelHead } from "@/components/AppShell";
 import { useGame } from "@/lib/game";
 
 export const Route = createFileRoute("/market")({
   head: () => ({
     meta: [
-      { title: "Market Insights — DevUp" },
-      { name: "description", content: "Skill gap analysis comparing your skills to market demand." },
-      { property: "og:title", content: "Market Insights — DevUp" },
-      { property: "og:description", content: "Skill gap analysis comparing your skills to market demand." },
+      { title: "Job Radar — DevUp" },
+      { name: "description", content: "Roles matched to your profile, refreshed as you grow." },
+      { property: "og:title", content: "Job Radar — DevUp" },
+      { property: "og:description", content: "Roles matched to your profile, refreshed as you grow." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: Market,
 });
 
-const DATA = [
-  { skill: "TypeScript", you: 75, market: 88 },
-  { skill: "React", you: 80, market: 85 },
-  { skill: "Docker", you: 20, market: 78 },
-  { skill: "AWS", you: 35, market: 74 },
-  { skill: "SQL", you: 60, market: 70 },
+const JOBS = [
+  { title: "Product Designer", company: "Notion", match: 94 },
+  { title: "Associate Product Designer", company: "Figma", match: 91 },
+  { title: "Product Designer", company: "Linear", match: 88 },
 ];
 
 function Market() {
-  const { quests, addQuest } = useGame();
-  const added = quests.some((q) => q.id === "docker");
+  const { level } = useGame();
+  const nav = useNavigate();
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
-      <div>
-        <p className="font-mono text-xs uppercase tracking-widest text-primary">Target role · Full-Stack Engineer</p>
-        <h1 className="text-4xl font-bold md:text-5xl">Job Radar</h1>
-        <p className="text-muted-foreground">Powered by simulated market data from 12,400 job postings.</p>
-      </div>
-      <div className="panel p-6">
-        <div className="h-96">
-          <ResponsiveContainer>
-            <BarChart data={DATA}>
-              <CartesianGrid stroke="var(--border)" vertical={false} />
-              <XAxis dataKey="skill" stroke="var(--muted-foreground)" fontSize={12} />
-              <YAxis stroke="var(--muted-foreground)" fontSize={12} />
-              <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)", borderRadius: 8 }} cursor={{ fill: "var(--muted)" }} />
-              <Legend />
-              <Bar dataKey="you" name="Your level" fill="var(--primary)" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="market" name="Market demand" fill="var(--accent)" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+    <div className="mx-auto max-w-6xl">
+      <PageHeader eyebrow="Build your next chapter" title="Job Radar" sub="Turn your potential into progress, one step at a time." />
+      <div className="panel">
+        <PanelHead title="Make the most of job radar" level={level} />
+        <div className="px-8 pb-10 pt-6 md:px-12">
+          {JOBS.map((j) => (
+            <div key={j.company + j.title} className="flex items-center gap-4 border-t py-6 first:border-t-0">
+              <div className="grid h-12 w-12 place-items-center rounded-xl border text-xl font-semibold">{j.company[0]}</div>
+              <div className="flex-1">
+                <div className="text-lg font-medium">{j.title}</div>
+                <div className="text-sm text-muted-foreground">{j.company} · Remote · {j.match}% profile match</div>
+              </div>
+              <button onClick={() => nav({ to: "/interview" })}
+                className="flex items-center gap-3 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground hover:opacity-90">
+                View role <ArrowRight className="h-4 w-4" />
+              </button>
+            </div>
+          ))}
         </div>
-      </div>
-      <div className="panel flex flex-col gap-4 border-success/40 p-6 md:flex-row md:items-center">
-        <TrendingUp className="h-10 w-10 shrink-0 text-success" />
-        <div className="flex-1">
-          <h3 className="font-semibold">Market Data Suggests</h3>
-          <p className="text-muted-foreground">Learning <span className="text-foreground">Docker</span> will increase your match rate by <span className="font-bold text-success">25%</span>.</p>
-        </div>
-        <Button disabled={added} onClick={() => addQuest({ id: "docker", title: "Containerize a project with Docker", xp: 600, category: "Skills" })}>
-          {added ? <><Check /> Added to quest log</> : <><Plus /> Add Docker Quest</>}
-        </Button>
       </div>
     </div>
   );

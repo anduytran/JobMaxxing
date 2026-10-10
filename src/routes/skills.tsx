@@ -1,7 +1,8 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Network } from "lucide-react";
-import { PageHeader, Mascot } from "@/components/AppShell";
+import { createFileRoute } from "@tanstack/react-router";
+import { Network, ShieldCheck } from "lucide-react";
+import { PageHeader, PanelHead } from "@/components/AppShell";
 import { useGame } from "@/lib/game";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/skills")({
   head: () => ({
@@ -17,23 +18,41 @@ export const Route = createFileRoute("/skills")({
   component: Page,
 });
 
+const TREE = [
+  { name: "Your career foundation", status: "Mastered", open: true },
+  { name: "Resume storytelling", status: "In progress", open: true },
+  { name: "Behavioral interviews", status: "In progress", open: true },
+  { name: "Technical fluency", status: "Unlocks at level 8", open: false },
+  { name: "Leadership", status: "Unlocks at level 8", open: false },
+  { name: "Career mastery", status: "Unlocks at level 8", open: false },
+];
+
 function Page() {
-  const { details } = useGame(); const skills = details.skills ?? [];
+  const { details, level } = useGame();
+  const skills = details.skills ?? [];
   return (
     <div className="mx-auto max-w-6xl">
-      <PageHeader eyebrow="Grow your strengths" title="Skill Tree" sub="Unlock skills as you complete quests, interviews and resume fixes." />
-      <div className="panel flex flex-col items-center px-6 py-20 text-center">
-        <Network className="h-12 w-12 text-primary" />
-        <h2 className="mt-6 text-3xl font-bold md:text-4xl">Unlock skills as you complete quests, interviews and resume fixes.</h2>
-        <p className="mt-4 max-w-lg text-muted-foreground">Your skill tree grows from the skills on your profile.</p>
-        <Link to="/quests" className="mt-8 inline-flex items-center gap-3 rounded-xl bg-primary px-7 py-4 font-semibold text-primary-foreground hover:opacity-90">Explore quests <ArrowRight className="h-5 w-5" /></Link>
-        <Mascot className="mt-10 h-24 w-24" />
-      </div>
-      {skills.length > 0 && (
-        <div className="panel mt-6 flex flex-wrap gap-2 p-6">
-          {skills.map((s) => <span key={s} className="rounded-full border border-primary/20 bg-sidebar-accent px-3 py-1 text-sm text-primary">{s}</span>)}
+      <PageHeader eyebrow="Build your next chapter" title="Skill Tree" sub="Turn your potential into progress, one step at a time." />
+      <div className="panel">
+        <PanelHead title="Grow in your own direction" level={level} />
+        <p className="px-8 pt-3 text-muted-foreground md:px-12">Unlock new skills by completing quests and interview practice.</p>
+        <div className="grid gap-5 px-8 py-8 md:grid-cols-3 md:px-12">
+          {TREE.map((t) => (
+            <div key={t.name} className={cn("flex flex-col items-center rounded-2xl px-6 py-12 text-center", t.open ? "bg-success/10" : "bg-muted/60")}>
+              {t.open
+                ? <Network className="h-8 w-8 text-success" strokeWidth={1.5} />
+                : <ShieldCheck className="h-8 w-8 text-muted-foreground" strokeWidth={1.5} />}
+              <div className={cn("mt-4 font-semibold", t.open ? "text-success" : "text-muted-foreground")}>{t.name}</div>
+              <div className="mt-1 text-sm text-muted-foreground">{t.status}</div>
+            </div>
+          ))}
         </div>
-      )}
+        {skills.length > 0 && (
+          <div className="flex flex-wrap gap-2 border-t px-8 py-6 md:px-12">
+            {skills.map((s) => <span key={s} className="rounded-full border border-primary/20 bg-sidebar-accent px-3 py-1 text-sm text-primary">{s}</span>)}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
