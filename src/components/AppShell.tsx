@@ -9,6 +9,7 @@ import { useGame, levelTitle } from "@/lib/game";
 import { Max, type MaxPose } from "@/components/Max";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { QuestMenu } from "@/components/QuestMenu";
 
 type Item = { to: string; label: string; icon: typeof LayoutGrid; badge?: string };
 const GROUPS: { label: string; items: Item[] }[] = [
@@ -109,6 +110,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <span className="text-muted-foreground">Workspace</span><span className="text-muted-foreground">›</span><span>{current}</span>
           </div>
           <div className="ml-auto flex items-center gap-4">
+            <QuestMenu />
             <div className="relative flex items-center gap-3 rounded-2xl border bg-card px-4 py-2.5 text-sm transition-shadow hover:shadow-md">
               <Flame className="animate-flame h-5 w-5 text-primary" />
               <span className="font-semibold">5 day streak</span>
