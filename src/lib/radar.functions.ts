@@ -319,7 +319,7 @@ export const markRadarViewed = createServerFn({ method: "POST" })
         [uid, batches + 1, target],
       );
       const awarded = Number(rows[0]?.["awarded"] ?? 0);
-      return { ok: true, awarded: awarded > 0 ? awarded : undefined, xp: Number(rows[0]?.["xp"] ?? 0) };
+      return { ok: true, ...(awarded > 0 ? { awarded } : {}), xp: Number(rows[0]?.["xp"] ?? 0) };
     } catch (err) {
       console.error("markRadarViewed failed", err);
       const { neonUserError } = await import("./neon.server");
@@ -353,7 +353,7 @@ export const awardRadarPracticeXp = createServerFn({ method: "POST" })
         [uid, data.jobId],
       );
       const awarded = Number(rows[0]?.["awarded"] ?? 0);
-      return { ok: true, awarded: awarded > 0 ? awarded : undefined, xp: Number(rows[0]?.["xp"] ?? 0) };
+      return { ok: true, ...(awarded > 0 ? { awarded } : {}), xp: Number(rows[0]?.["xp"] ?? 0) };
     } catch (err) {
       console.error("awardRadarPracticeXp failed", err);
       const { neonUserError } = await import("./neon.server");
