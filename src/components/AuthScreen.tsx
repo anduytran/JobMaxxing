@@ -23,6 +23,7 @@ export function AuthScreen() {
       const res = await fn({ data: { email, password, name } });
       if (!res.ok) return void toast.error(res.error);
       await router.invalidate();
+      toast.success(mode === "in" ? "Signed in" : "Account created");
     } catch (err) {
       toast.error((err as Error).message);
     } finally {
