@@ -36,7 +36,7 @@ export function AuthScreen() {
       <form onSubmit={submit} className="panel w-full max-w-sm space-y-4 p-6">
         <div className="flex items-center gap-2">
           <div className="grid h-9 w-9 place-items-center rounded-md bg-primary text-primary-foreground glow clip-corner"><Zap className="h-5 w-5" /></div>
-          <span className="font-display text-2xl font-bold tracking-wider">DEV<span className="text-primary">UP</span></span>
+          <span className="font-display text-2xl font-bold tracking-wider">JOB<span className="text-primary">MAXXING</span></span>
         </div>
         <h1 className="font-display text-xl">{mode === "in" ? "Sign in" : "Create your account"}</h1>
         {mode === "up" && (
