@@ -30,7 +30,7 @@ function LockIn() {
       <p className="mt-2 text-lg text-muted-foreground">Pick where you want to put in work today.</p>
       <div className="mt-8 grid gap-5 md:grid-cols-3">
         {MODES.map((m, i) => (
-          <Link key={m.to} to={m.to} search={m.to === "/interview" ? { radar: undefined } : undefined}
+          <Link key={m.to} to={m.to} search={{ radar: undefined } as never}
             className="hover-lift group flex flex-col overflow-hidden rounded-3xl border bg-card">
             <div className={`relative grid h-56 place-items-center ${m.tint.split(" ")[0]}`}>
               {i === 0 && <span className="absolute left-4 top-4 rounded-full bg-primary px-3 py-1 text-xs font-bold uppercase tracking-wider text-primary-foreground">Recommended</span>}
