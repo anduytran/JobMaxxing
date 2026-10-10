@@ -76,19 +76,37 @@ export const loadGame = createServerFn({ method: "GET" }).handler(
       const user = await currentUser();
       if (!user) return { ok: false, error: "Not signed in", signedOut: true };
       const PROFILE_ID = user.id;
-      const { results } = await neonQuery<{ results: any[] }>([
+      // Reset schedules live in Neon: daily quests flip back at midnight UTC,
+      // weekly quests at the start of the week. The resets and the reads run
+      // as one transaction, so a reset can never be missed or half-applied.
+      const { results } = await neonExecute<{ results: any[] }>([
         {
           query:
-            "select name, title, xp, roast, skills, student, job_prefs, resume from public.devup_profile where id = $1 limit 1",
+            "update public.devup_quest set done = false, completed_at = null " +
+            "where user_id = $1 and period = 'daily' and done and completed_at < date_trunc('day', now())",
           params: [PROFILE_ID],
         },
         {
           query:
-            "select id, title, xp, category, done from public.devup_quest where user_id = $1 order by sort_order asc, id asc limit 200",
+            "update public.devup_quest set done = false, completed_at = null " +
+            "where user_id = $1 and period = 'weekly' and done and completed_at < date_trunc('week', now())",
+          params: [PROFILE_ID],
+        },
+        {
+          query:
+            "select name, title, xp, roast, reduced_motion, skills, student, job_prefs, resume " +
+            "from public.devup_profile where id = $2 limit 1",
+          params: [PROFILE_ID],
+        },
+        {
+          query:
+            "select id, title, xp, category, done, period " +
+            "from public.devup_quest where user_id = $2 order by sort_order asc, id asc limit 200",
           params: [PROFILE_ID],
         },
       ]);
-      const profile = results[0]?.rows?.[0];
+      const profile = results[2]?.rows?.[0];
+      const questPeriod = (v: unknown): QuestPeriod => (v === "daily" || v === "weekly" ? v : "once");
       return {
         ok: true,
         email: user.email,
@@ -100,12 +118,14 @@ export const loadGame = createServerFn({ method: "GET" }).handler(
         title: String(profile?.title ?? "Junior Full-Stack Developer"),
         xp: Number(profile?.xp ?? 0),
         roast: Boolean(profile?.roast ?? false),
-        quests: (results[1]?.rows ?? []).map((r: any) => ({
+        reducedMotion: Boolean(profile?.reduced_motion ?? false),
+        quests: (results[3]?.rows ?? []).map((r: any) => ({
           id: String(r.id),
           title: String(r.title),
           xp: Number(r.xp),
           category: String(r.category),
           done: Boolean(r.done),
+          period: questPeriod(r.period),
         })),
       };
     } catch (err) {
