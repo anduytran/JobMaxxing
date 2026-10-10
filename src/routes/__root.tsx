@@ -16,6 +16,7 @@ import { GameProvider } from "../lib/game";
 import { loadGame } from "../lib/devup.functions";
 import { AppShell } from "../components/AppShell";
 import { Toaster } from "../components/ui/sonner";
+import { AuthScreen } from "../components/AuthScreen";
 
 function NotFoundComponent() {
   return (
@@ -133,12 +134,16 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+      {initial && !initial.ok && "signedOut" in initial && initial.signedOut ? (
+        <><AuthScreen /><Toaster /></>
+      ) : (
       <GameProvider initial={initial}>
         <AppShell>
           <Outlet />
         </AppShell>
         <Toaster />
       </GameProvider>
+      )}
     </QueryClientProvider>
   );
 }

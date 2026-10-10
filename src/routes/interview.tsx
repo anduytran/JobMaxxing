@@ -39,7 +39,7 @@ type Stage = "setup" | "review" | "options" | "live" | "your_questions" | "gradi
 
 function Interview() {
   const agents = Route.useLoaderData() as AgentStatus;
-  const { roast, setRoast, completeQuest, gainXp } = useGame();
+  const { roast, setRoast, completeQuest, gainXp, details } = useGame();
   const [stage, setStage] = useState<Stage>("setup");
   const [jd, setJd] = useState("");
   const [type, setType] = useState<InterviewType>("mixed");
@@ -79,7 +79,7 @@ function Interview() {
     setBusy(true);
     try {
       setJob(await parseJobDescription({ data: { jd } }));
-      setMine([]); setStage("review");
+      setMine(res.skills.filter((s) => details.skills.some((u) => u.toLowerCase() === s.toLowerCase()))); setStage("review");
     } catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
   };
 
