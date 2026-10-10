@@ -31,3 +31,16 @@ export function featuredQuestTitle(title: string): string {
   while (shortened.length > 4 && /^(?:a|an|the|to|for|with|and|of|in|your)$/i.test(shortened[shortened.length - 1] ?? "")) shortened.pop();
   return shortened.join(" ");
 }
+
+/** Presentation-only: always returns the display title as two lines, balanced by length. */
+export function questTitleLines(title: string): [string, string] {
+  const words = featuredQuestTitle(title).split(/\s+/u).filter(Boolean);
+  if (words.length < 2) return [words[0] ?? "", ""];
+  let split = 1;
+  let best = Number.POSITIVE_INFINITY;
+  for (let i = 1; i < words.length; i++) {
+    const diff = Math.abs(words.slice(0, i).join(" ").length - words.slice(i).join(" ").length);
+    if (diff < best) { best = diff; split = i; }
+  }
+  return [words.slice(0, split).join(" "), words.slice(split).join(" ")];
+}
