@@ -10,6 +10,7 @@ import type { StoredReview } from "@/lib/resume";
 import { MAX_POSES } from "@/components/Max";
 import { cn } from "@/lib/utils";
 import gymScene from "@/assets/max/gym-scene.svg";
+import billboardScene from "@/assets/max/billboard.svg";
 
 const MAX_ART: Record<string, string> = { setup: MAX_POSES.resume, resume: MAX_POSES.resume, interview: MAX_POSES.interview, skills: MAX_POSES.skills, hunt: MAX_POSES.hunt, branding: MAX_POSES.dap, social: MAX_POSES.dap };
 const QUEST_LINK: Record<string, "/setup" | "/interview" | "/quests" | "/skills" | "/market"> = { setup: "/setup", resume: "/setup", interview: "/interview", skills: "/skills", hunt: "/market" };
@@ -74,14 +75,8 @@ const DEFAULT_SCENE: Scene = {
 function SceneBackdrop({ kind }: { kind: string }) {
   if (kind === "branding" || kind === "social") {
     return (
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div className="absolute bottom-0 left-1/2 flex w-72 -translate-x-1/2 justify-between px-12">
-          <div className="h-40 w-3 rounded-t bg-foreground/15" /><div className="h-40 w-3 rounded-t bg-foreground/15" />
-        </div>
-        <div className="relative -mt-6 flex h-56 w-80 flex-col justify-between rounded-2xl border-4 border-foreground/15 bg-card/80 p-4">
-          <div className="flex gap-1.5">{[0, 1, 2, 3, 4].map((i) => <span key={i} className="h-2 w-2 rounded-full bg-accent/70" />)}</div>
-          <p className="text-center text-[10px] font-bold uppercase tracking-[0.4em] text-primary/60">JobMaxxing · Now hiring you</p>
-        </div>
+      <div className="absolute inset-0 overflow-hidden">
+        <img src={billboardScene} alt="" aria-hidden className="absolute inset-0 h-full w-full object-contain" draggable={false} />
       </div>
     );
   }
