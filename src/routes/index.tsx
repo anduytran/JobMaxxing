@@ -118,7 +118,7 @@ function SceneBackdrop({ kind }: { kind: string }) {
   return (
     <div className="absolute inset-0 flex items-center justify-center">
       {[-8, 4, -2].map((r, i) => (
-        <div key={i} className="absolute h-72 w-56 rounded-xl border border-foreground/10 bg-card/70" style={{ transform: `rotate(${r}deg) translate(${i * 12}px, ${i * 8}px)` }}>
+        <div key={i} className="absolute h-[clamp(260px,32svh,460px)] w-[clamp(210px,26svh,370px)] rounded-xl border border-foreground/10 bg-card/70" style={{ transform: `rotate(${r}deg) translate(${i * 12}px, ${i * 8}px)` }}>
           <div className="mt-7 space-y-2.5 px-6">{[80, 60, 70, 50].map((w) => <div key={w} className="h-1.5 rounded bg-foreground/10" style={{ width: `${w}%` }} />)}</div>
         </div>
       ))}
@@ -229,16 +229,16 @@ function Dashboard() {
           <motion.div key={featured?.id ?? "none"} initial={reducedMotion ? false : { opacity: 0, x: 28 * dir }} animate={sceneReady ? { opacity: 1, x: 0 } : { opacity: 0, x: reducedMotion ? 0 : 28 * dir }} transition={{ duration: 0.45 }} className="pointer-events-none absolute inset-y-0 right-0 hidden w-1/2 md:block">
             <div className="absolute inset-0"><SceneBackdrop kind={featKey} /></div>
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-              <div className="relative h-[clamp(260px,34svh,420px)] w-[clamp(260px,34svh,420px)]">
+              <div className="relative h-[clamp(280px,38svh,560px)] w-[clamp(280px,38svh,560px)]">
                 <div className="mascot-float relative h-full w-full"><img key={featArt} src={featArt} alt={featured ? `Max ready for: ${featured.title}` : "Max with a microphone, ready to interview you"} width={816} height={816} decoding="sync" draggable={false} className="h-full w-full object-contain" /></div>
               </div>
             </div>
             <div className="absolute left-10 top-12 flex -rotate-6 items-center gap-2 rounded-xl bg-card px-4 py-3 text-sm shadow-md"><Zap className="h-4 w-4" />+{featured?.xp ?? 150} XP</div>
             <div className={`absolute right-8 top-14 rotate-6 rounded-2xl bg-card p-3 shadow-md ${scene.chip}`}><scene.icon className="h-6 w-6" /></div>
             {scene.props.slice(0, 2).map(([label], i) => (
-              <div key={label} className={cn("absolute rounded-xl bg-card/90 px-3 py-1.5 text-xs font-medium shadow-sm", i === 0 ? "right-6 top-36 -rotate-3" : "right-6 top-1/2 rotate-3")}>{label}</div>
+              <div key={label} className={cn("absolute rounded-xl bg-card/90 px-3 py-1.5 text-xs font-medium shadow-sm", i === 0 ? "right-24 top-40 -rotate-3" : "right-24 top-1/2 rotate-3")}>{label}</div>
             ))}
-            <div className="absolute bottom-12 right-8 flex items-center gap-2 rounded-xl bg-card px-4 py-3 text-sm shadow-md"><Check className="h-4 w-4 text-success" />{scene.phrase}</div>
+            <div className="absolute bottom-14 right-10 flex items-center gap-2 rounded-xl bg-card px-4 py-3 text-sm shadow-md"><Check className="h-4 w-4 text-success" />{scene.phrase}</div>
           </motion.div>
           {total > 1 && (
             <span className="absolute bottom-5 left-1/2 z-20 -translate-x-1/2 rounded-full border bg-card/90 px-3 py-1 text-xs font-medium tabular-nums text-muted-foreground shadow-sm">{featIdx + 1} / {total}</span>
