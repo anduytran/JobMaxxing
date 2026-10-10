@@ -84,6 +84,7 @@ function Dashboard() {
   const featKey = featured?.category?.toLowerCase() ?? "interview";
   const featArt = MAX_ART[featKey] ?? MAX_POSES.interview;
   const featLink = QUEST_LINK[featKey] ?? "/quests";
+  const scene = SCENES[featKey] ?? DEFAULT_SCENE;
   const reducedMotion = useReducedMotion();
   const [tip, setTip] = useState(0);
   const tips = [
@@ -127,13 +128,17 @@ function Dashboard() {
           )}
           <p className="mt-4 flex items-center gap-2 text-sm text-muted-foreground"><Clock className="h-4 w-4" />{featured ? `+${featured.xp} XP waiting for you` : "15 minutes to a more confident you"}</p>
         </div>
-        <div className="pointer-events-none absolute -right-10 top-6 hidden h-[420px] w-[420px] rounded-full border border-success/30 md:block" />
-        <div className="absolute bottom-0 right-16 hidden items-end gap-0 md:flex">
-          {[90, 160, 260].map((h, i) => <div key={i} className="w-28 rounded-t-md bg-success/40" style={{ height: h }} />)}
+        <div key={featKey} className="pointer-events-none absolute inset-0 hidden md:block">
+          <div className={`absolute -right-10 top-6 h-[420px] w-[420px] rounded-full border ${scene.ring}`} />
+          <div className={`absolute right-24 top-16 h-72 w-72 rounded-full ${scene.bg}`} />
+          <div className="mascot-float absolute right-16 top-0">{featured ? <img key={featArt} src={featArt} alt={`Max ready for: ${featured.title}`} width={816} height={816} className="h-48 w-48 object-contain" /> : <Mascot className="h-40 w-40" />}</div>
+          <div className={`absolute right-56 top-24 rotate-6 rounded-2xl bg-card p-3 shadow-md ${scene.chip}`}><scene.icon className="h-6 w-6" /></div>
+          {scene.props.map(([label, pos]) => (
+            <div key={label} className={`absolute ${pos} rounded-xl bg-card/90 px-3 py-1.5 text-xs font-medium shadow-sm`}>{label}</div>
+          ))}
+          <div className="absolute right-64 top-16 flex -rotate-6 items-center gap-2 rounded-xl bg-card px-4 py-3 text-sm shadow-md"><Zap className="h-4 w-4" />+{featured?.xp ?? 150} XP</div>
+          <div className="absolute bottom-12 right-10 flex items-center gap-2 rounded-xl bg-card px-4 py-3 text-sm shadow-md"><Check className="h-4 w-4 text-success" />{scene.phrase}</div>
         </div>
-        <div className="mascot-float absolute right-16 top-0 hidden md:block">{featured ? <img key={featArt} src={featArt} alt={`Max ready for: ${featured.title}`} width={816} height={816} className="h-48 w-48 object-contain" /> : <Mascot className="h-40 w-40" />}</div>
-        <div className="absolute right-64 top-16 hidden -rotate-6 items-center gap-2 rounded-xl bg-card px-4 py-3 text-sm shadow-md md:flex"><Zap className="h-4 w-4" />+{featured?.xp ?? 150} XP</div>
-        <div className="absolute bottom-12 right-10 hidden items-center gap-2 rounded-xl bg-card px-4 py-3 text-sm shadow-md md:flex"><Check className="h-4 w-4 text-success" />One step closer.</div>
       </section>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_1fr_1fr_1.4fr]">
