@@ -11,6 +11,8 @@
 
 ## Architecture rules
 
+- Max assets remain pure vector SVGs with smooth Bézier contours and explicit viewBoxes; preserve facial highlights and hand creases when simplifying paths. Why: enlarging embedded bitmaps or overtraced contours cannot produce crisp mascot artwork.
+
 - Shared motion lives in global CSS and AppShell's reduced-motion-aware MotionConfig; stateful encouragement stays in frontend components. Why: animation polish must not change persistence or existing interview and resume workflows.
 
 - JobMaxxing persists game state (profile, XP, quests, resume reviews, interview sessions) in the connected Neon Postgres database through the Lovable connector gateway, not Lovable Cloud. Why: the user chose Neon as the backend and Lovable Cloud is disabled for this workspace. Keep all reads and writes inside `createServerFn` handlers in `src/lib/devup.functions.ts`, which use the gateway helpers in `src/lib/neon.server.ts`; never call the gateway from browser code and never store state in localStorage.
