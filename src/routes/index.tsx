@@ -9,7 +9,7 @@ import { getLatestResumeReview } from "@/lib/resume.functions";
 import type { StoredReview } from "@/lib/resume";
 import { MAX_POSES } from "@/components/Max";
 
-const MAX_ART: Record<string, string> = { setup: MAX_POSES.resume, resume: MAX_POSES.resume, interview: MAX_POSES.interview, skills: MAX_POSES.skills, hunt: MAX_POSES.hunt, branding: MAX_POSES.branding, social: MAX_POSES.branding };
+const MAX_ART: Record<string, string> = { setup: MAX_POSES.resume, resume: MAX_POSES.resume, interview: MAX_POSES.interview, skills: MAX_POSES.skills, hunt: MAX_POSES.hunt, branding: MAX_POSES.dap, social: MAX_POSES.dap };
 const QUEST_LINK: Record<string, "/setup" | "/interview" | "/quests" | "/skills" | "/market"> = { setup: "/setup", resume: "/setup", interview: "/interview", skills: "/skills", hunt: "/market" };
 
 export const Route = createFileRoute("/")({
