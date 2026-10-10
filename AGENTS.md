@@ -11,6 +11,8 @@
 
 ## Architecture rules
 
+- Featured quest display titles use the browser-safe quest-titles helper while preserving full saved titles. Why: concise card copy must not rewrite user quests or require data migrations.
+
 - Max poses are centralized through MAX_POSES; uploaded mascot images use CDN asset pointers, and sign-in shares the same wave source. Why: one image mapping keeps artwork consistent everywhere without duplicating binary files.
 
 - Shared motion lives in global CSS and AppShell's reduced-motion-aware MotionConfig; stateful encouragement stays in frontend components. Why: animation polish must not change persistence or existing interview and resume workflows.
