@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { GRADE_META, gradeFromScore, XP_RULES, type StoredReview } from "@/lib/resume";
 import { cn } from "@/lib/utils";
 
-export function ResumeScoreCard({ review, score, loading = false }: { review: StoredReview | null; score?: number; loading?: boolean }) {
+export function ResumeScoreCard({ review, score, loading = false }: { review: StoredReview | null; score: number | undefined; loading?: boolean }) {
   const reducedMotion = useReducedMotion();
   const pending = (review?.suggestions ?? []).filter((item) => !item.applied);
   const pendingKey = pending.map((item) => item.id).join("|");
