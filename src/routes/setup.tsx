@@ -373,7 +373,7 @@ function SuggestionList({
   return (
     <div className="space-y-3">
       <div className="flex items-baseline justify-between gap-3">
-        <h2 className="font-display text-lg font-bold">Fixes worth XP</h2>
+        <h2 className="font-display text-lg font-bold">Resume quests</h2>
         <span className="font-mono text-xs text-muted-foreground">
           {earned} / {total} XP claimed
         </span>

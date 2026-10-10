@@ -309,7 +309,8 @@ const RESUME_GUARDRAILS =
 
 const RESUME_SCHEMA =
   'Reply with JSON only: {"grade":"S"|"A"|"B"|"C"|"D"|"F","score":0-100,"summary":"2-3 sentences",' +
-  '"suggestions":[{"id":"kebab-case","title":"short imperative","detail":"what to change and why, with a rewrite example",' +
+  '"suggestions":[{"id":"kebab-case","title":"quest title: 2-6 words, Title Case, imperative, e.g. \\"Add a Quantitative Figure\\", \\"Fix Employment Dates\\"",' +
+  '"detail":"quest description: 1-3 sentences on what to change and why, with a rewrite example",' +
   '"category":"impact"|"keywords"|"formatting"|"structure"|"credibility","xp":25-500}],' +
   '"fields":{"name":null,"email":null,"phone":null,"location":null,"title":null,"linkedin":null,"github":null,' +
   '"yearsExperience":null,"skills":[],"experience":[{"company":null,"role":null,"start":null,"end":null}],' +
@@ -341,7 +342,7 @@ function normalizeReview(ai: any, source: "raia" | "fallback"): ResumeReview | n
       const s = raw ?? {};
       return {
         id: str(s.id, 60)?.toLowerCase().replace(/[^a-z0-9_-]/g, "-") ?? `s${i + 1}`,
-        title: str(s.title, 140) ?? "Improve this section",
+        title: str(s.title, 60) ?? "Improve this section",
         detail: str(s.detail, 900) ?? "",
         category: str(s.category, 24)?.toLowerCase() ?? "other",
         xp: num(s.xp, 25, 500) ?? 50,
