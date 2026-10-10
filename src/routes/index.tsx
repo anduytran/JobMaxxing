@@ -6,8 +6,7 @@ import { Mascot } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { useEffect, useMemo, useState } from "react";
 import { getLatestResumeReview } from "@/lib/resume.functions";
-import { DEFAULT_LAYOUT, getFeaturedLayouts, saveFeaturedLayout, type SceneLayout } from "@/lib/layout.functions";
-import { toast } from "sonner";
+import meadowScene from "@/assets/max/meadow.svg";
 import type { StoredReview } from "@/lib/resume";
 import { MAX_POSES } from "@/components/Max";
 import { cn } from "@/lib/utils";
@@ -91,15 +90,9 @@ function SceneBackdrop({ kind }: { kind: string }) {
     );
   }
   if (kind === "hunt") {
-    const blades = Array.from({ length: 34 }, (_, i) => ({ h: 28 + ((i * 37) % 46), r: ((i * 53) % 30) - 15 }));
     return (
-      <div className="absolute inset-0">
-        <div className="absolute inset-x-0 bottom-0 flex items-end justify-around px-2">
-          {blades.map((b, i) => (
-            <span key={i} className={cn("w-2 origin-bottom rounded-t-full", i % 3 ? "bg-success/45" : "bg-success/70")} style={{ height: `${b.h * 1.6}px`, transform: `rotate(${b.r}deg)` }} />
-          ))}
-        </div>
-        <div className="absolute inset-x-0 bottom-0 h-6 bg-success/30" />
+      <div className="absolute inset-0 overflow-hidden">
+        <img src={meadowScene} alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover object-bottom" draggable={false} />
       </div>
     );
   }
@@ -150,7 +143,7 @@ function Dashboard() {
   const featKey = featured?.category?.toLowerCase() ?? "interview";
   const featArt = MAX_ART[featKey] ?? MAX_POSES.interview;
   // Decode Max and the scene backdrop together so they appear at the same moment.
-  const sceneSrcs = [featArt, featKey === "skills" ? gymScene : featKey === "branding" || featKey === "social" ? billboardScene : null].filter(Boolean) as string[];
+  const sceneSrcs = [featArt, featKey === "skills" ? gymScene : featKey === "hunt" ? meadowScene : featKey === "branding" || featKey === "social" ? billboardScene : null].filter(Boolean) as string[];
   const sceneKey = sceneSrcs.join("|");
   const [readyKey, setReadyKey] = useState("");
   useEffect(() => {
@@ -159,39 +152,11 @@ function Dashboard() {
     return () => { live = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sceneKey]);
-  useEffect(() => { [gymScene, billboardScene, ...Object.values(MAX_POSES)].forEach((s) => { const i = new Image(); i.src = s; }); }, []);
+  useEffect(() => { [gymScene, billboardScene, meadowScene, ...Object.values(MAX_POSES)].forEach((s) => { const i = new Image(); i.src = s; }); }, []);
   const sceneReady = readyKey === sceneKey;
   const featLink = QUEST_LINK[featKey] ?? "/quests";
   const scene = SCENES[featKey] ?? DEFAULT_SCENE;
   const reducedMotion = useReducedMotion();
-  // Saved per-type positions for Max and the backdrop; the editor account can drag/resize them.
-  const layoutKind = featKey === "social" ? "branding" : featKey === "setup" ? "resume" : featKey;
-  const [layouts, setLayouts] = useState<Record<string, SceneLayout>>({});
-  const [canEdit, setCanEdit] = useState(false);
-  const [editing, setEditing] = useState(false);
-  const [saving, setSaving] = useState(false);
-  useEffect(() => { getFeaturedLayouts().then((r) => { setLayouts(r.layouts); setCanEdit(r.canEdit); }).catch(() => {}); }, []);
-  const lay = layouts[layoutKind] ?? DEFAULT_LAYOUT;
-  const patch = (p: Partial<SceneLayout>) => setLayouts((l) => ({ ...l, [layoutKind]: { ...(l[layoutKind] ?? DEFAULT_LAYOUT), ...p } }));
-  const startDrag = (target: "max" | "bg") => (e: React.PointerEvent) => {
-    if (!editing) return;
-    e.preventDefault(); e.stopPropagation();
-    const sx = e.clientX, sy = e.clientY, base = { ...lay };
-    const move = (ev: PointerEvent) => {
-      const dx = ev.clientX - sx, dy = ev.clientY - sy;
-      patch(target === "max" ? { maxX: Math.round(base.maxX + dx), maxY: Math.round(base.maxY + dy) } : { bgX: Math.round(base.bgX + dx), bgY: Math.round(base.bgY + dy) });
-    };
-    const up = () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); };
-    window.addEventListener("pointermove", move); window.addEventListener("pointerup", up);
-  };
-  const saveLayout = async () => {
-    setSaving(true);
-    try {
-      const r = await saveFeaturedLayout({ data: { kind: layoutKind, layout: lay } });
-      if (r.ok) toast.success(`Saved the ${layoutKind} card layout`); else toast.error(r.error);
-    } catch { toast.error("Couldn't save the layout. Try again."); }
-    setSaving(false);
-  };
   const [tip, setTip] = useState(0);
   const tips = [
     "You don't have to have it all figured out. You just have to take the next step.",
@@ -249,10 +214,10 @@ function Dashboard() {
           )}
           <p className="mt-4 flex items-center gap-2 text-sm text-muted-foreground"><Clock className="h-4 w-4" />{featured ? `+${featured.xp} XP waiting for you` : "15 minutes to a more confident you"}</p>
         </div>
-        <motion.div key={featured?.id ?? "none"} initial={reducedMotion ? false : { opacity: 0, x: 28 * dir }} animate={sceneReady ? { opacity: 1, x: 0 } : { opacity: 0, x: reducedMotion ? 0 : 28 * dir }} transition={{ duration: 0.45 }} className={cn("absolute inset-y-0 right-0 hidden w-1/2 md:block", editing ? "outline-dashed outline-2 outline-primary" : "pointer-events-none")}>
-          <div className={cn("absolute inset-0", editing && "cursor-move")} onPointerDown={startDrag("bg")} style={{ transform: `translate(${lay.bgX}px, ${lay.bgY}px) scale(${lay.bgScale})` }}><SceneBackdrop kind={featKey} /></div>
+        <motion.div key={featured?.id ?? "none"} initial={reducedMotion ? false : { opacity: 0, x: 28 * dir }} animate={sceneReady ? { opacity: 1, x: 0 } : { opacity: 0, x: reducedMotion ? 0 : 28 * dir }} transition={{ duration: 0.45 }} className="pointer-events-none absolute inset-y-0 right-0 hidden w-1/2 md:block">
+          <div className="absolute inset-0"><SceneBackdrop kind={featKey} /></div>
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-            <div onPointerDown={startDrag("max")} className={cn(!editing && "mascot-float", (featKey === "branding" || featKey === "social") && "relative left-16", editing && "pointer-events-auto cursor-grab rounded-xl ring-2 ring-primary")} style={{ transform: `translate(${lay.maxX}px, ${lay.maxY}px)`, width: lay.maxSize, height: lay.maxSize }}>{featured ? <img key={featArt} src={featArt} alt={`Max ready for: ${featured.title}`} width={816} height={816} decoding="sync" draggable={false} className="h-full w-full object-contain" /> : <Mascot className="h-full w-full" />}</div>
+            <div className="mascot-float h-[360px] w-[360px]">{featured ? <img key={featArt} src={featArt} alt={`Max ready for: ${featured.title}`} width={816} height={816} decoding="sync" draggable={false} className="h-full w-full object-contain" /> : <Mascot className="h-full w-full" />}</div>
           </div>
           <div className="absolute left-10 top-6 flex -rotate-6 items-center gap-2 rounded-xl bg-card px-4 py-3 text-sm shadow-md"><Zap className="h-4 w-4" />+{featured?.xp ?? 150} XP</div>
           <div className={`absolute right-8 top-8 rotate-6 rounded-2xl bg-card p-3 shadow-md ${scene.chip}`}><scene.icon className="h-6 w-6" /></div>
@@ -262,20 +227,6 @@ function Dashboard() {
           <div className="absolute bottom-6 right-8 flex items-center gap-2 rounded-xl bg-card px-4 py-3 text-sm shadow-md"><Check className="h-4 w-4 text-success" />{scene.phrase}</div>
         </motion.div>
       </section>
-      {canEdit && featured && (
-        <div className="panel -mt-4 hidden flex-wrap items-center gap-4 px-5 py-3 text-sm md:flex">
-          <b>Card layout · {layoutKind}</b>
-          <Button size="sm" variant={editing ? "default" : "outline"} onClick={() => setEditing((v) => !v)}>{editing ? "Done editing" : "Edit layout"}</Button>
-          {editing && (<>
-            <span className="text-muted-foreground">Drag Max or the background.</span>
-            <label className="flex items-center gap-2">Max size<input type="range" min={80} max={480} value={lay.maxSize} onChange={(e) => patch({ maxSize: Number(e.target.value) })} /></label>
-            <label className="flex items-center gap-2">Background size<input type="range" min={30} max={300} value={Math.round(lay.bgScale * 100)} onChange={(e) => patch({ bgScale: Number(e.target.value) / 100 })} /></label>
-            <Button size="sm" variant="ghost" onClick={() => patch(DEFAULT_LAYOUT)}>Reset</Button>
-            <Button size="sm" onClick={saveLayout} disabled={saving}>{saving ? "Saving…" : "Save"}</Button>
-          </>)}
-        </div>
-      )}
-
       <div className="grid gap-6 lg:grid-cols-[1fr_1fr_1fr_1.4fr]">
         <Stat icon={FileText} label="Resume score">
           <div className="text-4xl font-bold">{review && <span className="mr-2 rounded-md bg-success/20 px-2 text-2xl">{review.grade}</span>}{resumeScore ?? "—"}<span className="text-xl font-normal text-muted-foreground"> / 100</span></div>
