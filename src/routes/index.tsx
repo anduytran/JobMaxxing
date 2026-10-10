@@ -15,6 +15,9 @@ import { MAX_POSES } from "@/components/Max";
 import { cn } from "@/lib/utils";
 import gymDesktop from "@/assets/quest-scenes/gym-desktop.png.asset.json";
 import gymMobile from "@/assets/quest-scenes/gym-mobile.png.asset.json";
+import billboardDesktop from "@/assets/quest-scenes/billboard-desktop.png.asset.json";
+import billboardMobile from "@/assets/quest-scenes/billboard-mobile.png.asset.json";
+import openToWork from "@/assets/open-to-work.png.asset.json";
 
 import { questTitleLines } from "@/lib/quest-titles";
 import { ResumeScoreCard } from "@/components/ResumeScoreCard";
@@ -88,7 +91,8 @@ const DEFAULT_SCENE: Scene = {
 
 // Original uploaded scenes fill the entire featured screen; portrait art swaps on mobile.
 function sceneSources(kind: string) {
-  if (kind === "interview" || kind === "branding" || kind === "social") {
+  if (kind === "branding") return { desktop: billboardDesktop.url, mobile: billboardMobile.url };
+  if (kind === "interview" || kind === "social") {
     return { desktop: stageDesktop.url, mobile: stageMobile.url };
   }
   if (kind === "skills") return { desktop: gymDesktop.url, mobile: gymMobile.url };
