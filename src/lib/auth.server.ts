@@ -34,13 +34,26 @@ export async function verifyPassword(password: string, stored: string) {
 
 const sha256 = async (s: string) => toHex(await crypto.subtle.digest("SHA-256", enc.encode(s)));
 
+const MAX_SESSIONS_PER_USER = 5;
+
 export async function startSession(userId: string) {
   const token = toHex(crypto.getRandomValues(new Uint8Array(32)));
   const expires = new Date(Date.now() + SESSION_DAYS * 864e5);
-  await neonExecute(
-    "insert into public.devup_session (token_hash, user_id, expires_at) values ($1, $2, $3::timestamptz)",
-    [await sha256(token), userId, expires.toISOString()],
-  );
+  // One transaction: create the session, sweep expired sessions for everyone,
+  // and keep only this user's newest sessions (older devices are signed out).
+  await neonExecute([
+    {
+      query: "insert into public.devup_session (token_hash, user_id, expires_at) values ($1, $2, $3::timestamptz)",
+      params: [await sha256(token), userId, expires.toISOString()],
+    },
+    { query: "delete from public.devup_session where expires_at <= now()" },
+    {
+      query: `delete from public.devup_session where user_id = $1::uuid and token_hash not in (
+                select token_hash from public.devup_session where user_id = $1::uuid
+                 order by expires_at desc limit $2)`,
+      params: [userId, MAX_SESSIONS_PER_USER],
+    },
+  ]);
   setCookie(SESSION_COOKIE, token, {
     httpOnly: true, secure: true, sameSite: "none", partitioned: true, path: "/", expires,
   });
