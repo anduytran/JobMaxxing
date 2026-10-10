@@ -237,7 +237,6 @@ function Dashboard() {
           <div className="absolute inset-0"><SceneBackdrop kind={featKey} /></div>
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
             <div className="relative h-[240px] w-[240px]">
-              <div aria-hidden className="absolute -bottom-1 left-1/2 h-5 w-40 -translate-x-1/2 rounded-[50%] bg-foreground/25 blur-md" />
               <div className="mascot-float relative h-full w-full"><img key={featArt} src={featArt} alt={featured ? `Max ready for: ${featured.title}` : "Max with a microphone, ready to interview you"} width={816} height={816} decoding="sync" draggable={false} className="h-full w-full object-contain" /></div>
             </div>
           </div>
