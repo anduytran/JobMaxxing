@@ -52,7 +52,10 @@ type Game = {
   saveDetails: (d: Partial<Details>) => Promise<boolean>;
 };
 
-const Ctx = createContext<Game | null>(null);
+// Keep one context instance across hot reloads; a re-created context makes
+// already-mounted consumers throw "useGame outside provider".
+const g = globalThis as { __devupGameCtx?: React.Context<Game | null> };
+const Ctx = (g.__devupGameCtx ??= createContext<Game | null>(null));
 
 export function GameProvider({
   children,
