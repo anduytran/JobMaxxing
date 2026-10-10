@@ -72,7 +72,7 @@ async function extractSkills(text: string): Promise<string[]> {
 
 // ---------------- match scoring ----------------
 
-const tokens = (s: string) =>
+const tokens = (s: string | undefined) =>
   (s ?? "").toLowerCase().split(/[,;\n/|]+/).map((x) => x.trim()).filter((x) => x.length > 2);
 
 function parseSalary(v: string | undefined): number | null {
