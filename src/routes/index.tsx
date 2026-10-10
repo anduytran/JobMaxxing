@@ -140,7 +140,6 @@ function Dashboard() {
     setPick(((((pick ?? featIdx) + d) % openCount) + openCount) % openCount);
   };
   const jump = (i: number) => { setDir(i >= featIdx ? 1 : -1); setPick(i); };
-  const surprise = () => { setDir(1); setPick(null); setSeed(Math.random()); };
   const featKey = featured?.category?.toLowerCase() ?? "interview";
   const featArt = MAX_ART[featKey] ?? MAX_POSES.interview;
   // Decode Max and the scene backdrop together so they appear at the same moment.
@@ -179,26 +178,21 @@ function Dashboard() {
         </div>
       </div>
 
-      <section className="relative overflow-hidden rounded-3xl border bg-hero px-14 py-8 md:px-16 md:py-12" aria-label="Featured quest">
-        {featured && openCount > 1 && (<>
-          <Button variant="outline" size="icon" className="absolute left-2 top-1/2 z-20 h-10 w-10 -translate-y-1/2 rounded-full bg-card md:left-3" onClick={() => shift(-1)} aria-label="Previous quest" title="Previous quest"><ChevronLeft className="h-5 w-5" /></Button>
-          <Button variant="outline" size="icon" className="absolute right-2 top-1/2 z-20 h-10 w-10 -translate-y-1/2 rounded-full bg-card md:right-3" onClick={() => shift(1)} aria-label="Next quest" title="Next quest"><ChevronRight className="h-5 w-5" /></Button>
-        </>)}
+      <div className="relative md:px-16">
+        <section className="relative overflow-hidden rounded-3xl border bg-hero px-14 py-8 md:px-16 md:py-12" aria-label="Featured quest">
         <div className="relative z-10 max-w-xl md:max-w-[46%]">
-          <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-foreground/70"><span className="h-1.5 w-1.5 rounded-full bg-foreground/60" />Your next chapter starts here</p>
-          <h2 className="mt-5 text-4xl font-bold leading-tight md:text-5xl">You've got potential.<br />Let's put it to work.</h2>
+          <p className="flex items-center gap-2 whitespace-nowrap text-xs font-semibold uppercase tracking-[0.2em] text-foreground/70"><span className="h-1.5 w-1.5 rounded-full bg-foreground/60" />{featured ? `Today's featured quest · ${featured.category}` : "Today's featured quest"}</p>
+          {featured ? (
+            <motion.h2 key={featured.id} initial={reducedMotion ? false : { opacity: 0, x: -16 * dir }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.3 }} className="mt-5 text-4xl font-bold leading-[1.08] text-balance md:text-5xl">{featured.title}</motion.h2>
+          ) : (
+            <h2 className="mt-5 text-4xl font-bold leading-tight md:text-5xl">You've got potential.<br />Let's put it to work.</h2>
+          )}
           <p className="mt-4 text-muted-foreground">Your dream role is closer than you think. Build your skills, sharpen your story, and make your next move.</p>
           {featured ? (<>
-            <div className="mt-6 flex items-center justify-between gap-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Today's featured quest · {featured.category}</p>
-              <span className="min-w-12 shrink-0 text-center text-xs tabular-nums text-muted-foreground">{featIdx + 1} / {openCount}</span>
-            </div>
-            <motion.p key={featured.id} initial={reducedMotion ? false : { opacity: 0, x: -16 * dir }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.3 }} className="mt-1 text-2xl font-semibold">{featured.title}</motion.p>
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <Button asChild className="h-auto rounded-xl px-7 py-4 text-base"><Link to={featLink}>
                 Start this quest <ArrowRight className="h-5 w-5" />
               </Link></Button>
-              <Button variant="ghost" className="h-auto rounded-xl px-4 py-4 text-muted-foreground" onClick={surprise}>Pick another</Button>
             </div>
             {openCount > 1 && (
               <div className="mt-5 flex flex-wrap items-center gap-2">
@@ -227,7 +221,15 @@ function Dashboard() {
           ))}
           <div className="absolute bottom-6 right-8 flex items-center gap-2 rounded-xl bg-card px-4 py-3 text-sm shadow-md"><Check className="h-4 w-4 text-success" />{scene.phrase}</div>
         </motion.div>
-      </section>
+          {featured && openCount > 1 && (
+            <span className="absolute bottom-4 left-1/2 z-20 -translate-x-1/2 rounded-full border bg-card/90 px-3 py-1 text-xs font-medium tabular-nums text-muted-foreground shadow-sm">{featIdx + 1} / {openCount}</span>
+          )}
+        </section>
+        {featured && openCount > 1 && (<>
+          <Button variant="outline" size="icon" className="absolute left-0 top-1/2 z-20 h-10 w-10 -translate-y-1/2 rounded-full bg-card md:left-2" onClick={() => shift(-1)} aria-label="Previous quest" title="Previous quest"><ChevronLeft className="h-5 w-5" /></Button>
+          <Button variant="outline" size="icon" className="absolute right-0 top-1/2 z-20 h-10 w-10 -translate-y-1/2 rounded-full bg-card md:right-2" onClick={() => shift(1)} aria-label="Next quest" title="Next quest"><ChevronRight className="h-5 w-5" /></Button>
+        </>)}
+      </div>
       <div className="grid gap-6 lg:grid-cols-[1fr_1fr_1fr_1.4fr]">
         <Stat icon={FileText} label="Resume score">
           <div className="text-4xl font-bold">{review && <span className="mr-2 rounded-md bg-success/20 px-2 text-2xl">{review.grade}</span>}{resumeScore ?? "—"}<span className="text-xl font-normal text-muted-foreground"> / 100</span></div>
