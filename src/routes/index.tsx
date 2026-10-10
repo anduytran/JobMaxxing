@@ -178,7 +178,7 @@ function Dashboard() {
       {/* Phase 1 — the featured quest fills the whole screen, edge to edge, under the top bar. */}
       <div className="relative">
         <section
-          className={cn("featured-screen relative flex min-h-[calc(100svh_-_4rem)] items-stretch overflow-hidden border-b bg-hero px-6 pb-24 pt-8 md:px-20 md:pb-28 md:pt-14", (featKey === "interview" || featKey === "branding" || featKey === "social") && "featured-stage")}
+          className={cn("featured-screen relative flex min-h-[calc(100svh_-_4rem)] items-stretch overflow-hidden border-b bg-hero px-6 pb-24 pt-8 md:px-20 md:pb-28 md:pt-14", (featKey === "interview" || featKey === "social") && "featured-stage")}
           aria-label="Featured quest"
         >
           <SceneBackdrop kind={featKey} />
