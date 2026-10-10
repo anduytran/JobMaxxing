@@ -233,7 +233,7 @@ function Dashboard() {
             </div>
           </motion.div>
           <aside aria-label="Quick overview" className="absolute right-2 top-1/2 z-10 hidden w-1/2 -translate-y-1/2 justify-end lg:flex">
-            <div className="w-[min(32rem,calc(50vw_-_15svh_-_2rem))] max-w-full overflow-hidden rounded-md border border-border bg-card/90 text-card-foreground shadow-xl backdrop-blur-md">
+            <div className="w-[min(32rem,calc(50vw_-_15svh_-_4rem))] max-w-full overflow-hidden rounded-md border border-border bg-card/90 text-card-foreground shadow-xl backdrop-blur-md">
               <p className="border-b border-border bg-muted/40 px-5 py-3 text-center text-xs font-bold uppercase tracking-[0.25em]">Missions</p>
               <ul className="divide-y divide-border">
                 {[...quests.filter((q) => q.period === "daily"), ...quests.filter((q) => q.period === "weekly")].sort((a, b) => Number(a.done) - Number(b.done)).slice(0, 5).map((q) => (
@@ -242,15 +242,15 @@ function Dashboard() {
                       <span className={cn("grid h-7 w-7 shrink-0 place-items-center border", q.done ? "border-success/50 bg-success/15 text-success" : "border-border bg-muted text-muted-foreground")}>{q.done ? <Check className="h-3.5 w-3.5" /> : <Zap className="h-3.5 w-3.5" />}</span>
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-medium">{q.title}</p>
-                        <div className="mt-1.5 h-1 bg-muted"><div className={cn("h-full bg-success transition-all", q.done ? "w-full" : "w-0")} /></div>
+                        <div className="mt-1.5 h-1 bg-border"><div className={cn("h-full bg-success transition-all", q.done ? "w-full" : "w-0")} /></div>
                       </div>
-                      <span className="shrink-0 text-xs font-semibold tabular-nums text-muted-foreground">+{q.xp} XP</span>
+                      <span className="shrink-0 text-xs font-semibold tabular-nums text-foreground/80">+{q.xp} XP</span>
                     </Link>
                   </li>
                 ))}
                 {quests.length === 0 && <li className="px-5 py-4 text-sm text-muted-foreground">No missions yet.</li>}
               </ul>
-              <div className="flex items-center justify-center gap-2 border-t border-border px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              <div className="flex items-center justify-center gap-2 border-t border-border px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-foreground/80">
                 <Clock className="h-3.5 w-3.5" />
                 <ResetCountdown period="daily" label="Daily expiration in" />
               </div>
@@ -275,7 +275,7 @@ function Dashboard() {
         </section>
         {total > 1 && (<>
           <Button variant="outline" size="icon" className="absolute left-3 top-[70%] md:top-1/2 z-20 h-11 w-11 -translate-y-1/2 rounded-full bg-card md:left-6" onClick={() => shift(-1)} aria-label="Previous quest" title="Previous quest"><ChevronLeft className="h-5 w-5" /></Button>
-          <Button variant="outline" size="icon" className="absolute right-3 top-[70%] md:top-1/2 z-20 h-11 w-11 -translate-y-1/2 rounded-full bg-card md:right-6" onClick={() => shift(1)} aria-label="Next quest" title="Next quest"><ChevronRight className="h-5 w-5" /></Button>
+          <Button variant="outline" size="icon" className="absolute right-3 top-[70%] md:top-1/2 z-20 h-11 w-11 -translate-y-1/2 rounded-full bg-card md:right-6 lg:right-[calc(min(32rem,calc(50vw_-_15svh_-_4rem))_+_1.25rem)]" onClick={() => shift(1)} aria-label="Next quest" title="Next quest"><ChevronRight className="h-5 w-5" /></Button>
         </>)}
       </div>
 
