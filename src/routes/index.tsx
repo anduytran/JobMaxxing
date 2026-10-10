@@ -238,7 +238,7 @@ function Dashboard() {
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
             <div className="relative h-[240px] w-[240px]">
               <div aria-hidden className="absolute -bottom-1 left-1/2 h-5 w-40 -translate-x-1/2 rounded-[50%] bg-foreground/25 blur-md" />
-              <div className="mascot-float relative h-full w-full">{featured ? <img key={featArt} src={featArt} alt={`Max ready for: ${featured.title}`} width={816} height={816} decoding="sync" draggable={false} className="h-full w-full object-contain" /> : <Mascot className="h-full w-full" />}</div>
+              <div className="mascot-float relative h-full w-full"><img key={featArt} src={featArt} alt={featured ? `Max ready for: ${featured.title}` : "Max with a microphone, ready to interview you"} width={816} height={816} decoding="sync" draggable={false} className="h-full w-full object-contain" /></div>
             </div>
           </div>
           <div className="absolute left-10 top-6 flex -rotate-6 items-center gap-2 rounded-xl bg-card px-4 py-3 text-sm shadow-md"><Zap className="h-4 w-4" />+{featured?.xp ?? 150} XP</div>
