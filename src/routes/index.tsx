@@ -233,17 +233,17 @@ function Dashboard() {
           <motion.div key={featured?.id ?? "none"} initial={reducedMotion ? false : { opacity: 0, x: 28 * dir }} animate={sceneReady ? { opacity: 1, x: 0 } : { opacity: 0, x: reducedMotion ? 0 : 28 * dir }} transition={{ duration: 0.45 }} className="pointer-events-none absolute inset-y-0 right-0 hidden w-[52%] md:block">
             <div className="absolute inset-0"><SceneBackdrop kind={featKey} /></div>
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-              <div className="relative h-[clamp(240px,30svh,440px)] w-[clamp(240px,30svh,440px)]">
+              <div className="relative h-[clamp(220px,28svh,400px)] w-[clamp(220px,28svh,400px)]">
                 <div className="mascot-float relative h-full w-full"><img key={featArt} src={featArt} alt={featured ? `Max ready for: ${featured.title}` : "Max with a microphone, ready to interview you"} width={816} height={816} decoding="sync" draggable={false} className="h-full w-full object-contain" /></div>
               </div>
             </div>
             {/* Floating chips live in the empty band above and below Max, never on him. */}
-            <div className="absolute left-8 top-16 flex -rotate-6 items-center gap-2 rounded-xl bg-card px-4 py-3 text-sm shadow-md"><Zap className="h-4 w-4" />+{featured?.xp ?? 150} XP</div>
-            <div className={`absolute right-8 top-16 rotate-6 rounded-2xl bg-card p-3 shadow-md ${scene.chip}`}><scene.icon className="h-6 w-6" /></div>
+            <div className="absolute left-4 top-12 flex -rotate-6 items-center gap-2 rounded-xl bg-card px-4 py-3 text-sm shadow-md"><Zap className="h-4 w-4" />+{featured?.xp ?? 150} XP</div>
+            <div className={`absolute right-4 top-12 rotate-6 rounded-2xl bg-card p-3 shadow-md ${scene.chip}`}><scene.icon className="h-6 w-6" /></div>
             {scene.props.slice(0, 2).map(([label], i) => (
-              <div key={label} className={cn("absolute rounded-xl bg-card/90 px-3 py-1.5 text-xs font-medium shadow-sm", i === 0 ? "right-8 top-44 -rotate-3" : "left-8 bottom-44 rotate-3")}>{label}</div>
+              <div key={label} className={cn("absolute rounded-xl bg-card/90 px-3 py-1.5 text-xs font-medium shadow-sm", i === 0 ? "right-4 top-40 -rotate-3" : "left-4 bottom-40 rotate-3")}>{label}</div>
             ))}
-            <div className="absolute bottom-16 right-8 flex items-center gap-2 rounded-xl bg-card px-4 py-3 text-sm shadow-md"><Check className="h-4 w-4 text-success" />{scene.phrase}</div>
+            <div className="absolute bottom-12 right-4 flex items-center gap-2 rounded-xl bg-card px-4 py-3 text-sm shadow-md"><Check className="h-4 w-4 text-success" />{scene.phrase}</div>
           </motion.div>
           {total > 1 && (
             <span className="absolute bottom-5 left-1/2 z-20 -translate-x-1/2 rounded-full border bg-card/90 px-3 py-1 text-xs font-medium tabular-nums text-muted-foreground shadow-sm">{featIdx + 1} / {total}</span>
