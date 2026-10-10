@@ -60,10 +60,10 @@
     </div>
     <script type="module">
       const kinds = {
-        interview: { bg: "STAGE_DESKTOP", mobile: "STAGE_MOBILE", max: "MAX_INTERVIEW" },
-        skills: { bg: "GYM_DESKTOP", mobile: "GYM_MOBILE", max: "MAX_SKILLS" },
-        hunt: { bg: "MEADOW_DESKTOP", mobile: "MEADOW_MOBILE", max: "MAX_HUNT" },
-        branding: { bg: "BILLBOARD_DESKTOP", mobile: "BILLBOARD_MOBILE", max: "MAX_DAP", ring: "RING_URL" },
+        interview: { bg: "/__l5e/assets-v1/45b9608e-fa4d-4a80-bb4c-36e1a588608e/stage-desktop.png", mobile: "/__l5e/assets-v1/f23ade98-a272-4221-9acc-9861203b788c/stage-mobile.png", max: "/__l5e/assets-v1/017b81a0-1465-4be3-8320-8c12fb2ae69f/max-interview.png" },
+        skills: { bg: "/__l5e/assets-v1/c7a17db1-b8fe-4128-a2a5-435646befd13/gym-desktop.png", mobile: "/__l5e/assets-v1/b4e48fdc-b010-4971-8cf4-27203339e9e9/gym-mobile.png", max: "/__l5e/assets-v1/70fd972a-1cdd-486f-9c6c-6e03cde5b22f/max-skills.png" },
+        hunt: { bg: "/__l5e/assets-v1/3bbcd175-10f7-46c1-afb9-108eea15de32/meadow-desktop.png", mobile: "/__l5e/assets-v1/a1f260e9-078b-4d5a-8cb0-2c5bfbc7babb/meadow-mobile.png", max: "/src/assets/max/max-hunt.svg" },
+        branding: { bg: "/__l5e/assets-v1/0cc080ca-7ea9-433f-8f44-c7229cb81f17/billboard-desktop.png", mobile: "/__l5e/assets-v1/21f4a4a4-e2a5-4ebc-bc2d-bd08f088beba/billboard-mobile.png", max: "/__l5e/assets-v1/7965d6d5-a1e5-4363-885b-63ad40df5082/max-dap.png", ring: "/__l5e/assets-v1/7dfb7776-8855-4f8b-8ef0-af5247378642/open-to-work.png" },
       };
       const kind = new URLSearchParams(location.search).get("kind") || "interview";
       const s = kinds[kind] || kinds.interview;
