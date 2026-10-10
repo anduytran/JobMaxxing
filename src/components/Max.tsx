@@ -6,7 +6,7 @@ import skills from "@/assets/max/max-skills.svg";
 import hunt from "@/assets/max/max-hunt.svg";
 import dap from "@/assets/max/max-dap.svg";
 
-export const MAX_POSES = { wave, resume, interview, skills, hunt, branding, dap } as const;
+export const MAX_POSES = { wave, resume, interview, skills, hunt, dap } as const;
 export type MaxPose = keyof typeof MAX_POSES;
 
 export function Max({ pose = "wave", className, alt = "" }: { pose?: MaxPose; className?: string | undefined; alt?: string }) {
