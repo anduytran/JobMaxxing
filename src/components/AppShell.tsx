@@ -58,7 +58,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <nav className="hidden flex-1 items-stretch justify-center gap-1 self-stretch lg:flex" aria-label="Main">
             {LEFT.map((it) => <TopTab key={it.to} item={it} active={loc.pathname === it.to} />)}
             <Link to={LOCK_IN.to}
-              className={cn("relative mx-3 -mb-px flex items-center px-12 font-display text-base font-bold uppercase tracking-[0.25em] transition-colors [clip-path:polygon(0_0,100%_0,88%_100%,12%_100%)]",
+              className={cn("relative mx-3 -mb-px flex items-center px-14 font-display text-base font-bold uppercase tracking-[0.25em] transition-colors [clip-path:polygon(50%_0,100%_50%,50%_100%,0_50%)]",
                 loc.pathname === LOCK_IN.to ? "bg-primary text-primary-foreground" : "bg-foreground/90 text-background hover:bg-primary hover:text-primary-foreground")}>
               {LOCK_IN.label}
             </Link>
