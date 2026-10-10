@@ -11,7 +11,7 @@ import meadowMobile from "@/assets/quest-scenes/meadow-mobile.png.asset.json";
 import stageDesktop from "@/assets/quest-scenes/stage-desktop.png.asset.json";
 import stageMobile from "@/assets/quest-scenes/stage-mobile.png.asset.json";
 import type { StoredReview } from "@/lib/resume";
-import { MAX_POSES } from "@/components/Max";
+import { MAX_POSES, MAX_SCALE, type MaxPose } from "@/components/Max";
 import { cn } from "@/lib/utils";
 import gymDesktop from "@/assets/quest-scenes/gym-desktop.png.asset.json";
 import gymMobile from "@/assets/quest-scenes/gym-mobile.png.asset.json";
@@ -24,7 +24,7 @@ import { ResetCountdown } from "@/components/ResetCountdown";
 import { ResumeScoreCard } from "@/components/ResumeScoreCard";
 import { XpCareerCard } from "@/components/DashboardProgressCards";
 
-const MAX_ART: Record<string, string> = { setup: MAX_POSES.resume, resume: MAX_POSES.resume, interview: MAX_POSES.interview, skills: MAX_POSES.skills, hunt: MAX_POSES.hunt, branding: MAX_POSES.dap, social: MAX_POSES.dap };
+const MAX_ART: Record<string, MaxPose> = { setup: "resume", resume: "resume", interview: "interview", skills: "skills", hunt: "hunt", branding: "dap", social: "dap" };
 const QUEST_LINK: Record<string, "/setup" | "/interview" | "/quests" | "/skills" | "/market"> = { setup: "/setup", resume: "/setup", interview: "/interview", skills: "/skills", hunt: "/market" };
 
 export const Route = createFileRoute("/")({
@@ -132,7 +132,9 @@ function Dashboard() {
   };
   const jump = (i: number) => { setDir(i >= featIdx ? 1 : -1); setPick(i); };
   const featKey = featured?.category?.toLowerCase() ?? "interview";
-  const featArt = MAX_ART[featKey] ?? MAX_POSES.interview;
+  const featPose = MAX_ART[featKey] ?? "interview";
+  const featArt = MAX_POSES[featPose];
+  const featScale = MAX_SCALE[featPose];
   // Decode Max and the scene backdrop together so they appear at the same moment.
   const sources = sceneSources(featKey);
   const sceneSrcs = [featArt, sources.desktop, sources.mobile];
@@ -218,7 +220,7 @@ function Dashboard() {
             )}
           </div>
           <motion.div key={featured?.id ?? "none"} initial={reducedMotion ? false : { opacity: 0, x: 28 * dir }} animate={sceneReady ? { opacity: 1, x: 0 } : { opacity: 0, x: reducedMotion ? 0 : 28 * dir }} transition={{ duration: 0.45 }} className="pointer-events-none absolute inset-x-0 bottom-14 flex h-[28svh] items-end justify-center md:inset-0 md:h-auto md:items-center">
-            <div className="relative h-[clamp(140px,21svh,300px)] w-[clamp(140px,21svh,300px)]">
+            <div className="relative" style={{ height: `calc(clamp(140px,21svh,300px) * ${featScale})`, width: `calc(clamp(140px,21svh,300px) * ${featScale})` }}>
               {featKey === "branding" && (
                 <img
                   src={openToWork.url}
