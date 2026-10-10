@@ -202,7 +202,7 @@ function Dashboard() {
         </div>
       </div>
 
-      <div className="relative md:px-16">
+      <div className="relative">
         <section className="relative overflow-hidden rounded-3xl border bg-hero px-14 py-8 md:px-16 md:py-12" aria-label="Featured quest">
         <div className="relative z-10 max-w-xl md:max-w-[46%]">
           <p className="flex items-center gap-2 whitespace-nowrap text-xs font-semibold uppercase tracking-[0.2em] text-foreground/70"><span className="h-1.5 w-1.5 rounded-full bg-foreground/60" />{featured ? `Today's featured quest · ${featured.category}` : "Today's featured quest"}</p>
@@ -250,8 +250,8 @@ function Dashboard() {
           )}
         </section>
         {featured && openCount > 1 && (<>
-          <Button variant="outline" size="icon" className="absolute left-0 top-1/2 z-20 h-10 w-10 -translate-y-1/2 rounded-full bg-card md:left-2" onClick={() => shift(-1)} aria-label="Previous quest" title="Previous quest"><ChevronLeft className="h-5 w-5" /></Button>
-          <Button variant="outline" size="icon" className="absolute right-0 top-1/2 z-20 h-10 w-10 -translate-y-1/2 rounded-full bg-card md:right-2" onClick={() => shift(1)} aria-label="Next quest" title="Next quest"><ChevronRight className="h-5 w-5" /></Button>
+          <Button variant="outline" size="icon" className="absolute left-0 top-1/2 z-20 h-10 w-10 -translate-y-1/2 rounded-full bg-card md:-left-5 xl:-left-12" onClick={() => shift(-1)} aria-label="Previous quest" title="Previous quest"><ChevronLeft className="h-5 w-5" /></Button>
+          <Button variant="outline" size="icon" className="absolute right-0 top-1/2 z-20 h-10 w-10 -translate-y-1/2 rounded-full bg-card md:-right-5 xl:-right-12" onClick={() => shift(1)} aria-label="Next quest" title="Next quest"><ChevronRight className="h-5 w-5" /></Button>
         </>)}
       </div>
       <div className="grid gap-6 lg:grid-cols-[1fr_1fr_1fr_1.4fr]">
