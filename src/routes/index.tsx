@@ -14,6 +14,7 @@ import type { StoredReview } from "@/lib/resume";
 import { MAX_POSES } from "@/components/Max";
 import { cn } from "@/lib/utils";
 import gymDesktop from "@/assets/quest-scenes/gym-desktop.png.asset.json";
+import gymMobile from "@/assets/quest-scenes/gym-mobile.png.asset.json";
 
 import { questTitleLines } from "@/lib/quest-titles";
 import { ResumeScoreCard } from "@/components/ResumeScoreCard";
@@ -90,7 +91,7 @@ function sceneSources(kind: string) {
   if (kind === "interview" || kind === "branding" || kind === "social") {
     return { desktop: stageDesktop.url, mobile: stageMobile.url };
   }
-  if (kind === "skills") return { desktop: gymDesktop.url, mobile: gymDesktop.url };
+  if (kind === "skills") return { desktop: gymDesktop.url, mobile: gymMobile.url };
   return { desktop: meadowDesktop.url, mobile: meadowMobile.url };
 }
 function SceneBackdrop({ kind }: { kind: string }) {
@@ -137,7 +138,7 @@ function Dashboard() {
     return () => { live = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sceneKey]);
-  useEffect(() => { [gymDesktop.url, stageDesktop.url, stageMobile.url, meadowDesktop.url, meadowMobile.url, ...Object.values(MAX_POSES)].forEach((s) => { const i = new Image(); i.src = s; }); }, []);
+  useEffect(() => { [gymDesktop.url, gymMobile.url, stageDesktop.url, stageMobile.url, meadowDesktop.url, meadowMobile.url, ...Object.values(MAX_POSES)].forEach((s) => { const i = new Image(); i.src = s; }); }, []);
   const sceneReady = readyKey === sceneKey;
   const featLink = QUEST_LINK[featKey] ?? "/quests";
   const scene = SCENES[featKey] ?? (featKey === "setup" ? SCENES["resume"] : undefined) ?? DEFAULT_SCENE;

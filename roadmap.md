@@ -75,5 +75,7 @@
 
 ## Uploaded full-screen quest scenes
 - [x] Replace partitioned scenes with uploaded stage, gym and meadow backgrounds spanning the entire featured screen.
-- [x] Use portrait stage and meadow images on mobile; keep Max and quest controls above the art.
+- [x] Use portrait stage, gym and meadow images on mobile; keep Max and quest controls above the art.
 - [x] Isolated browser check: all three scenes load at full screen width/height, portrait sources select on mobile, carousel works with no runtime errors; live account check remains unavailable.
+- [x] Add the supplied portrait gym image as the skills card's mobile source (served from the CDN, preloaded with the other scenes); verified at 390x844 that the portrait gym is the image actually painted, edge to edge, with no console errors.
+
