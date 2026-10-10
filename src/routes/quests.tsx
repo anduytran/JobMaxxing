@@ -20,7 +20,7 @@ function Quests() {
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Quest Log</h1>
+        <h1 className="text-4xl font-bold md:text-5xl">Quest Log</h1>
         <p className="text-muted-foreground">{done} of {quests.length} completed. Tick a quest to claim its XP.</p>
       </div>
       <div className="panel p-6"><QuestList /></div>

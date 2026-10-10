@@ -43,7 +43,7 @@ function SettingsPage() {
   );
   return (
     <div className="mx-auto max-w-xl space-y-6">
-      <h1 className="text-3xl font-bold">Settings</h1>
+      <h1 className="text-4xl font-bold md:text-5xl">Settings</h1>
       <div className="panel space-y-4 p-6">
         <div className="space-y-2"><Label htmlFor="n">Name</Label><Input id="n" value={name} onChange={(e) => setName(e.target.value)} /></div>
         <div className="space-y-2"><Label htmlFor="t">Current title</Label><Input id="t" value={title} onChange={(e) => setTitle(e.target.value)} /></div>
