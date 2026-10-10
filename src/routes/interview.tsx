@@ -41,9 +41,8 @@ function Interview() {
   const { roast, setRoast, completeQuest, gainXp } = useGame();
   const [stage, setStage] = useState<Stage>("setup");
   const [jd, setJd] = useState("");
-  // Type/length selection comes later in the flow — fixed defaults for now.
-  const type: InterviewType = "mixed";
-  const length: InterviewLength = "standard";
+  const [type, setType] = useState<InterviewType>("mixed");
+  const [length, setLength] = useState<InterviewLength>("standard");
   const [job, setJob] = useState<ParsedJob | null>(null);
   const [questions, setQuestions] = useState<InterviewQuestion[]>([]);
   const [qi, setQi] = useState(0);
@@ -189,9 +188,15 @@ function Interview() {
               <ul className="list-disc space-y-1 pl-5 text-sm text-accent">{job.specialNotes.map((n) => <li key={n}>{n}</li>)}</ul>
             </div>
           )}
+          <div className="grid gap-4 border-t pt-4 md:grid-cols-2">
+            <Choice label="Interview type" value={type} onChange={setType}
+              options={[["mixed", "Mixed"], ["technical", "Technical"], ["behavioral", "Behavioral"]]} />
+            <Choice label="Length" value={length} onChange={setLength}
+              options={(Object.keys(LENGTHS) as InterviewLength[]).map((k) => [k, LENGTHS[k].label])} />
+          </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => setStage("setup")}>Back</Button>
-            <Button onClick={start} disabled={busy}>{busy && <Loader2 className="animate-spin" />} Start interview</Button>
+            <Button onClick={start} disabled={busy}>{busy && <Loader2 className="animate-spin" />} Start {LENGTHS[length].label} {type} interview</Button>
           </div>
         </section>
       )}
@@ -262,6 +267,19 @@ function Interview() {
 }
 
 const fmt = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+
+function Choice<T extends string>({ label, value, onChange, options }: { label: string; value: T; onChange: (v: T) => void; options: [T, string][] }) {
+  return (
+    <div>
+      <div className="mb-2 font-mono text-xs text-muted-foreground">{label.toUpperCase()}</div>
+      <div className="flex flex-wrap gap-2">
+        {options.map(([v, l]) => (
+          <Button key={v} type="button" size="sm" variant={value === v ? "default" : "outline"} onClick={() => onChange(v)}>{l}</Button>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 function Metric({ label, m }: { label: string; m: { score: number; feedback: string } }) {
   return (
