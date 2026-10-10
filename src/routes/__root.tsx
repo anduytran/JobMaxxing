@@ -13,6 +13,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { GameProvider } from "../lib/game";
+import { loadGame } from "../lib/devup.functions";
 import { AppShell } from "../components/AppShell";
 import { Toaster } from "../components/ui/sonner";
 
@@ -77,6 +78,14 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
+  loader: async () => {
+    try {
+      return await loadGame();
+    } catch (err) {
+      console.error(err);
+      return null;
+    }
+  },
   head: () => ({
     meta: [
       { charSet: "utf-8" },
@@ -119,11 +128,12 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const initial = Route.useLoaderData();
 
   return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <GameProvider>
+      <GameProvider initial={initial}>
         <AppShell>
           <Outlet />
         </AppShell>
