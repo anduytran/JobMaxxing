@@ -58,7 +58,7 @@ async function askRaia<T>(
 }
 
 // ---------- Job parsing ----------
-const SKILLS = [
+export const SKILLS = [
   "JavaScript", "TypeScript", "React", "Node.js", "Python", "Java", "Go", "Rust", "C++", "C#", "SQL", "PostgreSQL",
   "MongoDB", "Redis", "GraphQL", "REST", "AWS", "GCP", "Azure", "Docker", "Kubernetes", "Terraform", "CI/CD",
   "Git", "Linux", "Next.js", "Vue", "Angular", "Tailwind", "Kafka", "Microservices", "System Design",
