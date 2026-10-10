@@ -140,13 +140,15 @@ function Dashboard() {
   const [dir, setDir] = useState(1);
   useEffect(() => { setSeed(Math.random()); }, []);
   const openCount = open.length;
-  const startIdx = useMemo(() => (openCount ? Math.floor(seed * openCount) % openCount : 0), [seed, openCount]);
-  const featIdx = pick === null ? Math.min(startIdx, Math.max(openCount - 1, 0)) : Math.min(pick, Math.max(openCount - 1, 0));
-  const featured = openCount ? open[featIdx] : null;
+  // Slide 0 is always the mock interview — the core product; quest slides follow.
+  const total = openCount + 1;
+  const startIdx = useMemo(() => (openCount ? (Math.floor(seed * openCount) % openCount) + 1 : 0), [seed, openCount]);
+  const featIdx = pick === null ? 0 : Math.min(pick, total - 1);
+  const featured = featIdx === 0 ? null : open[featIdx - 1];
+  void startIdx;
   const shift = (d: number) => {
-    if (!openCount) return;
     setDir(d);
-    setPick(((((pick ?? featIdx) + d) % openCount) + openCount) % openCount);
+    setPick(((((pick ?? featIdx) + d) % total) + total) % total);
   };
   const jump = (i: number) => { setDir(i >= featIdx ? 1 : -1); setPick(i); };
   const featKey = featured?.category?.toLowerCase() ?? "interview";

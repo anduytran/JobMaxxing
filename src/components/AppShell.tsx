@@ -12,24 +12,18 @@ import { Button } from "@/components/ui/button";
 import { QuestMenu } from "@/components/QuestMenu";
 
 type Item = { to: string; label: string; icon: typeof LayoutGrid; badge?: string };
-const GROUPS: { label: string; items: Item[] }[] = [
-  { label: "Your career, levelled up", items: [
-    { to: "/", label: "Dashboard", icon: LayoutGrid },
-    { to: "/setup", label: "Resume Lab", icon: FileText },
-    { to: "/interview", label: "AI Mock Interview", icon: Mic },
-    { to: "/peers", label: "Peer Interviews", icon: Users },
-  ] },
-  { label: "Opportunities", items: [
-    { to: "/market", label: "Job Radar", icon: Radar, badge: "New" },
-    { to: "/progress", label: "Career Progress", icon: LineChart },
-  ] },
-  { label: "Growth", items: [
-    { to: "/quests", label: "Quests", icon: Swords },
-    { to: "/skills", label: "Skill Tree", icon: Network },
-  ] },
-  { label: "Your crew", items: [{ to: "/crew", label: "Job Maxxers", icon: UsersRound, badge: "3" }] },
+// Flat nav, no sections — Interview leads because it's the core product.
+const ITEMS: Item[] = [
+  { to: "/", label: "Dashboard", icon: LayoutGrid },
+  { to: "/interview", label: "Interview", icon: Mic },
+  { to: "/setup", label: "Resume Lab", icon: FileText },
+  { to: "/market", label: "Job Radar", icon: Radar, badge: "New" },
+  { to: "/quests", label: "Quests", icon: Swords },
+  { to: "/skills", label: "Skill Tree", icon: Network },
+  { to: "/progress", label: "Career Progress", icon: LineChart },
+  { to: "/crew", label: "Job Maxxers", icon: UsersRound, badge: "3" },
 ];
-const ALL = GROUPS.flatMap((g) => g.items).concat({ to: "/settings", label: "Settings", icon: Settings });
+const ALL = ITEMS.concat({ to: "/settings", label: "Settings", icon: Settings });
 
 export function Mascot({ className }: { className?: string }) {
   return <Max className={className} />;
