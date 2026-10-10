@@ -126,14 +126,29 @@ function Dashboard() {
           <h2 className="mt-5 text-4xl font-bold leading-tight md:text-5xl">You've got potential.<br />Let's put it to work.</h2>
           <p className="mt-4 text-muted-foreground">Your dream role is closer than you think. Build your skills, sharpen your story, and make your next move.</p>
           {featured ? (<>
-            <p className="mt-6 text-xs font-semibold uppercase tracking-[0.2em] text-primary">Today's featured quest · {featured.category}</p>
-            <p className="mt-1 text-2xl font-semibold">{featured.title}</p>
+            <div className="mt-6 flex items-center justify-between gap-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Today's featured quest · {featured.category}</p>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="icon" className="h-9 w-9 shrink-0 rounded-xl" onClick={() => shift(-1)} aria-label="Previous quest" title="Previous quest"><ChevronLeft className="h-4 w-4" /></Button>
+                <span className="min-w-12 text-center text-xs tabular-nums text-muted-foreground">{featIdx + 1} / {openCount}</span>
+                <Button variant="outline" size="icon" className="h-9 w-9 shrink-0 rounded-xl" onClick={() => shift(1)} aria-label="Next quest" title="Next quest"><ChevronRight className="h-4 w-4" /></Button>
+              </div>
+            </div>
+            <motion.p key={featured.id} initial={reducedMotion ? false : { opacity: 0, x: -16 * dir }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.3 }} className="mt-1 text-2xl font-semibold">{featured.title}</motion.p>
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <Button asChild className="h-auto rounded-xl px-7 py-4 text-base"><Link to={featLink}>
                 Start this quest <ArrowRight className="h-5 w-5" />
               </Link></Button>
-              <Button variant="outline" className="h-auto rounded-xl px-5 py-4" onClick={() => setSeed(Math.random())}>Pick another</Button>
+              <Button variant="ghost" className="h-auto rounded-xl px-4 py-4 text-muted-foreground" onClick={surprise}>Pick another</Button>
             </div>
+            {openCount > 1 && (
+              <div className="mt-5 flex flex-wrap items-center gap-2">
+                {open.slice(0, 9).map((q, i) => (
+                  <button key={q.id} type="button" onClick={() => jump(i)} aria-label={`Show quest: ${q.title}`} aria-current={i === featIdx} className={cn("h-2 rounded-full transition-all", i === featIdx ? "w-7 bg-primary" : "w-2 bg-muted-foreground/30 hover:bg-muted-foreground/60")} />
+                ))}
+                {openCount > 9 && <span className="text-xs text-muted-foreground">+{openCount - 9} more</span>}
+              </div>
+            )}
           </>) : (
             <Button asChild className="mt-8 h-auto rounded-xl px-7 py-4 text-base"><Link to="/interview">
               Start a mock interview <ArrowRight className="h-5 w-5" />
@@ -141,17 +156,10 @@ function Dashboard() {
           )}
           <p className="mt-4 flex items-center gap-2 text-sm text-muted-foreground"><Clock className="h-4 w-4" />{featured ? `+${featured.xp} XP waiting for you` : "15 minutes to a more confident you"}</p>
         </div>
-        <div key={featKey} className="pointer-events-none absolute inset-0 hidden md:block">
-          <div className={`absolute -right-10 top-6 h-[420px] w-[420px] rounded-full border ${scene.ring}`} />
-          <div className={`absolute right-24 top-16 h-72 w-72 rounded-full ${scene.bg}`} />
-          <div className="mascot-float absolute right-16 top-0">{featured ? <img key={featArt} src={featArt} alt={`Max ready for: ${featured.title}`} width={816} height={816} className="h-48 w-48 object-contain" /> : <Mascot className="h-40 w-40" />}</div>
-          <div className={`absolute right-56 top-24 rotate-6 rounded-2xl bg-card p-3 shadow-md ${scene.chip}`}><scene.icon className="h-6 w-6" /></div>
-          {scene.props.map(([label, pos]) => (
-            <div key={label} className={`absolute ${pos} rounded-xl bg-card/90 px-3 py-1.5 text-xs font-medium shadow-sm`}>{label}</div>
-          ))}
-          <div className="absolute right-64 top-16 flex -rotate-6 items-center gap-2 rounded-xl bg-card px-4 py-3 text-sm shadow-md"><Zap className="h-4 w-4" />+{featured?.xp ?? 150} XP</div>
+        <motion.div key={featured?.id ?? "none"} initial={reducedMotion ? false : { opacity: 0, x: 28 * dir }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.45 }} className="pointer-events-none absolute inset-0 hidden md:block">
+...
           <div className="absolute bottom-12 right-10 flex items-center gap-2 rounded-xl bg-card px-4 py-3 text-sm shadow-md"><Check className="h-4 w-4 text-success" />{scene.phrase}</div>
-        </div>
+        </motion.div>
       </section>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_1fr_1fr_1.4fr]">
