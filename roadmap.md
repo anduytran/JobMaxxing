@@ -79,3 +79,5 @@
 - [x] Isolated browser check: all three scenes load at full screen width/height, portrait sources select on mobile, carousel works with no runtime errors; live account check remains unavailable.
 - [x] Add the supplied portrait gym image as the skills card's mobile source (served from the CDN, preloaded with the other scenes); verified at 390x844 that the portrait gym is the image actually painted, edge to edge, with no console errors.
 
+
+- Max is horizontally centered in every featured card at every width (verified: mascot centre = card centre, 0px off, desktop and phone).
