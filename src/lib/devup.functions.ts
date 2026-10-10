@@ -95,13 +95,13 @@ export const loadGame = createServerFn({ method: "GET" }).handler(
         {
           query:
             "select name, title, xp, roast, reduced_motion, skills, student, job_prefs, resume " +
-            "from public.devup_profile where id = $2 limit 1",
+            "from public.devup_profile where id = $1 limit 1",
           params: [PROFILE_ID],
         },
         {
           query:
             "select id, title, xp, category, done, period " +
-            "from public.devup_quest where user_id = $2 order by sort_order asc, id asc limit 200",
+            "from public.devup_quest where user_id = $1 order by sort_order asc, id asc limit 200",
           params: [PROFILE_ID],
         },
       ]);
