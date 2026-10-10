@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { useGame, levelTitle } from "@/lib/game";
+import { Max } from "@/components/Max";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
@@ -31,9 +32,6 @@ const ALL = GROUPS.flatMap((g) => g.items).concat({ to: "/settings", label: "Set
 
 export function Mascot({ className }: { className?: string }) {
   return <Max className={className} />;
-}
-function _unused() {
-  return <img src={mascot} alt="" width={816} height={816} className={cn("mascot-personality object-contain", className)} />;
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
