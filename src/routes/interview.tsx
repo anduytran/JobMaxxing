@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Bot, Flame, Loader2, Mic, Send, Sparkles as _unused, Square, Timer, Volume2, VolumeX } from "lucide-react";
+import { Bot, Flame, Loader2, Mic, Send, Square, Timer, Volume2, VolumeX } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,6 @@ import {
 import { createBrowserVoice, type VoiceAgent } from "@/lib/interview/voice";
 import { cn } from "@/lib/utils";
 
-void _unused;
 
 export const Route = createFileRoute("/interview")({
   head: () => ({
