@@ -24,6 +24,7 @@ export function featuredQuestTitle(title: string): string {
   if (/^Read 3 .* job postings/i.test(title)) return "Explore Three Target Job Postings";
   if (/^Build a small project/i.test(title)) return "Build Your Next Role Project";
   if (/^Do a mock interview for/i.test(title)) return "Practice Your Target Role Interview";
+  if (/^Tailor .*bullet/i.test(title)) return "Tailor a Bullet for a Radar Role";
   const words = title.trim().replace(/[.!:;]+$/u, "").split(/\s+/u);
   if (words.length <= 5) return words.join(" ");
   const compact = title.replace(/\b(?:one of|in order to|from your experience|last week)\b/gi, "").trim().split(/\s+/u);
