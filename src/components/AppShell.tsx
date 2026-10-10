@@ -1,87 +1,136 @@
 import { Link, useLocation, useRouter, useRouterState } from "@tanstack/react-router";
 import { signOut } from "@/lib/auth.functions";
 import { AnimatePresence, motion } from "framer-motion";
-import { LayoutDashboard, Swords, Video, BarChart3, FileUp, Settings, Zap, Menu } from "lucide-react";
+import {
+  LayoutGrid, FileText, Mic, Users, Radar, LineChart, Network, UsersRound, Swords, Settings, Menu, Search, Bell, LogOut,
+} from "lucide-react";
 import { useState, type ReactNode } from "react";
-import { useGame, XP_PER_LEVEL, levelTitle } from "@/lib/game";
+import { useGame, levelTitle } from "@/lib/game";
 import { cn } from "@/lib/utils";
+import mascot from "@/assets/mascot.png";
 
-const NAV = [
-  { to: "/", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/quests", label: "Quests", icon: Swords },
-  { to: "/interview", label: "Interview Simulator", icon: Video },
-  { to: "/market", label: "Market Insights", icon: BarChart3 },
-  { to: "/setup", label: "Resume Setup", icon: FileUp },
-  { to: "/settings", label: "Settings", icon: Settings },
-] as const;
+type Item = { to: string; label: string; icon: typeof LayoutGrid; badge?: string };
+const GROUPS: { label: string; items: Item[] }[] = [
+  { label: "Your career, levelled up", items: [
+    { to: "/", label: "Dashboard", icon: LayoutGrid },
+    { to: "/setup", label: "Resume Lab", icon: FileText },
+    { to: "/interview", label: "AI Mock Interview", icon: Mic },
+    { to: "/peers", label: "Peer Interviews", icon: Users },
+  ] },
+  { label: "Opportunities", items: [
+    { to: "/market", label: "Job Radar", icon: Radar, badge: "New" },
+    { to: "/progress", label: "Career Progress", icon: LineChart },
+  ] },
+  { label: "Growth", items: [
+    { to: "/quests", label: "Quests", icon: Swords },
+    { to: "/skills", label: "Skill Tree", icon: Network },
+  ] },
+  { label: "Your crew", items: [{ to: "/crew", label: "Job Maxxers", icon: UsersRound, badge: "3" }] },
+];
+const ALL = GROUPS.flatMap((g) => g.items).concat({ to: "/settings", label: "Settings", icon: Settings });
+
+export function Mascot({ className }: { className?: string }) {
+  return <img src={mascot} alt="" width={816} height={816} className={cn("object-contain", className)} />;
+}
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const { level, levelXp, lastGain, name } = useGame();
+  const { level, lastGain, name } = useGame();
   const loc = useLocation();
   const router = useRouter();
   const navigating = useRouterState({ select: (s) => s.status === "pending" });
   const [signingOut, setSigningOut] = useState(false);
   const [open, setOpen] = useState(false);
+  const current = ALL.find((i) => i.to === loc.pathname)?.label ?? "Workspace";
+  const initials = name.split(/\s+/).map((p) => p[0]).join("").slice(0, 2).toUpperCase() || "ME";
 
   return (
     <div className="flex min-h-screen">
-      {navigating && <div role="progressbar" aria-label="Loading page" className="fixed inset-x-0 top-0 z-50 h-0.5 animate-pulse bg-primary glow" />}
+      {navigating && <div role="progressbar" aria-label="Loading page" className="fixed inset-x-0 top-0 z-50 h-0.5 animate-pulse bg-primary" />}
       <aside className={cn(
-        "fixed inset-y-0 left-0 z-40 w-64 border-r bg-sidebar p-5 transition-transform md:translate-x-0",
+        "fixed inset-y-0 left-0 z-40 flex w-72 flex-col overflow-y-auto border-r bg-sidebar px-4 py-7 transition-transform md:translate-x-0",
         open ? "translate-x-0" : "-translate-x-full",
       )}>
-        <div className="mb-10 flex items-center gap-2">
-          <div className="grid h-9 w-9 place-items-center rounded-md bg-primary text-primary-foreground glow clip-corner">
-            <Zap className="h-5 w-5" />
-          </div>
-          <span className="font-display text-2xl font-bold tracking-wider">DEV<span className="text-primary">UP</span></span>
-        </div>
-        <nav className="space-y-1">
-          {NAV.map(({ to, label, icon: Icon }) => {
-            const active = loc.pathname === to;
-            return (
-              <Link key={to} to={to} onClick={() => setOpen(false)}
-                className={cn("relative flex items-center gap-3 rounded-md px-3 py-2.5 text-sm transition-colors",
-                  active ? "text-primary" : "text-muted-foreground hover:bg-sidebar-accent hover:text-foreground")}>
-                {active && <motion.span layoutId="nav" className="absolute inset-0 rounded-md border border-primary/40 bg-primary/10" />}
-                <Icon className="relative h-4 w-4" />
-                <span className="relative">{label}</span>
-              </Link>
-            );
-          })}
+        <Link to="/" className="mb-8 flex items-center gap-2 px-2">
+          <Mascot className="h-10 w-10" />
+          <span className="font-display text-2xl font-bold">DevUp<span className="text-primary">.</span></span>
+        </Link>
+        <nav className="flex-1 space-y-6">
+          {GROUPS.map((g, gi) => (
+            <div key={g.label} className={cn(gi > 0 && "border-t pt-5")}>
+              <div className="mb-2 px-3 text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">{g.label}</div>
+              {g.items.map(({ to, label, icon: Icon, badge }) => {
+                const active = loc.pathname === to;
+                return (
+                  <Link key={to} to={to} onClick={() => setOpen(false)}
+                    className={cn("relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-[15px] transition-colors",
+                      active ? "font-medium text-primary" : "text-foreground/80 hover:bg-muted")}>
+                    {active && <motion.span layoutId="nav" className="absolute inset-0 rounded-xl border border-primary/20 bg-sidebar-accent" />}
+                    <Icon className="relative h-[18px] w-[18px]" />
+                    <span className="relative flex-1">{label}</span>
+                    {badge && <span className="relative rounded-md bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">{badge}</span>}
+                  </Link>
+                );
+              })}
+            </div>
+          ))}
         </nav>
-        <div className="absolute bottom-5 left-5 right-5 rounded-lg border bg-sidebar-accent p-3 font-mono text-xs text-muted-foreground">
-          <div className="text-foreground">{name}</div>
-          LVL {level} · {levelTitle(level)}
-          <button className="mt-2 block text-primary hover:underline disabled:opacity-60" disabled={signingOut}
-            onClick={async () => { setSigningOut(true); try { await signOut(); await router.invalidate(); } finally { setSigningOut(false); } }}>
-            {signingOut ? "Signing out…" : "Sign out"}</button>
+        <div className="mt-6 rounded-2xl border bg-background p-3 text-sm">
+          <div className="flex items-center gap-3">
+            <div className="grid h-9 w-9 place-items-center rounded-full bg-sidebar-accent text-xs font-semibold text-primary">{initials}</div>
+            <div className="min-w-0 flex-1">
+              <div className="truncate font-medium">{name}</div>
+              <div className="text-xs text-muted-foreground">Level {level} · {levelTitle(level)}</div>
+            </div>
+          </div>
+          <div className="mt-3 flex gap-2 text-xs">
+            <Link to="/settings" onClick={() => setOpen(false)} className="flex items-center gap-1 rounded-lg px-2 py-1 text-muted-foreground hover:bg-muted"><Settings className="h-3.5 w-3.5" />Settings</Link>
+            <button className="ml-auto flex items-center gap-1 rounded-lg px-2 py-1 text-primary hover:bg-muted disabled:opacity-60" disabled={signingOut}
+              onClick={async () => { setSigningOut(true); try { await signOut(); await router.invalidate(); } finally { setSigningOut(false); } }}>
+              <LogOut className="h-3.5 w-3.5" />{signingOut ? "Signing out…" : "Sign out"}</button>
+          </div>
         </div>
       </aside>
 
-      <div className="flex-1 md:pl-64">
-        <header className="sticky top-0 z-30 flex items-center gap-4 border-b bg-background/80 px-4 py-3 backdrop-blur md:px-8">
+      <div className="flex-1 md:pl-72">
+        <header className="sticky top-0 z-30 flex h-20 items-center gap-4 border-b bg-card/90 px-4 backdrop-blur md:px-10">
           <button className="md:hidden" onClick={() => setOpen(!open)} aria-label="Menu"><Menu /></button>
-          <div className="ml-auto flex items-center gap-3">
-            <span className="font-display text-sm font-bold text-primary">LVL {level}</span>
-            <div className="relative h-2.5 w-40 overflow-hidden rounded-full bg-muted sm:w-64">
-              <motion.div className="h-full rounded-full xp-fill" animate={{ width: `${(levelXp / XP_PER_LEVEL) * 100}%` }} transition={{ type: "spring", stiffness: 60 }} />
+          <div className="hidden items-center gap-3 text-[15px] sm:flex">
+            <span className="text-muted-foreground">Workspace</span><span className="text-muted-foreground">›</span><span>{current}</span>
+          </div>
+          <div className="ml-auto flex items-center gap-4">
+            <div className="hidden items-center gap-2 text-sm text-muted-foreground lg:flex">
+              <Search className="h-4 w-4" />Search anything…<kbd className="rounded-md border px-1.5 py-0.5 text-[11px]">⌘K</kbd>
             </div>
-            <span className="relative font-mono text-xs text-muted-foreground">
-              {levelXp}/{XP_PER_LEVEL} XP
+            <span className="relative rounded-full bg-sidebar-accent px-3 py-1 text-xs font-semibold text-primary">
+              Level {level}
               <AnimatePresence>
                 {lastGain && (
                   <motion.span key={lastGain.key} initial={{ opacity: 1, y: 0 }} animate={{ opacity: 0, y: -28 }} transition={{ duration: 1.6 }}
-                    className="absolute -top-1 right-0 font-bold text-success">+{lastGain.amount}</motion.span>
+                    className="absolute -top-2 right-0 font-bold text-success">+{lastGain.amount}</motion.span>
                 )}
               </AnimatePresence>
             </span>
+            <Bell className="h-5 w-5 text-muted-foreground" />
+            <div className="grid h-10 w-10 place-items-center rounded-full bg-sidebar-accent text-sm font-semibold">{initials}</div>
           </div>
         </header>
-        <motion.main key={loc.pathname} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }} className="p-4 md:p-8">
+        <motion.main key={loc.pathname} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="p-4 md:px-10 md:py-10">
           {children}
+          <footer className="mx-auto mt-16 flex max-w-6xl justify-between border-t pt-6 text-xs text-muted-foreground">
+            <span>Made for your next chapter.</span><span>Privacy · Terms · AI-powered. Human-centered.</span>
+          </footer>
         </motion.main>
       </div>
+    </div>
+  );
+}
+
+export function PageHeader({ eyebrow, title, sub }: { eyebrow: string; title: string; sub: string }) {
+  return (
+    <div className="mb-8">
+      <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">{eyebrow}</p>
+      <h1 className="mt-2 text-4xl font-bold md:text-5xl">{title}</h1>
+      <p className="mt-2 text-lg text-muted-foreground">{sub}</p>
     </div>
   );
 }
