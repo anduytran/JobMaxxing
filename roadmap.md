@@ -1,8 +1,8 @@
 # Roadmap
 
 ## Original Max images
-- [ ] Replace the five redrawn poses with the supplied original images, including sign-in.
-- [ ] Verify the original images load in the preview.
+- [x] Replace the five redrawn poses with the supplied original images, including sign-in.
+- [x] Verify all five original images load in the preview and visually confirm waving Max on sign-in; build clean.
 
 ## Max reference redraw
 - [x] Redraw branding, wave, resume, interview, and skills poses as clean vectors from the supplied references.
