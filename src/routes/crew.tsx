@@ -33,8 +33,8 @@ function Page() {
         <PanelHead title="Your crew of Job Maxxers" level={level} />
         <div className="px-8 pb-10 pt-6 md:px-12">
           {CREW.map((m) => (
-            <div key={m.name} className="flex items-center gap-4 border-t py-6 first:border-t-0">
-              <div className="grid h-12 w-12 place-items-center rounded-full bg-sidebar-accent text-sm font-semibold text-primary">
+            <div key={m.name} className="-mx-3 flex items-center gap-4 rounded-xl border-t px-3 py-6 transition-colors first:border-t-0 hover:bg-muted/60">
+              <div className="grid h-12 w-12 place-items-center rounded-full bg-sidebar-accent text-sm font-semibold text-primary transition-transform hover:scale-110">
                 {m.name.split(" ").map((p) => p[0]).join("")}
               </div>
               <div className="flex-1">
@@ -42,7 +42,7 @@ function Page() {
                 <div className="text-sm text-muted-foreground">{m.field} · Level {m.level}</div>
               </div>
               <button onClick={() => toast.info("Crew connections are coming soon.")}
-                className="flex items-center gap-3 rounded-xl border px-5 py-3 text-sm font-medium hover:bg-muted">
+                className="hover-pop flex items-center gap-3 rounded-xl border px-5 py-3 text-sm font-medium hover:bg-muted">
                 Connect <Plus className="h-4 w-4" />
               </button>
             </div>

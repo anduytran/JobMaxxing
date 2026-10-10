@@ -62,10 +62,10 @@ export function AppShell({ children }: { children: ReactNode }) {
                 const active = loc.pathname === to;
                 return (
                   <Link key={to} to={to} onClick={() => setOpen(false)}
-                    className={cn("relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-[15px] transition-colors",
+                    className={cn("group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-[15px] transition-all hover-slide",
                       active ? "font-medium text-primary" : "text-foreground/80 hover:bg-muted")}>
                     {active && <motion.span layoutId="nav" className="absolute inset-0 rounded-xl border border-primary/20 bg-sidebar-accent" />}
-                    <Icon className="relative h-[18px] w-[18px]" />
+                    <Icon className="icon-wiggle relative h-[18px] w-[18px]" />
                     <span className="relative flex-1">{label}</span>
                     {badge && <span className="relative rounded-md bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">{badge}</span>}
                   </Link>
@@ -74,7 +74,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
           ))}
         </nav>
-        <div className="mt-6 rounded-2xl bg-muted/60 p-4">
+        <div className="mt-6 rounded-2xl bg-muted/60 p-4 transition-shadow hover:shadow-md">
           <Zap className="h-5 w-5 text-primary" />
           <p className="mt-2 text-sm font-semibold">A little boost. A big leap.</p>
           <p className="mt-1 text-xs text-muted-foreground">Unlock your full career potential.</p>
@@ -107,8 +107,8 @@ export function AppShell({ children }: { children: ReactNode }) {
             <span className="text-muted-foreground">Workspace</span><span className="text-muted-foreground">›</span><span>{current}</span>
           </div>
           <div className="ml-auto flex items-center gap-4">
-            <div className="relative flex items-center gap-3 rounded-2xl border bg-card px-4 py-2.5 text-sm">
-              <Flame className="h-5 w-5 text-primary" />
+            <div className="relative flex items-center gap-3 rounded-2xl border bg-card px-4 py-2.5 text-sm transition-shadow hover:shadow-md">
+              <Flame className="animate-flame h-5 w-5 text-primary" />
               <span className="font-semibold">5 day streak</span>
               <span className="hidden border-l pl-3 text-muted-foreground sm:inline">Keep it going!</span>
               <AnimatePresence>
@@ -128,7 +128,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </footer>
         </motion.main>
       </div>
-      <button aria-label="Help" className="fixed bottom-6 right-6 z-40 grid h-11 w-11 place-items-center rounded-full border bg-card shadow-md hover:bg-muted">
+      <button aria-label="Help" className="hover-pop fixed bottom-6 right-6 z-40 grid h-11 w-11 place-items-center rounded-full border bg-card shadow-md hover:bg-muted">
         <CircleHelp className="h-5 w-5" />
       </button>
     </div>

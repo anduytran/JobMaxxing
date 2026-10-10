@@ -26,8 +26,8 @@ function Page() {
       <div className="panel">
         <PanelHead title="Look how far you've come" level={level} />
         <div className="px-8 pb-10 pt-6 md:px-12">
-          <div className="rounded-2xl bg-success/10 px-8 py-12 text-center">
-            <LineChart className="h-8 w-8 text-success" strokeWidth={1.5} />
+          <div className="hover-lift rounded-2xl bg-success/10 px-8 py-12 text-center">
+            <LineChart className="animate-bob h-8 w-8 text-success" strokeWidth={1.5} />
             <div className="mt-4 text-3xl font-bold text-success md:text-4xl">{xp.toLocaleString()} XP earned</div>
             <div className="mt-2 text-success/80">Level {level} · {done.length} quest{done.length === 1 ? "" : "s"} completed</div>
           </div>

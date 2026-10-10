@@ -26,11 +26,11 @@ function Page() {
       <div className="panel">
         <PanelHead title="Make the most of peer interviews" level={level} />
         <div className="flex flex-col items-center px-6 py-24 text-center">
-          <Users className="h-12 w-12 text-primary" strokeWidth={1.5} />
+          <Users className="animate-bob h-12 w-12 text-primary" strokeWidth={1.5} />
           <h2 className="mt-8 text-3xl font-bold md:text-4xl">Your next interview buddy is waiting.</h2>
           <p className="mt-4 max-w-lg text-muted-foreground">Schedule a practice session with a friend using an AI-generated interview script.</p>
           <button onClick={() => toast.info("Peer scheduling is coming soon — we'll pair you with someone at a similar level.")}
-            className="mt-8 inline-flex items-center gap-3 rounded-xl bg-primary px-7 py-4 font-semibold text-primary-foreground hover:opacity-90">
+            className="hover-pop mt-8 inline-flex items-center gap-3 rounded-xl bg-primary px-7 py-4 font-semibold text-primary-foreground hover:opacity-90">
             Schedule an interview <ArrowRight className="h-5 w-5" />
           </button>
         </div>
