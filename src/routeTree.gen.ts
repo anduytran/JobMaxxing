@@ -19,6 +19,7 @@ import { Route as QuestsRouteImport } from './routes/quests'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SetupRouteImport } from './routes/setup'
 import { Route as SkillsRouteImport } from './routes/skills'
+import { Route as QuestsAddRouteImport } from './routes/quests.add'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -70,6 +71,11 @@ const SkillsRoute = SkillsRouteImport.update({
   path: '/skills',
   getParentRoute: () => rootRouteImport,
 } as any)
+const QuestsAddRoute = QuestsAddRouteImport.update({
+  id: '/add',
+  path: '/add',
+  getParentRoute: () => QuestsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -78,10 +84,11 @@ export interface FileRoutesByFullPath {
   '/market': typeof MarketRoute
   '/peers': typeof PeersRoute
   '/progress': typeof ProgressRoute
-  '/quests': typeof QuestsRoute
+  '/quests': typeof QuestsRouteWithChildren
   '/settings': typeof SettingsRoute
   '/setup': typeof SetupRoute
   '/skills': typeof SkillsRoute
+  '/quests/add': typeof QuestsAddRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -90,10 +97,11 @@ export interface FileRoutesByTo {
   '/market': typeof MarketRoute
   '/peers': typeof PeersRoute
   '/progress': typeof ProgressRoute
-  '/quests': typeof QuestsRoute
+  '/quests': typeof QuestsRouteWithChildren
   '/settings': typeof SettingsRoute
   '/setup': typeof SetupRoute
   '/skills': typeof SkillsRoute
+  '/quests/add': typeof QuestsAddRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -103,10 +111,11 @@ export interface FileRoutesById {
   '/market': typeof MarketRoute
   '/peers': typeof PeersRoute
   '/progress': typeof ProgressRoute
-  '/quests': typeof QuestsRoute
+  '/quests': typeof QuestsRouteWithChildren
   '/settings': typeof SettingsRoute
   '/setup': typeof SetupRoute
   '/skills': typeof SkillsRoute
+  '/quests/add': typeof QuestsAddRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -121,6 +130,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/setup'
     | '/skills'
+    | '/quests/add'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -133,6 +143,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/setup'
     | '/skills'
+    | '/quests/add'
   id:
     | '__root__'
     | '/'
@@ -145,6 +156,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/setup'
     | '/skills'
+    | '/quests/add'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -154,7 +166,7 @@ export interface RootRouteChildren {
   MarketRoute: typeof MarketRoute
   PeersRoute: typeof PeersRoute
   ProgressRoute: typeof ProgressRoute
-  QuestsRoute: typeof QuestsRoute
+  QuestsRoute: typeof QuestsRouteWithChildren
   SettingsRoute: typeof SettingsRoute
   SetupRoute: typeof SetupRoute
   SkillsRoute: typeof SkillsRoute
@@ -232,8 +244,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SkillsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/quests/add': {
+      id: '/quests/add'
+      path: '/add'
+      fullPath: '/quests/add'
+      preLoaderRoute: typeof QuestsAddRouteImport
+      parentRoute: typeof QuestsRoute
+    }
   }
 }
+
+interface QuestsRouteChildren {
+  QuestsAddRoute: typeof QuestsAddRoute
+}
+
+const QuestsRouteChildren: QuestsRouteChildren = {
+  QuestsAddRoute: QuestsAddRoute,
+}
+
+const QuestsRouteWithChildren =
+  QuestsRoute._addFileChildren(QuestsRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -242,7 +272,7 @@ const rootRouteChildren: RootRouteChildren = {
   MarketRoute: MarketRoute,
   PeersRoute: PeersRoute,
   ProgressRoute: ProgressRoute,
-  QuestsRoute: QuestsRoute,
+  QuestsRoute: QuestsRouteWithChildren,
   SettingsRoute: SettingsRoute,
   SetupRoute: SetupRoute,
   SkillsRoute: SkillsRoute,

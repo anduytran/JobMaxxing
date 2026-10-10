@@ -244,9 +244,11 @@ export const addQuest = createServerFn({ method: "POST" })
     const id = questId(input.id);
     const title = clean(input.title, 120);
     const category = clean(input.category, 40);
-    const xp = int(input.xp, 1, 5000);
+    let xp = int(input.xp, 1, 5000);
     const period = input.period === "daily" || input.period === "weekly" ? input.period : "once";
     if (!id || !title || !category || xp === null) throw new Error("Invalid quest.");
+    // Custom quests are user-written, so they earn reduced XP.
+    if (id.startsWith("custom-")) xp = Math.min(xp, 75);
     return { id, title, category, xp, period };
   })
   .handler(async ({ data }): Promise<SaveResult> => {
@@ -258,6 +260,22 @@ export const addQuest = createServerFn({ method: "POST" })
          on conflict (user_id, id) do nothing`,
         [data.id, data.title, data.xp, data.category, data.period, PROFILE_ID],
       );
+      return { ok: true };
+    } catch (err) {
+      return fail(err);
+    }
+  });
+
+export const removeQuest = createServerFn({ method: "POST" })
+  .inputValidator((input: { id: unknown }) => {
+    const id = questId(input.id);
+    if (!id) throw new Error("Invalid quest.");
+    return { id };
+  })
+  .handler(async ({ data }): Promise<SaveResult> => {
+    try {
+      const PROFILE_ID = (await requireUser()).id;
+      await neonExecute("delete from public.devup_quest where user_id = $1 and id = $2", [PROFILE_ID, data.id]);
       return { ok: true };
     } catch (err) {
       return fail(err);

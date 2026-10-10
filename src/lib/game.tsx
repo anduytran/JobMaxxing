@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import { toast } from "sonner";
 import {
   addQuest as addQuestFn,
+  removeQuest as removeQuestFn,
   completeQuest as completeQuestFn,
   gainXp as gainXpFn,
   saveProfile as saveProfileFn,
@@ -45,6 +46,7 @@ type Game = {
   setProfile: (n: string, t: string) => Promise<boolean>;
   completeQuest: (id: string) => void;
   addQuest: (q: Omit<Quest, "done">) => void;
+  removeQuest: (id: string) => void;
   gainXp: (n: number, reason?: string) => void;
   setRoast: (v: boolean) => void;
   setReducedMotion: (v: boolean) => void;
@@ -143,6 +145,13 @@ export function GameProvider({
       setQuests((qs) => [{ ...q, done: false }, ...qs]);
       addQuestFn({ data: q }).then((res) => {
         rejected(res, () => setQuests((qs) => qs.filter((x) => x.id !== q.id)));
+      });
+    },
+    removeQuest: (id) => {
+      const prev = quests;
+      setQuests((qs) => qs.filter((x) => x.id !== id));
+      removeQuestFn({ data: { id } }).then((res) => {
+        rejected(res, () => setQuests(prev));
       });
     },
     gainXp,
