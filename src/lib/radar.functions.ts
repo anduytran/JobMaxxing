@@ -203,7 +203,7 @@ export const getRadar = createServerFn({ method: "POST" })
       );
       const jobs: RadarJob[] = [];
       for (const r of rows) {
-        const d = (r["data"] ?? {}) as Record<string, any>;
+        const d = (r["data"] ?? {}) as any; // Adzuna snapshot: free-form keys, validated field by field below
         const title = String(d.title ?? "Untitled role");
         const description = String(d.description ?? "");
         const jdSkills = await extractSkills(`${title} ${description}`);
