@@ -277,12 +277,20 @@ function Setup() {
 
           {versions.length > 0 && <Versions versions={versions} onRestore={restore} />}
 
-          <div className="panel flex items-center gap-3 p-4 opacity-70">
-            <Lock className="h-5 w-5 shrink-0 text-muted-foreground" />
-            <div>
+          <div className="panel flex flex-wrap items-center gap-3 p-4">
+            <Sparkle className="h-5 w-5 shrink-0 text-primary" />
+            <div className="flex-1">
               <p className="font-semibold">Daily quest: Tailor 1 bullet for a Job Radar role</p>
-              <p className="text-sm text-muted-foreground">Unlocks when Job Radar goes live.</p>
+              <p className="text-sm text-muted-foreground">Job Radar is live — find a matched role, practice its interview, then tailor one bullet from its description.</p>
             </div>
+            {quests.some((q) => q.id === "radar-tailor") ? (
+              <span className="flex items-center gap-1 text-sm font-semibold text-success"><Check className="h-4 w-4" /> In your quest pool</span>
+            ) : (
+              <Button size="sm" onClick={() => addQuest({ id: "radar-tailor", title: "Tailor 1 bullet for a Job Radar role", xp: 100, category: "Hunt", period: "daily" })}>
+                Add to quest pool
+              </Button>
+            )}
+            <Button size="sm" variant="outline" asChild><Link to="/market">Open Job Radar</Link></Button>
           </div>
 
           {review && (

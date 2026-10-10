@@ -187,10 +187,18 @@ function Interview() {
       setStage("report");
       completeQuest("mock1");
       if (g.xp > 0) gainXp(g.xp, "mock interview");
+      // A tailored practice for a Job Radar role pays a one-time +50 XP bonus.
+      if (radarJobId.current) {
+        const radarXp = await awardRadarPracticeXp({ data: { jobId: radarJobId.current } }).catch(() => null);
+        if (radarXp?.ok && radarXp.awarded) {
+          toast.success("Tailored practice complete", { description: `+${radarXp.awarded} XP for practicing a Job Radar role.` });
+        }
+        radarJobId.current = null;
+      }
     } catch (e) { toast.error((e as Error).message); setStage("your_questions"); }
   };
 
-  const reset = () => { setConvId(null); setStage("intro"); setGrade(null); setTurns([]); setJob(null); setAck(false); };
+  const reset = () => { setConvId(null); setStage("intro"); setGrade(null); setTurns([]); setJob(null); setAck(false); radarJobId.current = null; };
 
   return (
     <div className="mx-auto max-w-6xl space-y-4">
