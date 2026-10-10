@@ -2,7 +2,7 @@ import { Link, useLocation, useRouter, useRouterState } from "@tanstack/react-ro
 import { signOut } from "@/lib/auth.functions";
 import { AnimatePresence, motion, MotionConfig, useReducedMotion } from "framer-motion";
 import {
-  LayoutGrid, FileText, Mic, Radar, LineChart, Network, UsersRound, Swords, Settings, Menu, LogOut, Zap, ArrowRight, Flame, CircleHelp,
+  LayoutGrid, FileText, Mic, Radar, LineChart, Network, UsersRound, Swords, Settings, Menu, LogOut, Zap, Flame, CircleHelp, X,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { useGame, levelTitle } from "@/lib/game";
@@ -23,7 +23,6 @@ const ITEMS: Item[] = [
   { to: "/progress", label: "Career Progress", icon: LineChart },
   { to: "/crew", label: "Job Maxxers", icon: UsersRound, badge: "3" },
 ];
-const ALL = ITEMS.concat({ to: "/settings", label: "Settings", icon: Settings });
 
 export function Mascot({ className }: { className?: string }) {
   return <Max className={className} />;
@@ -37,73 +36,47 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [signingOut, setSigningOut] = useState(false);
   const [open, setOpen] = useState(false);
   const reducedMotion = useReducedMotion();
-  const current = ALL.find((i) => i.to === loc.pathname)?.label ?? "Workspace";
   const initials = name.split(/\s+/).map((p) => p[0]).join("").slice(0, 2).toUpperCase() || "ME";
 
-  return (
-    <MotionConfig reducedMotion="user"><div className="flex min-h-screen">
-      {navigating && <div role="progressbar" aria-label="Loading page" className="fixed inset-x-0 top-0 z-50 h-0.5 animate-pulse bg-primary" />}
-      <aside className={cn(
-        "fixed inset-y-0 left-0 z-40 flex w-72 flex-col overflow-y-auto border-r bg-sidebar px-4 py-7 transition-transform md:translate-x-0",
-        open ? "translate-x-0" : "-translate-x-full",
-      )}>
-        <Link to="/" className="mb-8 flex items-center gap-2 px-2">
-          <Mascot className="h-10 w-10" />
-          <span className="font-display text-2xl font-bold">JobMaxxing<span className="text-primary">.</span></span>
-        </Link>
-        <nav className="flex-1 space-y-1">
-          {ITEMS.map(({ to, label, icon: Icon, badge }) => {
-            const active = loc.pathname === to;
-            return (
-              <Link key={to} to={to} onClick={() => setOpen(false)}
-                className={cn("group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-[15px] transition-all hover-slide",
-                  active ? "font-medium text-primary" : "text-foreground/80 hover:bg-muted")}>
-                {active && <motion.span layoutId="nav" className="absolute inset-0 rounded-xl border border-primary/20 bg-sidebar-accent" />}
-                <Icon className="icon-wiggle relative h-[18px] w-[18px]" />
-                <span className="relative flex-1">{label}</span>
-                {badge && <span className="relative rounded-md bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">{badge}</span>}
-              </Link>
-            );
-          })}
-        </nav>
-        <div className="mt-6 rounded-2xl bg-muted/60 p-4 transition-shadow hover:shadow-md">
-          <Zap className="h-5 w-5 text-primary" />
-          <p className="mt-2 text-sm font-semibold">A little boost. A big leap.</p>
-          <p className="mt-1 text-xs text-muted-foreground">Unlock your full career potential.</p>
-          <Link to="/settings" onClick={() => setOpen(false)} className="mt-3 flex items-center justify-between rounded-xl border bg-card px-4 py-2.5 text-sm font-medium hover:bg-muted">Explore Pro <ArrowRight className="h-4 w-4" /></Link>
-        </div>
-        <Link to="/settings" onClick={() => setOpen(false)} className="mt-4 flex items-center gap-3 rounded-xl px-3 py-2.5 text-[15px] text-foreground/80 hover:bg-muted">
-          <Settings className="h-[18px] w-[18px]" /> Settings
-        </Link>
-        <div className="mt-4 rounded-2xl border bg-background p-3 text-sm">
-          <div className="flex items-center gap-3">
-            <div className="grid h-9 w-9 place-items-center rounded-full bg-sidebar-accent text-xs font-semibold text-primary">{initials}</div>
-            <div className="min-w-0 flex-1">
-              <div className="truncate font-medium">{name}</div>
-              <div className="text-xs text-muted-foreground">Level {level} · {levelTitle(level)}</div>
-            </div>
-          </div>
-          <div className="mt-3 flex gap-2 text-xs">
-            <Link to="/settings" onClick={() => setOpen(false)} className="flex items-center gap-1 rounded-lg px-2 py-1 text-muted-foreground hover:bg-muted"><Settings className="h-3.5 w-3.5" />Settings</Link>
-            <Button variant="ghost" size="sm" className="ml-auto flex h-auto items-center gap-1 rounded-lg px-2 py-1 text-primary hover:bg-muted disabled:opacity-60" disabled={signingOut}
-              onClick={async () => { setSigningOut(true); try { await signOut(); await router.invalidate(); } finally { setSigningOut(false); } }}>
-              <LogOut className="h-3.5 w-3.5" />{signingOut ? "Signing out…" : "Sign out"}</Button>
-          </div>
-        </div>
-      </aside>
+  const doSignOut = async () => {
+    setSigningOut(true);
+    try { await signOut(); await router.invalidate(); } finally { setSigningOut(false); }
+  };
 
-      <div className="flex-1 md:pl-72">
-        <header className="sticky top-0 z-30 flex h-20 items-center gap-4 border-b bg-card/90 px-4 backdrop-blur md:px-10">
-          <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setOpen(!open)} aria-label="Menu"><Menu /></Button>
-          <div className="hidden items-center gap-3 text-[15px] sm:flex">
-            <span className="text-muted-foreground">Workspace</span><span className="text-muted-foreground">›</span><span>{current}</span>
-          </div>
-          <div className="ml-auto flex items-center gap-4">
+  return (
+    <MotionConfig reducedMotion="user"><div className="flex min-h-screen flex-col">
+      {navigating && <div role="progressbar" aria-label="Loading page" className="fixed inset-x-0 top-0 z-50 h-0.5 animate-pulse bg-primary" />}
+
+      {/* Valorant-style top nav: brand left, centered tabs with active underline, player cluster right */}
+      <header className="sticky top-0 z-40 border-b bg-card/90 backdrop-blur">
+        <div className="flex h-16 items-center gap-4 px-4 md:px-8">
+          <Link to="/" className="flex shrink-0 items-center gap-2">
+            <Mascot className="h-9 w-9" />
+            <span className="font-display text-xl font-bold">JobMaxxing<span className="text-primary">.</span></span>
+          </Link>
+
+          <nav className="hidden flex-1 items-stretch justify-center gap-1 self-stretch lg:flex" aria-label="Main">
+            {ITEMS.map(({ to, label, badge }) => {
+              const active = loc.pathname === to;
+              return (
+                <Link key={to} to={to}
+                  className={cn("relative flex items-center gap-1.5 px-4 text-[13px] font-semibold uppercase tracking-[0.14em] transition-colors",
+                    active ? "text-primary" : "text-foreground/70 hover:text-foreground")}>
+                  {label}
+                  {badge && <span className="rounded-sm bg-muted px-1 py-0.5 text-[10px] font-bold tracking-normal text-muted-foreground">{badge}</span>}
+                  {active && (
+                    <motion.span layoutId="topnav" className="absolute inset-x-3 -bottom-px h-[3px] rounded-t-sm bg-primary" />
+                  )}
+                </Link>
+              );
+            })}
+          </nav>
+
+          <div className="ml-auto flex items-center gap-3 lg:ml-0">
             <QuestMenu />
-            <div className="relative flex items-center gap-3 rounded-2xl border bg-card px-4 py-2.5 text-sm transition-shadow hover:shadow-md">
-              <Flame className="animate-flame h-5 w-5 text-primary" />
+            <div className="relative hidden items-center gap-2 rounded-full border bg-card px-3.5 py-1.5 text-sm transition-shadow hover:shadow-md md:flex">
+              <Flame className="animate-flame h-4 w-4 text-primary" />
               <span className="font-semibold">5 day streak</span>
-              <span className="hidden border-l pl-3 text-muted-foreground sm:inline">Keep it going!</span>
               <AnimatePresence>
                 {lastGain && (
                   <motion.span key={lastGain.key} initial={{ opacity: 1, y: 0 }} animate={{ opacity: 0, y: -28 }} transition={{ duration: 1.6 }}
@@ -111,21 +84,65 @@ export function AppShell({ children }: { children: ReactNode }) {
                 )}
               </AnimatePresence>
             </div>
-            <div className="grid h-10 w-10 place-items-center rounded-full bg-sidebar-accent text-sm font-semibold">{initials}</div>
+            <Link to="/settings" className="hidden items-center gap-2 rounded-full border bg-card px-3 py-1.5 text-sm transition-shadow hover:shadow-md md:flex" title="Settings">
+              <span className="grid h-7 w-7 place-items-center rounded-full bg-sidebar-accent text-xs font-semibold text-primary">{initials}</span>
+              <span className="font-semibold">Lv {level}</span>
+              <span className="hidden text-xs text-muted-foreground xl:inline">{levelTitle(level)}</span>
+            </Link>
+            <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setOpen(!open)} aria-label="Menu" aria-expanded={open}>
+              {open ? <X /> : <Menu />}
+            </Button>
           </div>
-        </header>
-        <motion.main key={loc.pathname} initial={reducedMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="page-arrival p-4 md:px-10 md:py-10">
-          {children}
-          <footer className="mx-auto mt-16 flex max-w-6xl justify-between border-t pt-6 text-xs text-muted-foreground">
-            <span>Made for your next chapter.</span><span>Privacy · Terms · AI-powered. Human-centered.</span>
-          </footer>
-        </motion.main>
-      </div>
+        </div>
+
+        {/* Mobile menu */}
+        <AnimatePresence>
+          {open && (
+            <motion.nav initial={reducedMotion ? false : { height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25 }}
+              className="overflow-hidden border-t lg:hidden" aria-label="Main mobile">
+              <div className="space-y-1 px-4 py-4">
+                {ITEMS.map(({ to, label, icon: Icon, badge }) => {
+                  const active = loc.pathname === to;
+                  return (
+                    <Link key={to} to={to} onClick={() => setOpen(false)}
+                      className={cn("flex items-center gap-3 rounded-xl px-3 py-2.5 text-[15px] transition-colors",
+                        active ? "bg-sidebar-accent font-medium text-primary" : "text-foreground/80 hover:bg-muted")}>
+                      <Icon className="h-[18px] w-[18px]" />
+                      <span className="flex-1">{label}</span>
+                      {badge && <span className="rounded-md bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">{badge}</span>}
+                    </Link>
+                  );
+                })}
+                <div className="mt-3 flex items-center gap-3 rounded-xl border bg-background p-3 text-sm">
+                  <div className="grid h-9 w-9 place-items-center rounded-full bg-sidebar-accent text-xs font-semibold text-primary">{initials}</div>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate font-medium">{name}</div>
+                    <div className="text-xs text-muted-foreground">Level {level} · {levelTitle(level)}</div>
+                  </div>
+                </div>
+                <div className="flex gap-2 pt-1 text-xs">
+                  <Link to="/settings" onClick={() => setOpen(false)} className="flex items-center gap-1 rounded-lg px-2 py-1 text-muted-foreground hover:bg-muted"><Settings className="h-3.5 w-3.5" />Settings</Link>
+                  <Button variant="ghost" size="sm" className="ml-auto flex h-auto items-center gap-1 rounded-lg px-2 py-1 text-primary hover:bg-muted disabled:opacity-60" disabled={signingOut} onClick={doSignOut}>
+                    <LogOut className="h-3.5 w-3.5" />{signingOut ? "Signing out…" : "Sign out"}</Button>
+                </div>
+              </div>
+            </motion.nav>
+          )}
+        </AnimatePresence>
+      </header>
+
+      <motion.main key={loc.pathname} initial={reducedMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="page-arrival flex-1 p-4 md:px-10 md:py-10">
+        {children}
+        <footer className="mx-auto mt-16 flex max-w-6xl justify-between border-t pt-6 text-xs text-muted-foreground">
+          <span>Made for your next chapter.</span><span>Privacy · Terms · AI-powered. Human-centered.</span>
+        </footer>
+      </motion.main>
+
       <Button variant="outline" size="icon" aria-label="Help" title="Help" className="hover-pop fixed bottom-6 right-6 z-40 grid h-11 w-11 place-items-center rounded-full border bg-card shadow-md hover:bg-muted">
         <CircleHelp className="h-5 w-5" />
       </Button>
       <AnimatePresence>
-        {lastGain && <motion.div key={lastGain.key} initial={{ opacity: 0, y: 20, scale: 0.95 }} animate={{ opacity: [0, 1, 1, 0], y: reducedMotion ? 0 : [20, 0, 0, -8] }} transition={{ duration: 3.5, times: [0, 0.1, 0.8, 1] }} className="pointer-events-none fixed bottom-6 left-4 right-20 z-50 mx-auto flex max-w-sm items-center gap-3 rounded-xl border bg-card p-4 shadow-md md:left-72">
+        {lastGain && <motion.div key={lastGain.key} initial={{ opacity: 0, y: 20, scale: 0.95 }} animate={{ opacity: [0, 1, 1, 0], y: reducedMotion ? 0 : [20, 0, 0, -8] }} transition={{ duration: 3.5, times: [0, 0.1, 0.8, 1] }} className="pointer-events-none fixed bottom-6 left-4 right-20 z-50 mx-auto flex max-w-sm items-center gap-3 rounded-xl border bg-card p-4 shadow-md">
           <div className="relative grid h-10 w-10 shrink-0 place-items-center rounded-full bg-success/20 text-foreground">
             <CheckReward />
             <div aria-hidden="true" className="absolute inset-0 flex justify-between">{["bg-primary", "bg-success", "bg-accent", "bg-primary"].map((color, i) => <span key={i} className={cn("reward-particle h-2 w-1 rounded-sm", color)} />)}</div>
