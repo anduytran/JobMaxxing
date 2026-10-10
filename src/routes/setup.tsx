@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, FileUp, Loader2, Sparkle } from "lucide-react";
+import { Check, FileUp, Loader2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -289,9 +289,8 @@ function Setup() {
             <GradeHeader review={review} />
             <SuggestionList review={review} applying={applying} onApply={apply} />
             <DetectedFields review={review} />
-            <div className="panel glow p-6 text-center">
-              <Sparkle className="mx-auto mb-2 h-6 w-6 text-accent" />
-              <h2 className="text-xl font-bold">Profile unlocked</h2>
+            <div className="border-t pt-6 text-center">
+              <h2 className="text-xl font-bold">Profile updated</h2>
               <p className="mt-1 text-sm text-muted-foreground">
                 Level <span className="font-bold text-primary">{level}: {levelTitle(level)}</span> ·{" "}
                 <span className="font-bold text-success">{xp.toLocaleString()} XP</span>
