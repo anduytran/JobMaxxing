@@ -270,7 +270,7 @@ export const setRadarStatus = createServerFn({ method: "POST" })
         [uid, data.jobId, data.status],
       );
       const awarded = Number(rows[0]?.["awarded"] ?? 0);
-      return { ok: true, awarded: awarded > 0 ? awarded : undefined, xp: Number(rows[0]?.["xp"] ?? 0) };
+      return { ok: true, ...(awarded > 0 ? { awarded } : {}), xp: Number(rows[0]?.["xp"] ?? 0) };
     } catch (err) {
       console.error("setRadarStatus failed", err);
       const { neonUserError } = await import("./neon.server");
