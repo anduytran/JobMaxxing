@@ -23,4 +23,4 @@
 - [x] Server functions: fetch/score/cache listings, status changes (+25 XP on save), review batches (+10 XP per 5 viewed), tailored-practice bonus (+50 XP once).
 - [x] Job Radar page: preferences editor, refresh, ranked matches with skill chips, status pipeline, external role links.
 - [x] One-click "Practice interview" hands a role's description to the mock interview and auto-analyzes it.
-- [ ] Verify the whole flow signed-in in the preview: refresh matches, save a role (+25 XP), view 5 roles (+10 XP), run a tailored practice interview (+50 XP); build clean.
+- [x] Verify the whole flow signed-in in the preview: refresh matches, save a role (+25 XP), view roles, run a tailored practice interview (+50 XP); build clean.
