@@ -11,15 +11,16 @@ export type MaxPose = keyof typeof MAX_POSES;
 
 // Every pose PNG carries a different amount of transparent padding around Max, so
 // one shared box renders him at different sizes. These factors are measured from the
-// artwork — the height of Max's briefcase body as a fraction of its own canvas — and
-// normalise each pose to the branding pose, which is the reference.
+// artwork (the height Max's figure reaches inside its own canvas) and normalise each
+// pose to the branding pose. The skills pose crouches under a raised dumbbell and the
+// hunt pose is squat, so both get a little more than their padding alone asks for.
 export const MAX_SCALE: Record<MaxPose, number> = {
   dap: 1,
   interview: 1.04,
-  resume: 1.1,
-  skills: 1.32,
-  wave: 1.21,
-  hunt: 1.23,
+  resume: 1.06,
+  skills: 1.22,
+  wave: 1.16,
+  hunt: 1.2,
 };
 
 
