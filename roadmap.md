@@ -17,3 +17,10 @@
 - [x] Daily quests reset every day, weekly quests reset every week (schedule stored in Neon).
 - [x] Per-user reduced-motion preference persisted in Neon and applied app-wide.
 - [x] Verify resets and the preference in the signed-in preview; build clean.
+
+## Job Radar (Adzuna + Neon)
+- [x] Create `devup_job_radar` in Neon (listing cache, statuses, viewed flags) and the idempotent `radar:*` XP index.
+- [x] Server functions: fetch/score/cache listings, status changes (+25 XP on save), review batches (+10 XP per 5 viewed), tailored-practice bonus (+50 XP once).
+- [x] Job Radar page: preferences editor, refresh, ranked matches with skill chips, status pipeline, external role links.
+- [x] One-click "Practice interview" hands a role's description to the mock interview and auto-analyzes it.
+- [x] Verify the whole flow signed-in in the preview: refresh matches, save a role (+25 XP), view roles, run a tailored practice interview (+50 XP); build clean.

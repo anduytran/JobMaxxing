@@ -14,6 +14,7 @@ import { useGame } from "@/lib/game";
 import {
   generateInterviewQuestions, getInterviewAgents, gradeInterviewTranscript, parseJobDescription, sendInterviewTurn, speakInterviewLine, startLiveInterview,
 } from "@/lib/interview.functions";
+import { awardRadarPracticeXp, setRadarStatus } from "@/lib/radar.functions";
 import {
   LENGTHS, type AgentStatus, type InterviewGrade, type InterviewLength, type InterviewQuestion,
   type InterviewType, type ParsedJob, type TranscriptTurn,
@@ -33,6 +34,9 @@ export const Route = createFileRoute("/interview")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
+  validateSearch: (s: Record<string, unknown>) => ({
+    radar: typeof s["radar"] === "string" && /^[0-9]{1,20}$/.test(s["radar"]) ? s["radar"] : undefined,
+  }),
   loader: () => getInterviewAgents(),
   staleTime: 5 * 60_000, // agent status rarely changes; skip the refetch on every visit
   component: Interview,
@@ -42,9 +46,12 @@ type Stage = "intro" | "setup" | "review" | "options" | "live" | "your_questions
 
 function Interview() {
   const agents = Route.useLoaderData() as AgentStatus;
+  const search = Route.useSearch();
   const { roast, setRoast, completeQuest, gainXp, details } = useGame();
   const [stage, setStage] = useState<Stage>("intro");
   const [jd, setJd] = useState("");
+  const radarJobId = useRef<string | null>(null);
+  const radarBootstrapped = useRef(false);
   const [type, setType] = useState<InterviewType>("mixed");
   const [length, setLength] = useState<InterviewLength>("standard");
   const [job, setJob] = useState<ParsedJob | null>(null);
@@ -86,10 +93,25 @@ function Interview() {
   }, [stage]);
   useEffect(() => { if (stage === "live" && left <= 0) toTail("Looks like we're at time."); }, [left, stage]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const analyze = async () => {
+  // Job Radar hand-off: one-click practice for a radar role pre-fills the job
+  // description and runs the analysis immediately.
+  useEffect(() => {
+    if (!search.radar || radarBootstrapped.current) return;
+    radarBootstrapped.current = true;
+    radarJobId.current = search.radar;
+    const stored = sessionStorage.getItem("jobmaxxing:radar-jd") ?? "";
+    sessionStorage.removeItem("jobmaxxing:radar-jd");
+    if (stored.trim().length >= 40) {
+      setJd(stored);
+      setStage("setup");
+      void analyze(stored);
+    }
+  }, [search.radar]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const analyze = async (jdText: string = jd) => {
     setBusy(true);
     try {
-      const res = await parseJobDescription({ data: { jd } });
+      const res = await parseJobDescription({ data: { jd: jdText } });
       setJob(res);
       setMine(res.skills.filter((s) => details.skills.some((u) => u.toLowerCase() === s.toLowerCase()))); setStage("review");
     } catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
@@ -165,10 +187,18 @@ function Interview() {
       setStage("report");
       completeQuest("mock1");
       if (g.xp > 0) gainXp(g.xp, "mock interview");
+      // A tailored practice for a Job Radar role pays a one-time +50 XP bonus.
+      if (radarJobId.current) {
+        const radarXp = await awardRadarPracticeXp({ data: { jobId: radarJobId.current } }).catch(() => null);
+        if (radarXp?.ok && radarXp.awarded) {
+          toast.success("Tailored practice complete", { description: `+${radarXp.awarded} XP for practicing a Job Radar role.` });
+        }
+        radarJobId.current = null;
+      }
     } catch (e) { toast.error((e as Error).message); setStage("your_questions"); }
   };
 
-  const reset = () => { setConvId(null); setStage("intro"); setGrade(null); setTurns([]); setJob(null); setAck(false); };
+  const reset = () => { setConvId(null); setStage("intro"); setGrade(null); setTurns([]); setJob(null); setAck(false); radarJobId.current = null; };
 
   return (
     <div className="mx-auto max-w-6xl space-y-4">
@@ -206,7 +236,7 @@ function Interview() {
             <p className="text-sm text-muted-foreground">Find a posting that matches the role you want and paste the full text.</p>
           </div>
           <Textarea value={jd} onChange={(e) => setJd(e.target.value)} rows={10} placeholder="Senior Frontend Engineer — We're looking for 4+ years of React and TypeScript…" />
-          <Button onClick={analyze} disabled={busy || jd.trim().length < 40}>
+          <Button onClick={() => analyze()} disabled={busy || jd.trim().length < 40}>
             {busy && <Loader2 className="animate-spin" />} Analyze job
           </Button>
         </section>

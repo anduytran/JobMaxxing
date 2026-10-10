@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
-import { AlertTriangle, ArrowRight, Check, FileUp, History, Loader2, Lock, RotateCcw, Save, ScanLine, Sparkle } from "lucide-react";
+import { AlertTriangle, ArrowRight, Check, FileUp, History, Loader2, RotateCcw, Save, ScanLine, Sparkle } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -71,7 +71,7 @@ const findLine = (sections: ResumeSection[], lineId?: string | null) =>
   lineId ? sections.flatMap((s) => s.lines).find((l) => l.id === lineId) : undefined;
 
 function Setup() {
-  const { completeQuest, quests, xp, level, setXp } = useGame();
+  const { completeQuest, quests, xp, level, setXp, addQuest } = useGame();
   const { welcome } = Route.useSearch();
   const navigate = useNavigate();
   const [review, setReview] = useState<StoredReview | null>(null);
@@ -277,12 +277,20 @@ function Setup() {
 
           {versions.length > 0 && <Versions versions={versions} onRestore={restore} />}
 
-          <div className="panel flex items-center gap-3 p-4 opacity-70">
-            <Lock className="h-5 w-5 shrink-0 text-muted-foreground" />
-            <div>
+          <div className="panel flex flex-wrap items-center gap-3 p-4">
+            <Sparkle className="h-5 w-5 shrink-0 text-primary" />
+            <div className="flex-1">
               <p className="font-semibold">Daily quest: Tailor 1 bullet for a Job Radar role</p>
-              <p className="text-sm text-muted-foreground">Unlocks when Job Radar goes live.</p>
+              <p className="text-sm text-muted-foreground">Job Radar is live — find a matched role, practice its interview, then tailor one bullet from its description.</p>
             </div>
+            {quests.some((q) => q.id === "radar-tailor") ? (
+              <span className="flex items-center gap-1 text-sm font-semibold text-success"><Check className="h-4 w-4" /> In your quest pool</span>
+            ) : (
+              <Button size="sm" onClick={() => addQuest({ id: "radar-tailor", title: "Tailor 1 bullet for a Job Radar role", xp: 100, category: "Hunt", period: "daily" })}>
+                Add to quest pool
+              </Button>
+            )}
+            <Button size="sm" variant="outline" asChild><Link to="/market">Open Job Radar</Link></Button>
           </div>
 
           {review && (
