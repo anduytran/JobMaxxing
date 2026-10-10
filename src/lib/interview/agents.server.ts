@@ -66,13 +66,27 @@ function fallbackParse(jd: string): ParsedJob {
     .filter((l) => /(years?|degree|experience|proficien|required|must|bachelor|master|familiar)/i.test(l))
     .slice(0, 8);
   const title = lines[0] && lines[0].length < 80 ? lines[0] : null;
-  return { title, summary: jd.replace(/\s+/g, " ").slice(0, 280), skills, qualifications };
+  const loc = jd.match(/(?:location|based in|located in)[:\s]+([^\n.,;]+)/i);
+  return { title, summary: jd.replace(/\s+/g, " ").slice(0, 280), skills, qualifications, location: loc?.[1]?.trim() ?? null, specialNotes: [] };
 }
 
 export async function parseJob(jd: string): Promise<ParsedJob> {
   const ai = await askRaia<ParsedJob>(ENV.parser, jd,
-    "Extract {title, summary, skills[], qualifications[]} from this job description. Reply with JSON only.");
-  return ai && Array.isArray(ai.skills) ? ai : fallbackParse(jd);
+    "Extract from this job description: title (role title or null), summary (2-3 sentence description of the role), " +
+    "skills[] (every skill, tool, or technology listed), qualifications[] (requirements like years of experience or degrees), " +
+    "location (city/region/remote status or null), specialNotes[] (anything notable: visa, travel, on-call, clearance, perks). " +
+    "Reply with JSON only: {title, summary, skills, qualifications, location, specialNotes}.");
+  if (ai && Array.isArray(ai.skills)) {
+    return {
+      title: ai.title ?? null,
+      summary: ai.summary ?? "",
+      skills: ai.skills,
+      qualifications: Array.isArray(ai.qualifications) ? ai.qualifications : [],
+      location: ai.location ?? null,
+      specialNotes: Array.isArray(ai.specialNotes) ? ai.specialNotes : [],
+    };
+  }
+  return fallbackParse(jd);
 }
 
 // ---------- Question generation ----------

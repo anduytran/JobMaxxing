@@ -41,8 +41,9 @@ function Interview() {
   const { roast, setRoast, completeQuest, gainXp } = useGame();
   const [stage, setStage] = useState<Stage>("setup");
   const [jd, setJd] = useState("");
-  const [type, setType] = useState<InterviewType>("mixed");
-  const [length, setLength] = useState<InterviewLength>("standard");
+  // Type/length selection comes later in the flow — fixed defaults for now.
+  const type: InterviewType = "mixed";
+  const length: InterviewLength = "standard";
   const [job, setJob] = useState<ParsedJob | null>(null);
   const [questions, setQuestions] = useState<InterviewQuestion[]>([]);
   const [qi, setQi] = useState(0);
@@ -158,12 +159,6 @@ function Interview() {
             <p className="text-sm text-muted-foreground">Find a posting that matches the role you want and paste the full text.</p>
           </div>
           <Textarea value={jd} onChange={(e) => setJd(e.target.value)} rows={10} placeholder="Senior Frontend Engineer — We're looking for 4+ years of React and TypeScript…" />
-          <div className="grid gap-4 md:grid-cols-2">
-            <Choice label="Interview type" value={type} onChange={setType}
-              options={[["mixed", "Mixed"], ["technical", "Technical"], ["behavioral", "Behavioral"]]} />
-            <Choice label="Length" value={length} onChange={setLength}
-              options={(Object.keys(LENGTHS) as InterviewLength[]).map((k) => [k, LENGTHS[k].label])} />
-          </div>
           <Button onClick={analyze} disabled={busy || jd.trim().length < 40}>
             {busy && <Loader2 className="animate-spin" />} Analyze job
           </Button>
@@ -173,6 +168,7 @@ function Interview() {
       {stage === "review" && job && (
         <section className="panel space-y-4 p-6">
           <h2 className="font-display text-xl">2 · What we found{job.title ? ` — ${job.title}` : ""}</h2>
+          {job.location && <p className="font-mono text-xs text-accent">📍 {job.location}</p>}
           <p className="text-sm text-muted-foreground">{job.summary}</p>
           <div>
             <div className="mb-2 font-mono text-xs text-muted-foreground">SKILLS</div>
@@ -187,9 +183,15 @@ function Interview() {
               <ul className="list-disc space-y-1 pl-5 text-sm">{job.qualifications.map((q) => <li key={q}>{q}</li>)}</ul>
             </div>
           )}
+          {job.specialNotes.length > 0 && (
+            <div>
+              <div className="mb-2 font-mono text-xs text-muted-foreground">SPECIAL NOTES</div>
+              <ul className="list-disc space-y-1 pl-5 text-sm text-accent">{job.specialNotes.map((n) => <li key={n}>{n}</li>)}</ul>
+            </div>
+          )}
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => setStage("setup")}>Back</Button>
-            <Button onClick={start} disabled={busy}>{busy && <Loader2 className="animate-spin" />} Start {LENGTHS[length].label} {type} interview</Button>
+            <Button onClick={start} disabled={busy}>{busy && <Loader2 className="animate-spin" />} Start interview</Button>
           </div>
         </section>
       )}
@@ -260,19 +262,6 @@ function Interview() {
 }
 
 const fmt = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
-
-function Choice<T extends string>({ label, value, onChange, options }: { label: string; value: T; onChange: (v: T) => void; options: [T, string][] }) {
-  return (
-    <div>
-      <div className="mb-2 font-mono text-xs text-muted-foreground">{label.toUpperCase()}</div>
-      <div className="flex flex-wrap gap-2">
-        {options.map(([v, l]) => (
-          <Button key={v} type="button" size="sm" variant={value === v ? "default" : "outline"} onClick={() => onChange(v)}>{l}</Button>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 function Metric({ label, m }: { label: string; m: { score: number; feedback: string } }) {
   return (
