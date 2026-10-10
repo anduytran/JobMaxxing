@@ -264,7 +264,7 @@ function Dashboard() {
                 <Link to="/setup" className="group flex items-center gap-4 px-5 py-4 hover:bg-muted/50">
                   <span className="grid h-10 w-10 place-items-center rounded-full border border-border bg-muted"><FileText className="h-5 w-5" /></span>
                   <span className="flex-1 text-sm font-bold uppercase tracking-wider">Resume Lab</span>
-                  <span className="text-xs text-white/60">Grade & polish</span>
+                  <span className="text-xs text-muted-foreground">Grade & polish</span>
                 </Link>
               </div>
             </div>
