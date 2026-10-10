@@ -181,7 +181,7 @@ function Dashboard() {
       <div className="relative md:px-16">
         <section className="relative overflow-hidden rounded-3xl border bg-hero px-14 py-8 md:px-16 md:py-12" aria-label="Featured quest">
         <div className="relative z-10 max-w-xl md:max-w-[46%]">
-          <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-foreground/70"><span className="h-1.5 w-1.5 rounded-full bg-foreground/60" />{featured ? `Today's featured quest · ${featured.category}` : "Today's featured quest"}</p>
+          <p className="flex items-center gap-2 whitespace-nowrap text-xs font-semibold uppercase tracking-[0.2em] text-foreground/70"><span className="h-1.5 w-1.5 rounded-full bg-foreground/60" />{featured ? `Today's featured quest · ${featured.category}` : "Today's featured quest"}</p>
           {featured ? (
             <motion.h2 key={featured.id} initial={reducedMotion ? false : { opacity: 0, x: -16 * dir }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.3 }} className="mt-5 text-4xl font-bold leading-[1.08] text-balance md:text-5xl">{featured.title}</motion.h2>
           ) : (
