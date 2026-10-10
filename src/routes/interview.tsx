@@ -236,7 +236,7 @@ function Interview() {
             <p className="text-sm text-muted-foreground">Find a posting that matches the role you want and paste the full text.</p>
           </div>
           <Textarea value={jd} onChange={(e) => setJd(e.target.value)} rows={10} placeholder="Senior Frontend Engineer — We're looking for 4+ years of React and TypeScript…" />
-          <Button onClick={analyze} disabled={busy || jd.trim().length < 40}>
+          <Button onClick={() => analyze()} disabled={busy || jd.trim().length < 40}>
             {busy && <Loader2 className="animate-spin" />} Analyze job
           </Button>
         </section>
