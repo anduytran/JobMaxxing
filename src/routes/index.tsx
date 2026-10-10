@@ -143,7 +143,7 @@ function Dashboard() {
     return () => { live = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sceneKey]);
-  useEffect(() => { [gymDesktop.url, gymMobile.url, stageDesktop.url, stageMobile.url, meadowDesktop.url, meadowMobile.url, ...Object.values(MAX_POSES)].forEach((s) => { const i = new Image(); i.src = s; }); }, []);
+  useEffect(() => { [gymDesktop.url, gymMobile.url, stageDesktop.url, stageMobile.url, meadowDesktop.url, meadowMobile.url, billboardDesktop.url, billboardMobile.url, openToWork.url, ...Object.values(MAX_POSES)].forEach((s) => { const i = new Image(); i.src = s; }); }, []);
   const sceneReady = readyKey === sceneKey;
   const featLink = QUEST_LINK[featKey] ?? "/quests";
   const scene = SCENES[featKey] ?? (featKey === "setup" ? SCENES["resume"] : undefined) ?? DEFAULT_SCENE;
@@ -218,6 +218,16 @@ function Dashboard() {
           </div>
           <motion.div key={featured?.id ?? "none"} initial={reducedMotion ? false : { opacity: 0, x: 28 * dir }} animate={sceneReady ? { opacity: 1, x: 0 } : { opacity: 0, x: reducedMotion ? 0 : 28 * dir }} transition={{ duration: 0.45 }} className="pointer-events-none absolute inset-x-0 bottom-14 flex h-[28svh] items-end justify-center md:bottom-[12%] md:h-[32svh]">
             <div className="relative h-[clamp(160px,28svh,400px)] w-[clamp(160px,28svh,400px)]">
+              {featKey === "branding" && (
+                <img
+                  src={openToWork.url}
+                  alt=""
+                  aria-hidden
+                  draggable={false}
+                  className="absolute left-1/2 top-1/2 h-[135%] w-[135%] -translate-x-1/2 -translate-y-1/2 object-contain"
+                  style={{ maskImage: "radial-gradient(closest-side, black 62%, transparent 78%)", WebkitMaskImage: "radial-gradient(closest-side, black 62%, transparent 78%)" }}
+                />
+              )}
               <div className="mascot-float relative h-full w-full"><img key={featArt} src={featArt} alt={featured ? `Max ready for: ${featured.title}` : "Max with a microphone, ready to interview you"} width={816} height={816} decoding="sync" draggable={false} className="h-full w-full object-contain" /></div>
             </div>
           </motion.div>
