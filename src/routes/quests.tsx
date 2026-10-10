@@ -9,6 +9,8 @@ export const Route = createFileRoute("/quests")({
       { name: "description", content: "Complete career quests to earn XP and level up." },
       { property: "og:title", content: "Quests — JobMaxxing" },
       { property: "og:description", content: "Complete career quests to earn XP and level up." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: Quests,
