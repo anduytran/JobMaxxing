@@ -89,7 +89,7 @@ const DEFAULT_SCENE: Scene = {
 // Original uploaded scenes fill the entire featured screen; portrait art swaps on mobile.
 function sceneSources(kind: string) {
   if (kind === "interview" || kind === "branding" || kind === "social") {
-    return { desktop: stageDesktop.url, mobile: stageMobile.url };
+    return { desktop: gymDesktop.url, mobile: gymMobile.url }; // TEMP-PROBE
   }
   if (kind === "skills") return { desktop: gymDesktop.url, mobile: gymMobile.url };
   return { desktop: meadowDesktop.url, mobile: meadowMobile.url };
