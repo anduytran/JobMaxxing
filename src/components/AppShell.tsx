@@ -7,7 +7,8 @@ import {
 import { useState, type ReactNode } from "react";
 import { useGame, levelTitle } from "@/lib/game";
 import { cn } from "@/lib/utils";
-import mascot from "@/assets/mascot.png";
+import mascotAsset from "@/assets/mascot.png.asset.json";
+const mascot = mascotAsset.url;
 import { Button } from "@/components/ui/button";
 
 type Item = { to: string; label: string; icon: typeof LayoutGrid; badge?: string };

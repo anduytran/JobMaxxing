@@ -7,11 +7,15 @@ import { Button } from "@/components/ui/button";
 import { useEffect, useMemo, useState } from "react";
 import { getLatestResumeReview } from "@/lib/resume.functions";
 import type { StoredReview } from "@/lib/resume";
-import maxResume from "@/assets/max-resume.png";
-import maxInterview from "@/assets/max-interview.png";
-import maxSkills from "@/assets/max-skills.png";
+import maxResumeAsset from "@/assets/max-resume.png.asset.json";
+import maxInterviewAsset from "@/assets/max-interview.png.asset.json";
+import maxSkillsAsset from "@/assets/max-skills.png.asset.json";
 import maxHunt from "@/assets/max-hunt.png";
 import maxBranding from "@/assets/max-branding.png";
+
+const maxResume = maxResumeAsset.url;
+const maxInterview = maxInterviewAsset.url;
+const maxSkills = maxSkillsAsset.url;
 
 const MAX_ART: Record<string, string> = { setup: maxResume, resume: maxResume, interview: maxInterview, skills: maxSkills, hunt: maxHunt, branding: maxBranding, social: maxBranding };
 const QUEST_LINK: Record<string, "/setup" | "/interview" | "/quests" | "/skills" | "/market"> = { setup: "/setup", resume: "/setup", interview: "/interview", skills: "/skills", hunt: "/market" };
