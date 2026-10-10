@@ -60,7 +60,7 @@ function Interview() {
 
   useEffect(() => { stream.current?.getVideoTracks().forEach((t) => (t.enabled = cam)); }, [cam]);
   useEffect(() => { stream.current?.getAudioTracks().forEach((t) => (t.enabled = mic)); }, [mic]);
-  useEffect(() => { setMsgs([{ from: "ai", text: qs[0] }]); setQi(0); }, [roast]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { setMsgs([{ from: "ai", text: qs[0] ?? "" }]); setQi(0); }, [roast]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     const t = setInterval(() => setEye((e) => Math.max(60, Math.min(98, e + (Math.random() * 10 - 5)))), 1200);
     return () => clearInterval(t);
@@ -69,7 +69,7 @@ function Interview() {
   const answer = (a: string) => {
     if (!a.trim()) return;
     const next = qi + 1;
-    const reply = next < qs.length ? qs[next] : roast ? "That's all. I've seen worse. Barely. Hit End Interview." : "Great, that wraps it up! Click End Interview for your report.";
+    const reply = next < qs.length ? (qs[next] ?? "") : roast ? "That's all. I've seen worse. Barely. Hit End Interview." : "Great, that wraps it up! Click End Interview for your report.";
     setMsgs((m) => [...m, { from: "me", text: a }, { from: "ai", text: reply }]);
     setQi(next);
     setText("");

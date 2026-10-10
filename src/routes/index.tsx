@@ -75,7 +75,7 @@ function Dashboard() {
         <h2 className="mb-4 text-lg font-semibold">Recent Achievements</h2>
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
           {ACHIEVEMENTS.map((a, i) => {
-            const Icon = ICONS[i];
+            const Icon = ICONS[i] ?? Trophy;
             return (
               <motion.div key={a.id} whileHover={{ y: -4 }} className="flex items-center gap-3 rounded-lg border bg-secondary/40 p-3">
                 <div className="grid h-10 w-10 place-items-center rounded-full border border-accent/60 bg-accent/15 text-accent"><Icon className="h-5 w-5" /></div>
