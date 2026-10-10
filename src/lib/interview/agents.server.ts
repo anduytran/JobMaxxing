@@ -345,7 +345,7 @@ function normalizeReview(ai: any, source: "raia" | "fallback"): ResumeReview | n
         applied: false,
       };
     })
-    .filter((s) => (seen.has(s.id) ? false : (seen.add(s.id), true)));
+    .filter((s: any) => (seen.has(s.id) ? false : (seen.add(s.id), true)));
   const f = ai?.fields ?? {};
   const experience = (Array.isArray(f.experience) ? f.experience : [])
     .slice(0, 12)
@@ -353,14 +353,14 @@ function normalizeReview(ai: any, source: "raia" | "fallback"): ResumeReview | n
       const e = raw ?? {};
       return { company: str(e.company, 120), role: str(e.role, 120), start: str(e.start, 20), end: str(e.end, 20) };
     })
-    .filter((e) => e.company || e.role);
+    .filter((e: any) => e.company || e.role);
   const education = (Array.isArray(f.education) ? f.education : [])
     .slice(0, 8)
     .map((raw: any) => {
       const e = raw ?? {};
       return { school: str(e.school, 140), degree: str(e.degree, 140), year: str(e.year, 12) };
     })
-    .filter((e) => e.school || e.degree);
+    .filter((e: any) => e.school || e.degree);
   return {
     grade,
     score,
