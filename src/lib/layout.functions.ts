@@ -14,12 +14,12 @@ const num = (v: unknown, min: number, max: number, d: number) => {
   return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : d;
 };
 const normalize = (v: Record<string, unknown> = {}): SceneLayout => ({
-  maxX: num(v.maxX, -600, 600, 0),
-  maxY: num(v.maxY, -400, 400, 0),
-  maxSize: num(v.maxSize, 80, 480, 240),
-  bgX: num(v.bgX, -800, 800, 0),
-  bgY: num(v.bgY, -600, 600, 0),
-  bgScale: num(v.bgScale, 0.3, 3, 1),
+  maxX: num(v["maxX"], -600, 600, 0),
+  maxY: num(v["maxY"], -400, 400, 0),
+  maxSize: num(v["maxSize"], 80, 480, 240),
+  bgX: num(v["bgX"], -800, 800, 0),
+  bgY: num(v["bgY"], -600, 600, 0),
+  bgScale: num(v["bgScale"], 0.3, 3, 1),
 });
 
 export const getFeaturedLayouts = createServerFn({ method: "GET" }).handler(async () => {
