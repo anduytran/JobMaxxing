@@ -2,7 +2,7 @@ import { Link, useLocation, useRouter, useRouterState } from "@tanstack/react-ro
 import { signOut } from "@/lib/auth.functions";
 import { AnimatePresence, motion, MotionConfig, useReducedMotion } from "framer-motion";
 import {
-  LayoutGrid, FileText, Mic, Radar, LineChart, Network, UsersRound, Swords, Settings, Menu, LogOut, Zap, Flame, CircleHelp, X, Store, Crosshair,
+  LayoutGrid, FileText, Mic, Radar, LineChart, Network, UsersRound, Swords, Settings, Menu, LogOut, Zap, Flame, CircleHelp, X, Store,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { useGame, levelTitle } from "@/lib/game";
@@ -21,8 +21,7 @@ const RIGHT: Item[] = [
   { to: "/progress", label: "Career", icon: LineChart },
   { to: "/store", label: "Store", icon: Store },
 ];
-const LOCK_IN: Item = { to: "/lock-in", label: "Lock In", icon: Crosshair };
-const ITEMS: Item[] = [...LEFT, LOCK_IN, ...RIGHT];
+const ITEMS: Item[] = [...LEFT, ...RIGHT];
 
 export function Mascot({ className }: { className?: string }) {
   return <Max className={className} />;
@@ -57,11 +56,6 @@ export function AppShell({ children }: { children: ReactNode }) {
 
           <nav className="hidden flex-1 items-stretch justify-center gap-1 self-stretch lg:flex" aria-label="Main">
             {LEFT.map((it) => <TopTab key={it.to} item={it} active={loc.pathname === it.to} />)}
-            <Link to={LOCK_IN.to}
-              className={cn("relative mx-3 -mb-px flex items-center px-14 font-display text-base font-bold uppercase tracking-[0.25em] transition-colors [clip-path:polygon(50%_0,100%_50%,50%_100%,0_50%)]",
-                loc.pathname === LOCK_IN.to ? "bg-primary text-primary-foreground" : "bg-foreground/90 text-background hover:bg-primary hover:text-primary-foreground")}>
-              {LOCK_IN.label}
-            </Link>
             {RIGHT.map((it) => <TopTab key={it.to} item={it} active={loc.pathname === it.to} />)}
           </nav>
 
