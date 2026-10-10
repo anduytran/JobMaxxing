@@ -7,8 +7,6 @@ import {
 import { useState, type ReactNode } from "react";
 import { useGame, levelTitle } from "@/lib/game";
 import { cn } from "@/lib/utils";
-import mascotAsset from "@/assets/mascot.png.asset.json";
-const mascot = mascotAsset.url;
 import { Button } from "@/components/ui/button";
 
 type Item = { to: string; label: string; icon: typeof LayoutGrid; badge?: string };
@@ -32,6 +30,9 @@ const GROUPS: { label: string; items: Item[] }[] = [
 const ALL = GROUPS.flatMap((g) => g.items).concat({ to: "/settings", label: "Settings", icon: Settings });
 
 export function Mascot({ className }: { className?: string }) {
+  return <Max className={className} />;
+}
+function _unused() {
   return <img src={mascot} alt="" width={816} height={816} className={cn("mascot-personality object-contain", className)} />;
 }
 
