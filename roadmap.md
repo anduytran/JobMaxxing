@@ -1,5 +1,9 @@
 # Roadmap
 
+## Max reference redraw
+- [x] Redraw branding, wave, resume, interview, and skills poses as clean vectors from the supplied references.
+- [x] Replace the five traced drawings everywhere, including sign-in, and check their details in browser renders.
+
 ## Featured quest polish
 - [x] Make the gym floor full-width and unify pale tracing colors without altering equipment; vector rendering checked.
 - [x] Place quest arrows at the left and right card edges; source checks and build passed.
