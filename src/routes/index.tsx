@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { motion, useReducedMotion } from "framer-motion";
-import { ArrowRight, Check, ChevronRight, Clock, FileText, Flame, Mic, Users, Zap } from "lucide-react";
+import { ArrowRight, Check, ChevronRight, Clock, Code2, FileText, Flame, Mic, Radar, Sparkles, Users, Zap } from "lucide-react";
 import { levelTitle, useGame, XP_PER_LEVEL } from "@/lib/game";
 import { Mascot } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,46 @@ export const Route = createFileRoute("/")({
 });
 
 const CAT_ICON: Record<string, typeof FileText> = { resume: FileText, interview: Mic, social: Users };
+
+// Per-type featured-quest scenes: tinted backdrop, floating icon and prop chips.
+type Scene = { icon: typeof FileText; bg: string; ring: string; chip: string; props: [string, string][]; phrase: string };
+const SCENES: Record<string, Scene> = {
+  skills: {
+    icon: Code2, bg: "bg-success/15", ring: "border-success/30", chip: "text-success",
+    props: [["</>", "right-72 top-40 -rotate-6"], ["{ algo }", "right-52 bottom-28 rotate-3"], ["O(n)", "right-80 bottom-44 -rotate-3"]],
+    phrase: "Sharpen the blade.",
+  },
+  interview: {
+    icon: Mic, bg: "bg-primary/15", ring: "border-primary/30", chip: "text-primary",
+    props: [["Q&A", "right-72 top-40 -rotate-6"], ["STAR method", "right-52 bottom-28 rotate-3"], ["Tell me about…", "right-80 bottom-44 -rotate-3"]],
+    phrase: "Talk it out.",
+  },
+  resume: {
+    icon: FileText, bg: "bg-accent/20", ring: "border-accent/40", chip: "text-accent-foreground",
+    props: [["ATS-friendly", "right-72 top-40 -rotate-6"], ["Impact verbs", "right-52 bottom-28 rotate-3"], ["+1 metric", "right-80 bottom-44 -rotate-3"]],
+    phrase: "Polish your story.",
+  },
+  hunt: {
+    icon: Radar, bg: "bg-success/15", ring: "border-success/30", chip: "text-success",
+    props: [["Remote", "right-72 top-40 -rotate-6"], ["92% match", "right-52 bottom-28 rotate-3"], ["New role", "right-80 bottom-44 -rotate-3"]],
+    phrase: "Scan the horizon.",
+  },
+  branding: {
+    icon: Users, bg: "bg-primary/15", ring: "border-primary/30", chip: "text-primary",
+    props: [["Coffee chat", "right-72 top-40 -rotate-6"], ["LinkedIn", "right-52 bottom-28 rotate-3"], ["Dap!", "right-80 bottom-44 -rotate-3"]],
+    phrase: "Grow your crew.",
+  },
+  social: {
+    icon: Users, bg: "bg-primary/15", ring: "border-primary/30", chip: "text-primary",
+    props: [["Coffee chat", "right-72 top-40 -rotate-6"], ["LinkedIn", "right-52 bottom-28 rotate-3"], ["Dap!", "right-80 bottom-44 -rotate-3"]],
+    phrase: "Grow your crew.",
+  },
+};
+const DEFAULT_SCENE: Scene = {
+  icon: Sparkles, bg: "bg-accent/20", ring: "border-accent/40", chip: "text-accent-foreground",
+  props: [["Small win", "right-72 top-40 -rotate-6"], ["Momentum", "right-52 bottom-28 rotate-3"], ["+XP", "right-80 bottom-44 -rotate-3"]],
+  phrase: "One step closer.",
+};
 
 function Dashboard() {
   const { name, level, levelXp, xp, quests, completeQuest, details } = useGame();
