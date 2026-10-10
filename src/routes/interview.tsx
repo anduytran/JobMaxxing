@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Bot, Flame, Loader2, Mic, Send, Square, Timer, Volume2, VolumeX } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { SkillText } from "@/components/skill-text";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
@@ -179,13 +180,13 @@ function Interview() {
           {job.qualifications.length > 0 && (
             <div>
               <div className="mb-2 font-mono text-xs text-muted-foreground">QUALIFICATIONS</div>
-              <ul className="list-disc space-y-1 pl-5 text-sm">{job.qualifications.map((q) => <li key={q}>{q}</li>)}</ul>
+              <ul className="list-disc space-y-1 pl-5 text-sm">{job.qualifications.map((q) => <li key={q}><SkillText text={q} skills={job.skills} /></li>)}</ul>
             </div>
           )}
           {job.specialNotes.length > 0 && (
             <div>
               <div className="mb-2 font-mono text-xs text-muted-foreground">SPECIAL NOTES</div>
-              <ul className="list-disc space-y-1 pl-5 text-sm text-accent">{job.specialNotes.map((n) => <li key={n}>{n}</li>)}</ul>
+              <ul className="list-disc space-y-1 pl-5 text-sm text-accent">{job.specialNotes.map((n) => <li key={n}><SkillText className="text-accent" text={n} skills={job.skills} /></li>)}</ul>
             </div>
           )}
           <div className="grid gap-4 border-t pt-4 md:grid-cols-2">
