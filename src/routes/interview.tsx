@@ -46,7 +46,6 @@ function Interview() {
   const [length, setLength] = useState<InterviewLength>("standard");
   const [job, setJob] = useState<ParsedJob | null>(null);
   const [mine, setMine] = useState<string[]>([]);
-  const [confirmed, setConfirmed] = useState(false);
   const toggleMine = (s: string) => setMine((m) => (m.includes(s) ? m.filter((x) => x !== s) : [...m, s]));
   const [questions, setQuestions] = useState<InterviewQuestion[]>([]);
   const [qi, setQi] = useState(0);
@@ -80,7 +79,7 @@ function Interview() {
     setBusy(true);
     try {
       setJob(await parseJobDescription({ data: { jd } }));
-      setMine([]); setConfirmed(false); setStage("review");
+      setMine([]); setStage("review");
     } catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
   };
 
@@ -196,13 +195,10 @@ function Interview() {
               <ul className="list-disc space-y-1 pl-5 text-sm text-accent">{job.specialNotes.map((n) => <li key={n}><SkillText className="text-accent" text={n} skills={mine} /></li>)}</ul>
             </div>
           )}
-          <label className="flex items-center gap-2 border-t pt-4 text-sm">
-            <input type="checkbox" className="h-4 w-4 accent-[var(--primary)]" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} />
-            This information looks correct
-          </label>
+          <p className="border-t pt-4 text-sm text-muted-foreground">Does this look right? Continuing confirms the details.</p>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => setStage("setup")}>Back</Button>
-            <Button onClick={() => setStage("options")} disabled={!confirmed}>Continue</Button>
+            <Button onClick={() => setStage("options")}>Looks correct — Continue</Button>
           </div>
         </section>
       )}
