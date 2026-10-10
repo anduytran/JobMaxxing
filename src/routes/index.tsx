@@ -218,17 +218,17 @@ function Dashboard() {
           </div>
           <motion.div key={featured?.id ?? "none"} initial={reducedMotion ? false : { opacity: 0, x: 28 * dir }} animate={sceneReady ? { opacity: 1, x: 0 } : { opacity: 0, x: reducedMotion ? 0 : 28 * dir }} transition={{ duration: 0.45 }} className="pointer-events-none absolute inset-x-0 bottom-14 flex h-[28svh] items-end justify-center md:bottom-[12%] md:h-[32svh]">
             <div className="relative h-[clamp(160px,28svh,400px)] w-[clamp(160px,28svh,400px)]">
+              <div className="mascot-float relative h-full w-full"><img key={featArt} src={featArt} alt={featured ? `Max ready for: ${featured.title}` : "Max with a microphone, ready to interview you"} width={816} height={816} decoding="sync" draggable={false} className="h-full w-full object-contain" /></div>
               {featKey === "branding" && (
                 <img
                   src={openToWork.url}
                   alt=""
                   aria-hidden
                   draggable={false}
-                  className="absolute left-1/2 top-1/2 h-[185%] w-[185%] -translate-x-1/2 -translate-y-1/2 object-contain"
+                  className="absolute left-1/2 top-1/2 z-10 h-[185%] w-[185%] -translate-x-1/2 -translate-y-1/2 object-contain"
                   style={{ maskImage: "radial-gradient(closest-side, black 82%, transparent 97%)", WebkitMaskImage: "radial-gradient(closest-side, black 82%, transparent 97%)" }}
                 />
               )}
-              <div className="mascot-float relative h-full w-full"><img key={featArt} src={featArt} alt={featured ? `Max ready for: ${featured.title}` : "Max with a microphone, ready to interview you"} width={816} height={816} decoding="sync" draggable={false} className="h-full w-full object-contain" /></div>
             </div>
           </motion.div>
           <aside aria-label="Quick overview" className="absolute right-20 top-1/2 z-10 hidden w-72 -translate-y-1/2 space-y-3 lg:block xl:right-24">
