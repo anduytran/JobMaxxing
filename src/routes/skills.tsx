@@ -38,7 +38,7 @@ function Page() {
         <p className="px-8 pt-3 text-muted-foreground md:px-12">Unlock new skills by completing quests and interview practice.</p>
         <div className="grid gap-5 px-8 py-8 md:grid-cols-3 md:px-12">
           {TREE.map((t) => (
-            <div key={t.name} className={cn("flex flex-col items-center rounded-2xl px-6 py-12 text-center", t.open ? "bg-success/10" : "bg-muted/60")}>
+            <div key={t.name} className={cn("hover-lift flex flex-col items-center rounded-2xl px-6 py-12 text-center", t.open ? "bg-success/10" : "bg-muted/60")}>
               {t.open
                 ? <Network className="h-8 w-8 text-success" strokeWidth={1.5} />
                 : <ShieldCheck className="h-8 w-8 text-muted-foreground" strokeWidth={1.5} />}

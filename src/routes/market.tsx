@@ -33,14 +33,14 @@ function Market() {
         <PanelHead title="Make the most of job radar" level={level} />
         <div className="px-8 pb-10 pt-6 md:px-12">
           {JOBS.map((j) => (
-            <div key={j.company + j.title} className="flex items-center gap-4 border-t py-6 first:border-t-0">
-              <div className="grid h-12 w-12 place-items-center rounded-xl border text-xl font-semibold">{j.company[0]}</div>
+            <div key={j.company + j.title} className="-mx-3 flex items-center gap-4 rounded-xl border-t px-3 py-6 transition-colors first:border-t-0 hover:bg-muted/60">
+              <div className="grid h-12 w-12 place-items-center rounded-xl border text-xl font-semibold transition-transform hover:scale-110">{j.company[0]}</div>
               <div className="flex-1">
                 <div className="text-lg font-medium">{j.title}</div>
                 <div className="text-sm text-muted-foreground">{j.company} · Remote · {j.match}% profile match</div>
               </div>
               <button onClick={() => nav({ to: "/interview" })}
-                className="flex items-center gap-3 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground hover:opacity-90">
+                className="hover-pop flex items-center gap-3 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground hover:opacity-90">
                 View role <ArrowRight className="h-4 w-4" />
               </button>
             </div>

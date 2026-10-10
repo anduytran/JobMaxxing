@@ -190,7 +190,7 @@ function Interview() {
       {stage === "intro" && (
         <section className="panel">
           <div className="flex flex-col items-center px-6 py-24 text-center">
-            <Mic className="h-12 w-12 text-primary" strokeWidth={1.5} />
+            <Mic className="animate-bob h-12 w-12 text-primary" strokeWidth={1.5} />
             <h2 className="mt-8 text-3xl font-bold md:text-4xl">Confidence comes with practice.</h2>
             <p className="mt-4 max-w-lg text-muted-foreground">Practice personalized technical or behavioral questions and get a sample feedback report.</p>
             <Button size="lg" className="mt-8 px-7 py-6 text-base" onClick={() => setStage("setup")}>Start practicing</Button>
