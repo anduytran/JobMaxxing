@@ -84,8 +84,9 @@ function SceneBackdrop({ kind }: { kind: string }) {
   }
   if (kind === "skills") {
     return (
-      <div className="absolute inset-0 overflow-hidden">
-        <img src={gymScene} alt="" aria-hidden style={{ backgroundColor: "#FDF7E7" /* matches the gym art wall */ }} className="absolute inset-0 h-full w-full object-contain object-bottom" draggable={false} />
+      <div className="absolute inset-0 overflow-hidden bg-gym-wall [container-type:inline-size]">
+        <div className="absolute inset-x-0 bottom-0 h-[min(25cqw,25%)] bg-gym-floor" />
+        <img src={gymScene} alt="" aria-hidden className="absolute inset-0 h-full w-full object-contain object-bottom" draggable={false} />
       </div>
     );
   }
@@ -178,7 +179,11 @@ function Dashboard() {
         </div>
       </div>
 
-      <section className="relative overflow-hidden rounded-3xl border bg-hero p-8 md:p-12">
+      <section className="relative overflow-hidden rounded-3xl border bg-hero px-14 py-8 md:px-16 md:py-12" aria-label="Featured quest">
+        {featured && openCount > 1 && (<>
+          <Button variant="outline" size="icon" className="absolute left-2 top-1/2 z-20 h-10 w-10 -translate-y-1/2 rounded-full bg-card md:left-3" onClick={() => shift(-1)} aria-label="Previous quest" title="Previous quest"><ChevronLeft className="h-5 w-5" /></Button>
+          <Button variant="outline" size="icon" className="absolute right-2 top-1/2 z-20 h-10 w-10 -translate-y-1/2 rounded-full bg-card md:right-3" onClick={() => shift(1)} aria-label="Next quest" title="Next quest"><ChevronRight className="h-5 w-5" /></Button>
+        </>)}
         <div className="relative z-10 max-w-xl md:max-w-[46%]">
           <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-foreground/70"><span className="h-1.5 w-1.5 rounded-full bg-foreground/60" />Your next chapter starts here</p>
           <h2 className="mt-5 text-4xl font-bold leading-tight md:text-5xl">You've got potential.<br />Let's put it to work.</h2>
@@ -186,11 +191,7 @@ function Dashboard() {
           {featured ? (<>
             <div className="mt-6 flex items-center justify-between gap-4">
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Today's featured quest · {featured.category}</p>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="icon" className="h-9 w-9 shrink-0 rounded-xl" onClick={() => shift(-1)} aria-label="Previous quest" title="Previous quest"><ChevronLeft className="h-4 w-4" /></Button>
-                <span className="min-w-12 text-center text-xs tabular-nums text-muted-foreground">{featIdx + 1} / {openCount}</span>
-                <Button variant="outline" size="icon" className="h-9 w-9 shrink-0 rounded-xl" onClick={() => shift(1)} aria-label="Next quest" title="Next quest"><ChevronRight className="h-4 w-4" /></Button>
-              </div>
+              <span className="min-w-12 shrink-0 text-center text-xs tabular-nums text-muted-foreground">{featIdx + 1} / {openCount}</span>
             </div>
             <motion.p key={featured.id} initial={reducedMotion ? false : { opacity: 0, x: -16 * dir }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.3 }} className="mt-1 text-2xl font-semibold">{featured.title}</motion.p>
             <div className="mt-6 flex flex-wrap items-center gap-3">

@@ -1,5 +1,9 @@
 # Roadmap
 
+## Featured quest polish
+- [ ] Make the gym floor full-width and unify pale tracing colors without altering equipment.
+- [ ] Place quest arrows at the left and right card edges and verify navigation.
+
 ## Motion and personality
 - [x] Add personable mascot interactions, staggered entrances, and tactile controls.
 - [x] Add XP celebration and contextual encouragement without changing saved data or workflows.

@@ -28,6 +28,8 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-success: var(--success);
   --color-hero: var(--hero);
+  --color-gym-wall: var(--gym-wall);
+  --color-gym-floor: var(--gym-floor);
   --color-lavender: var(--lavender);
   --color-roast: var(--roast);
   --color-destructive: var(--destructive);
@@ -89,6 +91,8 @@
   --glow: 0 1px 2px oklch(0.3 0.02 60 / 6%), 0 8px 24px -12px oklch(0.3 0.02 60 / 12%);
   --grid-line: transparent;
   --hero: oklch(0.945 0.015 115);
+  --gym-wall: #FCF6E6;
+  --gym-floor: #E3DCC6;
   --lavender: oklch(0.95 0.02 285);
   --shadow-hover: 0 14px 36px -14px oklch(0.3 0.02 60 / 22%);
   --shadow-control: 0 5px 12px -6px oklch(0.3 0.02 60 / 25%);
