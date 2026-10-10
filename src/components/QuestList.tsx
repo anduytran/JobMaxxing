@@ -16,7 +16,9 @@ export function QuestList({ limit, showDone = true }: { limit?: number; showDone
           </button>
           <div className="min-w-0 flex-1">
             <div className={cn("truncate text-sm", q.done && "line-through")}>{q.title}</div>
-            <div className="font-mono text-[10px] uppercase text-muted-foreground">{q.category}</div>
+            <div className="font-mono text-[10px] uppercase text-muted-foreground">
+              {q.category}{q.period !== "once" && <span className="ml-1 text-primary/80">· resets {q.period}</span>}
+            </div>
           </div>
           <span className="font-mono text-xs font-bold text-success">+{q.xp} XP</span>
         </motion.li>
