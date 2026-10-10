@@ -81,7 +81,7 @@ export function GameProvider({
     setLastGain({ amount: n, key: Date.now() });
     gainXpFn({ data: { amount: n, reason } }).then((res) => {
       if (rejected(res, () => { setXpState(prev); setLastGain(null); })) return;
-      if (typeof res.xp === "number") setXpState(res.xp);
+      if (res.ok && typeof res.xp === "number") setXpState(res.xp);
     });
   };
 
@@ -112,7 +112,7 @@ export function GameProvider({
           })
         )
           return;
-        if (typeof res.xp === "number") setXpState(res.xp);
+        if (res.ok && typeof res.xp === "number") setXpState(res.xp);
       });
     },
     addQuest: (q) => {

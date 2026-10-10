@@ -168,9 +168,9 @@ export const completeQuest = createServerFn({ method: "POST" })
                 (select xp from p)::int as xp`,
         [data.id, PROFILE_ID],
       );
-      const awarded = Number(rows[0]?.awarded ?? 0);
+      const awarded = Number(rows[0]?.["awarded"] ?? 0);
       if (awarded === 0) return { ok: true }; // already done — nothing to award
-      return { ok: true, xp: Number(rows[0]?.xp ?? 0) };
+      return { ok: true, xp: Number(rows[0]?.["xp"] ?? 0) };
     } catch (err) {
       return fail(err);
     }

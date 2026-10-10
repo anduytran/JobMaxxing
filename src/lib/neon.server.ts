@@ -6,8 +6,8 @@ const GATEWAY_URL = "https://connector-gateway.lovable.dev/neon";
 // Env is read per request inside the server boundary: module-scope reads are
 // undefined on Cloudflare Workers and can leak into the client bundle.
 function gatewayHeaders(): Record<string, string> {
-  const LOVABLE_API_KEY = process.env.LOVABLE_API_KEY;
-  const NEON_API_KEY = process.env.NEON_API_KEY; // connection key (lovc_…), not a Neon key
+  const LOVABLE_API_KEY = process.env["LOVABLE_API_KEY"];
+  const NEON_API_KEY = process.env["NEON_API_KEY"]; // connection key (lovc_…), not a Neon key
   if (!LOVABLE_API_KEY || !NEON_API_KEY) {
     throw new Error("Missing LOVABLE_API_KEY or NEON_API_KEY");
   }
@@ -59,7 +59,7 @@ const toBody = (q: string | Statement[], params: unknown[]) =>
 async function neonFetch(
   body: unknown,
   headers: Record<string, string>,
-  signal?: AbortSignal,
+  signal?: AbortSignal | null,
 ): Promise<NeonResponse> {
   const base = gatewayHeaders();
   const started = Date.now();
