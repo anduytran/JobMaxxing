@@ -77,7 +77,7 @@ function SceneBackdrop({ kind }: { kind: string }) {
     return (
       <div className="absolute inset-0 overflow-hidden">
         {/* Sized so the ring's hole (~25% of width, centre at ~41% height) frames the 160px Max at card centre. */}
-        <img src={billboardScene} alt="" aria-hidden className="absolute left-1/2 w-[620px] max-w-none -translate-x-1/2" style={{ top: "calc(50% - 254px)" }} draggable={false} />
+        <img src={billboardScene} alt="" aria-hidden className="absolute left-1/2 w-[620px] max-w-none -translate-x-1/2" style={{ top: "calc(50% - 250px)" }} draggable={false} />
       </div>
     );
   }
