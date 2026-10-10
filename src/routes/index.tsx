@@ -212,24 +212,24 @@ function Dashboard() {
             <h2 className="mt-5 min-h-[2.2em] break-words text-2xl font-bold leading-[1.1] sm:text-3xl"><span className="block">Practice your</span><span className="block">mock interview</span></h2>
           )}
           <p ref={subRef} className="mt-4 text-muted-foreground">{scene.blurb}</p>
-          {featured ? (<>
+          {featured ? (
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <Button asChild className="h-auto rounded-xl px-7 py-4 text-base"><Link to={featLink}>
                 Start this quest <ArrowRight className="h-5 w-5" />
               </Link></Button>
             </div>
-            {openCount > 1 && (
-              <div className="mt-5 flex flex-wrap items-center gap-2">
-                {open.slice(0, 9).map((q, i) => (
-                  <button key={q.id} type="button" onClick={() => jump(i)} aria-label={`Show quest: ${q.title}`} aria-current={i === featIdx} className={cn("h-2 rounded-full transition-all", i === featIdx ? "w-7 bg-primary" : "w-2 bg-muted-foreground/30 hover:bg-muted-foreground/60")} />
-                ))}
-                {openCount > 9 && <span className="text-xs text-muted-foreground">+{openCount - 9} more</span>}
-              </div>
-            )}
-          </>) : (
+          ) : (
             <Button asChild className="mt-8 h-auto rounded-xl px-7 py-4 text-base"><Link to="/interview" search={{ radar: undefined }}>
               Start a mock interview <ArrowRight className="h-5 w-5" />
             </Link></Button>
+          )}
+          {total > 1 && (
+            <div className="mt-5 flex flex-wrap items-center gap-2">
+              {Array.from({ length: Math.min(total, 10) }, (_, i) => (
+                <button key={i} type="button" onClick={() => jump(i)} aria-label={i === 0 ? "Show mock interview" : `Show quest: ${open[i - 1]?.title}`} aria-current={i === featIdx} className={cn("h-2 rounded-full transition-all", i === featIdx ? "w-7 bg-primary" : "w-2 bg-muted-foreground/30 hover:bg-muted-foreground/60")} />
+              ))}
+              {total > 10 && <span className="text-xs text-muted-foreground">+{total - 10} more</span>}
+            </div>
           )}
           <p className="mt-4 flex items-center gap-2 text-sm text-muted-foreground"><Clock className="h-4 w-4" />{featured ? `+${featured.xp} XP waiting for you` : "15 minutes to a more confident you"}</p>
         </div>
@@ -248,11 +248,11 @@ function Dashboard() {
           ))}
           <div className="absolute bottom-6 right-8 flex items-center gap-2 rounded-xl bg-card px-4 py-3 text-sm shadow-md"><Check className="h-4 w-4 text-success" />{scene.phrase}</div>
         </motion.div>
-          {featured && openCount > 1 && (
-            <span className="absolute bottom-4 left-1/2 z-20 -translate-x-1/2 rounded-full border bg-card/90 px-3 py-1 text-xs font-medium tabular-nums text-muted-foreground shadow-sm">{featIdx + 1} / {openCount}</span>
+          {total > 1 && (
+            <span className="absolute bottom-4 left-1/2 z-20 -translate-x-1/2 rounded-full border bg-card/90 px-3 py-1 text-xs font-medium tabular-nums text-muted-foreground shadow-sm">{featIdx + 1} / {total}</span>
           )}
         </section>
-        {featured && openCount > 1 && (<>
+        {total > 1 && (<>
           <Button variant="outline" size="icon" className="absolute left-0 top-1/2 z-20 h-10 w-10 -translate-y-1/2 rounded-full bg-card md:-left-5 xl:-left-12" onClick={() => shift(-1)} aria-label="Previous quest" title="Previous quest"><ChevronLeft className="h-5 w-5" /></Button>
           <Button variant="outline" size="icon" className="absolute right-0 top-1/2 z-20 h-10 w-10 -translate-y-1/2 rounded-full bg-card md:-right-5 xl:-right-12" onClick={() => shift(1)} aria-label="Next quest" title="Next quest"><ChevronRight className="h-5 w-5" /></Button>
         </>)}
