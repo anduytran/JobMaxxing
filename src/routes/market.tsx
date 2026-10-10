@@ -6,9 +6,9 @@ import { useGame } from "@/lib/game";
 export const Route = createFileRoute("/market")({
   head: () => ({
     meta: [
-      { title: "Job Radar — DevUp" },
+      { title: "Job Radar — JobMaxxing" },
       { name: "description", content: "Roles matched to your profile, refreshed as you grow." },
-      { property: "og:title", content: "Job Radar — DevUp" },
+      { property: "og:title", content: "Job Radar — JobMaxxing" },
       { property: "og:description", content: "Roles matched to your profile, refreshed as you grow." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

@@ -4,12 +4,12 @@ import type { ParsedJob } from "@/lib/interview/types";
 import { cn } from "@/lib/utils";
 
 const FULL_NOTICE: [string, string][] = [
-  ["No company affiliation", "DevUp is an independent practice tool. It is not affiliated with, authorized, endorsed by, sponsored by, or acting on behalf of the company named in your job description, and this interview is not conducted by, watched by, or shared with that company."],
+  ["No company affiliation", "JobMaxxing is an independent practice tool. It is not affiliated with, authorized, endorsed by, sponsored by, or acting on behalf of the company named in your job description, and this interview is not conducted by, watched by, or shared with that company."],
   ["You are talking to an AI", "The interviewer is an automated AI agent with a synthetic name and, if voice is on, a synthetic voice. It is not a recruiter, hiring manager, or any real person, and it has no access to the company's real interview process, questions, or interviewers."],
   ["Not a real interview or evaluation", "The questions, score, feedback, and XP are AI-generated practice estimates. They are not an employer assessment, a hiring decision, a job offer, or a prediction of how a real interview will go, and must not be presented to an employer as interview results."],
   ["Your job description is user-supplied", "The job text is entered by you and is not verified, licensed, or provided by the company. All company names, trademarks, and posting content remain the property of their respective owners and are used only to label your own practice session."],
-  ["Where your data goes", "The job text, your answers, and the transcript are sent to DevUp's AI providers for parsing, question generation, and grading, then saved to your DevUp account. Nothing is sent to the company. Don't enter personal details about other people."],
-  ["Voice features", "Speaking and hearing use your browser's built-in speech recognition and speech synthesis while the interview is open. DevUp does not record or store audio."],
+  ["Where your data goes", "The job text, your answers, and the transcript are sent to JobMaxxing's AI providers for parsing, question generation, and grading, then saved to your JobMaxxing account. Nothing is sent to the company. Don't enter personal details about other people."],
+  ["Voice features", "Speaking and hearing use your browser's built-in speech recognition and speech synthesis while the interview is open. JobMaxxing does not record or store audio."],
   ["AI can be wrong", "AI output may be inaccurate, incomplete, or biased. Treat it as practice, not as professional career, legal, or employment advice."],
 ];
 
@@ -23,7 +23,7 @@ export function InterviewDisclosure({ job, className }: { job: ParsedJob | null;
         <div className="space-y-1 text-sm">
           <p className="font-semibold">AI practice interview — no company affiliation</p>
           <p className="text-foreground/85">
-            {job?.title ? `The "${job.title}" interviewer` : "The interviewer"} is an AI, not a person or a recruiter. DevUp isn't
+            {job?.title ? `The "${job.title}" interviewer` : "The interviewer"} is an AI, not a person or a recruiter. JobMaxxing isn't
             affiliated with, endorsed by, or acting for the company in your job description, and nothing you say here is
             shared with them.
           </p>

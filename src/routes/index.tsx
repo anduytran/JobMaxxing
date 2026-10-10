@@ -7,9 +7,9 @@ import { Mascot } from "@/components/AppShell";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Dashboard — DevUp" },
+      { title: "Dashboard — JobMaxxing" },
       { name: "description", content: "Your career hub: level, XP, daily quests and your next power move." },
-      { property: "og:title", content: "DevUp — Your career, levelled up" },
+      { property: "og:title", content: "JobMaxxing — Your career, levelled up" },
       { property: "og:description", content: "Level up your job hunt with quests, XP and AI mock interviews." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

@@ -11,10 +11,10 @@ import { useGame } from "@/lib/game";
 export const Route = createFileRoute("/settings")({
   head: () => ({
     meta: [
-      { title: "Settings — DevUp" },
-      { name: "description", content: "Edit your DevUp profile and preferences." },
-      { property: "og:title", content: "Settings — DevUp" },
-      { property: "og:description", content: "Edit your DevUp profile and preferences." },
+      { title: "Settings — JobMaxxing" },
+      { name: "description", content: "Edit your JobMaxxing profile and preferences." },
+      { property: "og:title", content: "Settings — JobMaxxing" },
+      { property: "og:description", content: "Edit your JobMaxxing profile and preferences." },
     ],
   }),
   component: SettingsPage,

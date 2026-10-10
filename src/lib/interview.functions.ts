@@ -58,7 +58,7 @@ export const startLiveInterview = createServerFn({ method: "POST" })
     const user = await requireUser();
     const { startInterviewConversation } = await import("./interview/agents.server");
     const u = user as { id: string; name?: string; email?: string };
-    return startInterviewConversation({ ...data, userId: u.id, name: u.name ?? u.email?.split("@")[0] ?? "DevUp" });
+    return startInterviewConversation({ ...data, userId: u.id, name: u.name ?? u.email?.split("@")[0] ?? "Candidate" });
   });
 
 export const sendInterviewTurn = createServerFn({ method: "POST" })

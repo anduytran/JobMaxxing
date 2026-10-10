@@ -6,9 +6,9 @@ import { useGame } from "@/lib/game";
 export const Route = createFileRoute("/progress")({
   head: () => ({
     meta: [
-      { title: "Career Progress — DevUp" },
+      { title: "Career Progress — JobMaxxing" },
       { name: "description", content: "Track your level, XP and milestones over time." },
-      { property: "og:title", content: "Career Progress — DevUp" },
+      { property: "og:title", content: "Career Progress — JobMaxxing" },
       { property: "og:description", content: "Track your level, XP and milestones over time." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

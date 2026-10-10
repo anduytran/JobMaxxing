@@ -24,9 +24,9 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/interview")({
   head: () => ({
     meta: [
-      { title: "AI Mock Interview — DevUp" },
+      { title: "AI Mock Interview — JobMaxxing" },
       { name: "description", content: "Paste a real job post and run a timed AI mock interview, then get graded feedback and XP." },
-      { property: "og:title", content: "AI Mock Interview — DevUp" },
+      { property: "og:title", content: "AI Mock Interview — JobMaxxing" },
       { property: "og:description", content: "Job-specific AI mock interviews with graded feedback and XP rewards." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

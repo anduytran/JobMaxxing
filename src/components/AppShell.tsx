@@ -52,7 +52,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       )}>
         <Link to="/" className="mb-8 flex items-center gap-2 px-2">
           <Mascot className="h-10 w-10" />
-          <span className="font-display text-2xl font-bold">DevUp<span className="text-primary">.</span></span>
+          <span className="font-display text-2xl font-bold">JobMaxxing<span className="text-primary">.</span></span>
         </Link>
         <nav className="flex-1 space-y-6">
           {GROUPS.map((g, gi) => (

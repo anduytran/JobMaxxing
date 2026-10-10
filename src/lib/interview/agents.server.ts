@@ -235,7 +235,7 @@ export async function startInterviewConversation(opts: {
   const secret = key(ENV.questions);
   if (!secret) return null;
   try {
-    const [first = "DevUp", ...rest] = opts.name.trim().split(/\s+/);
+    const [first = "Candidate", ...rest] = opts.name.trim().split(/\s+/);
     const user = await raiaPost<{ id: string }>(secret, "/users", {
       firstName: first, lastName: rest.join(" ") || "Candidate", fkId: opts.userId, source: "devup",
     });
@@ -384,7 +384,7 @@ function normalizeReview(ai: any, source: "raia" | "fallback"): ResumeReview | n
 
 export async function reviewResume(text: string): Promise<ResumeReview> {
   const ai = await askRaia<Record<string, unknown>>(ENV.resume, text,
-    "You are the DevUp Resume Agent. Grade the resume below the way a recruiter would, then list the specific edits that would raise it. " +
+    "You are the JobMaxxing Resume Agent. Grade the resume below the way a recruiter would, then list the specific edits that would raise it. " +
       "Every suggestion must be something the candidate can act on now, and worth XP when they do it. " +
       `${RESUME_GUARDRAILS} ${RESUME_SCHEMA}\n\nRESUME:`,
     // A full read of a real resume is the slowest of these calls; measured 18-28 s
