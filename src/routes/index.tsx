@@ -20,6 +20,7 @@ import billboardMobile from "@/assets/quest-scenes/billboard-mobile.png.asset.js
 import openToWork from "@/assets/open-to-work.png.asset.json";
 
 import { questTitleLines } from "@/lib/quest-titles";
+import { ResetCountdown } from "@/components/ResetCountdown";
 import { ResumeScoreCard } from "@/components/ResumeScoreCard";
 import { XpCareerCard } from "@/components/DashboardProgressCards";
 
@@ -231,33 +232,42 @@ function Dashboard() {
               )}
             </div>
           </motion.div>
-          <aside aria-label="Quick overview" className="absolute right-20 top-1/2 z-10 hidden w-72 -translate-y-1/2 space-y-3 lg:block xl:right-24">
-            <div className="rounded-2xl border bg-card/90 p-4 text-card-foreground shadow-sm backdrop-blur">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Quests</p>
-                <Link to="/quests" className="text-xs font-medium text-primary hover:underline">View all</Link>
-              </div>
-              <div className="mt-3 grid grid-cols-2 gap-2 text-sm tabular-nums">
-                {(["daily", "weekly"] as const).map((p) => {
-                  const list = quests.filter((q) => q.period === p);
-                  return <div key={p} className="rounded-xl bg-muted/60 px-3 py-2"><span className="block text-xs capitalize text-muted-foreground">{p}</span><b>{list.filter((q) => q.done).length}/{list.length}</b></div>;
-                })}
-              </div>
-              <ul className="mt-3 space-y-2">
-                {open.slice(0, 3).map((q) => (
-                  <li key={q.id} className="flex items-center justify-between gap-2 text-sm"><span className="truncate">{q.title}</span><span className="shrink-0 text-xs font-semibold text-primary">+{q.xp}</span></li>
+          <aside aria-label="Quick overview" className="absolute right-0 top-1/2 z-10 hidden w-1/2 -translate-y-1/2 justify-center lg:flex">
+            <div className="w-80 max-w-[85%] overflow-hidden rounded-md border border-white/10 bg-black/45 text-white shadow-xl backdrop-blur-md">
+              <p className="border-b border-white/10 px-5 py-3 text-center text-xs font-bold uppercase tracking-[0.25em]">Missions</p>
+              <ul className="divide-y divide-white/10">
+                {[...quests.filter((q) => q.period === "daily"), ...quests.filter((q) => q.period === "weekly")].sort((a, b) => Number(a.done) - Number(b.done)).slice(0, 5).map((q) => (
+                  <li key={q.id}>
+                    <Link to="/quests" title={q.title} className="group flex items-center gap-3 px-5 py-3 hover:bg-white/5">
+                      <span className={cn("grid h-7 w-7 shrink-0 place-items-center border", q.done ? "border-success/50 bg-success/15 text-success" : "border-white/25 bg-white/5 text-white/80")}>{q.done ? <Check className="h-3.5 w-3.5" /> : <Zap className="h-3.5 w-3.5" />}</span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium">{q.title}</p>
+                        <div className="mt-1.5 h-1 bg-white/15"><div className={cn("h-full bg-success transition-all", q.done ? "w-full" : "w-0")} /></div>
+                      </div>
+                      <span className="shrink-0 text-xs font-semibold tabular-nums text-white/70">+{q.xp} XP</span>
+                    </Link>
+                  </li>
                 ))}
-                {open.length === 0 && <li className="flex items-center gap-2 text-sm text-muted-foreground"><Check className="h-4 w-4" />All caught up</li>}
+                {quests.length === 0 && <li className="px-5 py-4 text-sm text-white/60">No missions yet.</li>}
               </ul>
+              <div className="flex items-center justify-center gap-2 border-t border-white/10 px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-white/70">
+                <Clock className="h-3.5 w-3.5" />
+                <ResetCountdown period="daily" label="Daily expiration in" />
+              </div>
+              <p className="border-t border-white/10 bg-white/5 px-5 py-3 text-center text-xs font-bold uppercase tracking-[0.25em]">Featured modes</p>
+              <div className="divide-y divide-white/10">
+                <Link to="/interview" search={{ radar: undefined }} className="group flex items-center gap-4 px-5 py-4 hover:bg-white/5">
+                  <span className="grid h-10 w-10 place-items-center rounded-full border border-white/25 bg-white/10"><Mic className="h-5 w-5" /></span>
+                  <span className="flex-1 text-sm font-bold uppercase tracking-wider">AI Interview</span>
+                  <span className="text-xs text-white/60">~15 mins</span>
+                </Link>
+                <Link to="/setup" className="group flex items-center gap-4 px-5 py-4 hover:bg-white/5">
+                  <span className="grid h-10 w-10 place-items-center rounded-full border border-white/25 bg-white/10"><FileText className="h-5 w-5" /></span>
+                  <span className="flex-1 text-sm font-bold uppercase tracking-wider">Resume Lab</span>
+                  <span className="text-xs text-white/60">Grade & polish</span>
+                </Link>
+              </div>
             </div>
-            <Link to="/interview" search={{ radar: undefined }} className="hover-lift flex items-center gap-3 rounded-2xl border bg-card/90 p-4 text-card-foreground backdrop-blur">
-              <span className="grid h-10 w-10 place-items-center rounded-xl bg-primary/15 text-primary"><Mic className="h-5 w-5" /></span>
-              <span className="flex-1 font-semibold">Interview</span><ArrowRight className="h-4 w-4 text-muted-foreground" />
-            </Link>
-            <Link to="/setup" className="hover-lift flex items-center gap-3 rounded-2xl border bg-card/90 p-4 text-card-foreground backdrop-blur">
-              <span className="grid h-10 w-10 place-items-center rounded-xl bg-accent/20 text-accent-foreground"><FileText className="h-5 w-5" /></span>
-              <span className="flex-1 font-semibold">Resume Lab</span><ArrowRight className="h-4 w-4 text-muted-foreground" />
-            </Link>
           </aside>
           {total > 1 && (
             <span className="absolute bottom-5 left-1/2 z-20 -translate-x-1/2 rounded-full border bg-card/90 px-3 py-1 text-xs font-medium tabular-nums text-card-foreground shadow-sm">{featIdx + 1} / {total}</span>
