@@ -23,7 +23,7 @@ export function XpCareerCard({ xp, level, levelXp, lastGain, title }: { xp: numb
   const nextTitle = levelTitle(level + 1);
   const titleChanges = currentTitle !== nextTitle;
   const toNext = (XP_PER_LEVEL - levelXp).toLocaleString();
-  return <Card title="Level & XP" icon={<Compass className="h-5 w-5 shrink-0" />}>
+  return <Card title="Career" icon={<Compass className="h-5 w-5 shrink-0" />}>
     <div className="flex flex-wrap items-center gap-6">
       <div className="relative h-32 w-32 shrink-0"><svg viewBox="0 0 100 100" aria-hidden="true" className="h-full w-full -rotate-90"><circle cx="50" cy="50" r="44" fill="none" stroke="var(--muted)" strokeWidth="5" /><motion.circle cx="50" cy="50" r="44" fill="none" stroke="var(--success)" strokeWidth="5" strokeLinecap="round" strokeDasharray={276.5} initial={reduced ? false : { strokeDashoffset: 276.5 }} animate={{ strokeDashoffset: 276.5 * (1 - levelXp / XP_PER_LEVEL) }} transition={{ duration: reduced ? 0 : 0.7 }} /></svg><div className="absolute inset-0 grid place-content-center text-center"><span className="text-xs text-muted-foreground">LEVEL</span><span className="text-4xl font-bold tabular-nums">{level}</span><span className="max-w-[7rem] truncate text-xs font-semibold">{currentTitle}</span></div></div>
       <div className="min-w-0 flex-1">
