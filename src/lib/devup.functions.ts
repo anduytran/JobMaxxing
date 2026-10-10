@@ -6,12 +6,14 @@ import { currentUser, requireUser } from "./auth.server";
 // Shared shapes
 // ---------------------------------------------------------------------------
 
+export type QuestPeriod = "once" | "daily" | "weekly";
 export type Quest = {
   id: string;
   title: string;
   xp: number;
   category: string;
   done: boolean;
+  period: QuestPeriod;
 };
 
 export type StudentInfo = { school?: string; degree?: string; major?: string; gradYear?: string };
@@ -29,6 +31,7 @@ export type GameState = {
   title: string;
   xp: number;
   roast: boolean;
+  reducedMotion: boolean;
   quests: Quest[];
 };
 
@@ -73,19 +76,37 @@ export const loadGame = createServerFn({ method: "GET" }).handler(
       const user = await currentUser();
       if (!user) return { ok: false, error: "Not signed in", signedOut: true };
       const PROFILE_ID = user.id;
-      const { results } = await neonQuery<{ results: any[] }>([
+      // Reset schedules live in Neon: daily quests flip back at midnight UTC,
+      // weekly quests at the start of the week. The resets and the reads run
+      // as one transaction, so a reset can never be missed or half-applied.
+      const { results } = await neonExecute<{ results: any[] }>([
         {
           query:
-            "select name, title, xp, roast, skills, student, job_prefs, resume from public.devup_profile where id = $1 limit 1",
+            "update public.devup_quest set done = false, completed_at = null " +
+            "where user_id = $1 and period = 'daily' and done and completed_at < date_trunc('day', now())",
           params: [PROFILE_ID],
         },
         {
           query:
-            "select id, title, xp, category, done from public.devup_quest where user_id = $1 order by sort_order asc, id asc limit 200",
+            "update public.devup_quest set done = false, completed_at = null " +
+            "where user_id = $1 and period = 'weekly' and done and completed_at < date_trunc('week', now())",
+          params: [PROFILE_ID],
+        },
+        {
+          query:
+            "select name, title, xp, roast, reduced_motion, skills, student, job_prefs, resume " +
+            "from public.devup_profile where id = $1 limit 1",
+          params: [PROFILE_ID],
+        },
+        {
+          query:
+            "select id, title, xp, category, done, period " +
+            "from public.devup_quest where user_id = $1 order by sort_order asc, id asc limit 200",
           params: [PROFILE_ID],
         },
       ]);
-      const profile = results[0]?.rows?.[0];
+      const profile = results[2]?.rows?.[0];
+      const questPeriod = (v: unknown): QuestPeriod => (v === "daily" || v === "weekly" ? v : "once");
       return {
         ok: true,
         email: user.email,
@@ -97,12 +118,14 @@ export const loadGame = createServerFn({ method: "GET" }).handler(
         title: String(profile?.title ?? "Junior Full-Stack Developer"),
         xp: Number(profile?.xp ?? 0),
         roast: Boolean(profile?.roast ?? false),
-        quests: (results[1]?.rows ?? []).map((r: any) => ({
+        reducedMotion: Boolean(profile?.reduced_motion ?? false),
+        quests: (results[3]?.rows ?? []).map((r: any) => ({
           id: String(r.id),
           title: String(r.title),
           xp: Number(r.xp),
           category: String(r.category),
           done: Boolean(r.done),
+          period: questPeriod(r.period),
         })),
       };
     } catch (err) {
@@ -155,6 +178,24 @@ export const saveRoast = createServerFn({ method: "POST" })
     }
   });
 
+export const saveReducedMotion = createServerFn({ method: "POST" })
+  .inputValidator((input: { reducedMotion: unknown }) => {
+    if (typeof input.reducedMotion !== "boolean") throw new Error("Motion preference must be true or false.");
+    return { reducedMotion: input.reducedMotion };
+  })
+  .handler(async ({ data }): Promise<SaveResult> => {
+    try {
+      const PROFILE_ID = (await requireUser()).id;
+      await neonExecute(
+        "update public.devup_profile set reduced_motion = $1, updated_at = now() where id = $2",
+        [data.reducedMotion, PROFILE_ID],
+      );
+      return { ok: true };
+    } catch (err) {
+      return fail(err);
+    }
+  });
+
 /**
  * Marks one quest done and awards its XP in a single transaction. The CTE only
  * returns a row when the quest flips from not-done to done, so a double click
@@ -199,22 +240,23 @@ export const completeQuest = createServerFn({ method: "POST" })
   });
 
 export const addQuest = createServerFn({ method: "POST" })
-  .inputValidator((input: { id: unknown; title: unknown; xp: unknown; category: unknown }) => {
+  .inputValidator((input: { id: unknown; title: unknown; xp: unknown; category: unknown; period?: unknown }) => {
     const id = questId(input.id);
     const title = clean(input.title, 120);
     const category = clean(input.category, 40);
     const xp = int(input.xp, 1, 5000);
+    const period = input.period === "daily" || input.period === "weekly" ? input.period : "once";
     if (!id || !title || !category || xp === null) throw new Error("Invalid quest.");
-    return { id, title, category, xp };
+    return { id, title, category, xp, period };
   })
   .handler(async ({ data }): Promise<SaveResult> => {
     try {
       const PROFILE_ID = (await requireUser()).id;
       await neonExecute(
-        `insert into public.devup_quest (id, title, xp, category, sort_order, user_id)
-         values ($1, $2, $3, $4, -1, $5)
+        `insert into public.devup_quest (id, title, xp, category, period, sort_order, user_id)
+         values ($1, $2, $3, $4, $5, -1, $6)
          on conflict (user_id, id) do nothing`,
-        [data.id, data.title, data.xp, data.category, PROFILE_ID],
+        [data.id, data.title, data.xp, data.category, data.period, PROFILE_ID],
       );
       return { ok: true };
     } catch (err) {

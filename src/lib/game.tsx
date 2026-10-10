@@ -6,6 +6,7 @@ import {
   gainXp as gainXpFn,
   saveProfile as saveProfileFn,
   saveRoast as saveRoastFn,
+  saveReducedMotion as saveReducedMotionFn,
   saveDetails as saveDetailsFn,
   type JobPrefs,
   type ResumeInfo,
@@ -24,11 +25,11 @@ export type Details = { skills: string[]; student: StudentInfo; jobPrefs: JobPre
 
 /** Used only when Neon can't be reached, so the UI still has something to show. */
 const FALLBACK_QUESTS: Quest[] = [
-  { id: "resume", title: "Upload Resume", xp: 500, done: false, category: "Setup" },
-  { id: "mock1", title: "Complete 1 Mock Interview", xp: 200, done: false, category: "Interview" },
-  { id: "linkedin", title: "Polish LinkedIn headline", xp: 150, done: false, category: "Branding" },
-  { id: "leet", title: "Solve 3 algorithm problems", xp: 300, done: false, category: "Skills" },
-  { id: "apply", title: "Apply to 5 target roles", xp: 400, done: true, category: "Hunt" },
+  { id: "resume", title: "Upload Resume", xp: 500, done: false, category: "Setup", period: "once" },
+  { id: "mock1", title: "Complete 1 Mock Interview", xp: 200, done: false, category: "Interview", period: "daily" },
+  { id: "linkedin", title: "Polish LinkedIn headline", xp: 150, done: false, category: "Branding", period: "once" },
+  { id: "leet", title: "Solve 3 algorithm problems", xp: 300, done: false, category: "Skills", period: "daily" },
+  { id: "apply", title: "Apply to 5 target roles", xp: 400, done: true, category: "Hunt", period: "weekly" },
 ];
 
 export const ACHIEVEMENTS = [
@@ -40,12 +41,13 @@ export const ACHIEVEMENTS = [
 
 type Game = {
   name: string; title: string; xp: number; level: number; levelXp: number;
-  quests: Quest[]; roast: boolean; lastGain: { amount: number; key: number } | null;
+  quests: Quest[]; roast: boolean; reducedMotion: boolean; lastGain: { amount: number; key: number } | null;
   setProfile: (n: string, t: string) => Promise<boolean>;
   completeQuest: (id: string) => void;
   addQuest: (q: Omit<Quest, "done">) => void;
   gainXp: (n: number, reason?: string) => void;
   setRoast: (v: boolean) => void;
+  setReducedMotion: (v: boolean) => void;
   setXp: (n: number) => void;
   email: string;
   details: Details;
@@ -70,6 +72,7 @@ export function GameProvider({
   const [xp, setXpState] = useState(loaded?.xp ?? 2350);
   const [quests, setQuests] = useState<Quest[]>(loaded?.quests ?? FALLBACK_QUESTS);
   const [roast, setRoastState] = useState(loaded?.roast ?? false);
+  const [reducedMotion, setReducedMotionState] = useState(loaded?.reducedMotion ?? false);
   const [details, setDetails] = useState<Details>({
     skills: loaded?.skills ?? [], student: loaded?.student ?? {}, jobPrefs: loaded?.jobPrefs ?? {}, resume: loaded?.resume ?? null,
   });
@@ -78,6 +81,12 @@ export function GameProvider({
   useEffect(() => {
     document.documentElement.classList.toggle("roast", roast);
   }, [roast]);
+
+  // The in-app "reduce motion" switch; OS-level prefers-reduced-motion is
+  // handled separately by the stylesheet.
+  useEffect(() => {
+    document.documentElement.classList.toggle("reduce-motion", reducedMotion);
+  }, [reducedMotion]);
 
   // Writes go to Neon optimistically; a rejected write rolls the screen back.
   const rejected = (res: SaveResult | undefined, rollback: () => void) => {
@@ -100,7 +109,7 @@ export function GameProvider({
   };
 
   const value: Game = {
-    name, title, xp, quests, roast, lastGain,
+    name, title, xp, quests, roast, reducedMotion, lastGain,
     level: Math.floor(xp / XP_PER_LEVEL) + 1,
     levelXp: xp % XP_PER_LEVEL,
     setProfile: async (n, t) => {
@@ -142,6 +151,13 @@ export function GameProvider({
       setRoastState(v);
       saveRoastFn({ data: { roast: v } }).then((res) => {
         rejected(res, () => setRoastState(prev));
+      });
+    },
+    setReducedMotion: (v) => {
+      const prev = reducedMotion;
+      setReducedMotionState(v);
+      saveReducedMotionFn({ data: { reducedMotion: v } }).then((res) => {
+        rejected(res, () => setReducedMotionState(prev));
       });
     },
     setXp: (n) => setXpState(n),

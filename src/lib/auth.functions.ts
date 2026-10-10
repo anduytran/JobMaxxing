@@ -36,8 +36,8 @@ export const signUp = createServerFn({ method: "POST" })
           params: [data.email, hash, data.name || data.email.split("@")[0]],
         },
         {
-          query: `insert into public.devup_quest (user_id, id, title, xp, category, done, sort_order)
-                  select p.id, q.id, q.title, q.xp, q.category, false, q.sort_order
+          query: `insert into public.devup_quest (user_id, id, title, xp, category, period, done, sort_order)
+                  select p.id, q.id, q.title, q.xp, q.category, q.period, false, q.sort_order
                     from public.devup_quest q, public.devup_profile p
                    where q.user_id = 'default' and p.id = (select id from public.devup_user where email = $1)::text
                      and not exists (select 1 from public.devup_quest x where x.user_id = p.id)`,
