@@ -14,7 +14,7 @@ import maxHunt from "@/assets/max-hunt.png";
 import maxBranding from "@/assets/max-branding.png";
 
 const MAX_ART: Record<string, string> = { setup: maxResume, resume: maxResume, interview: maxInterview, skills: maxSkills, hunt: maxHunt, branding: maxBranding, social: maxBranding };
-const QUEST_LINK: Record<string, "/setup" | "/interview" | "/quests" | "/radar"> = { setup: "/setup", resume: "/setup", interview: "/interview" };
+const QUEST_LINK: Record<string, "/setup" | "/interview" | "/quests"> = { setup: "/setup", resume: "/setup", interview: "/interview" };
 
 export const Route = createFileRoute("/")({
   head: () => ({
