@@ -27,7 +27,7 @@ function Page() {
       <div className="panel">
         <PanelHead title="Make the most of peer interviews" level={level} />
         <div className="flex flex-col items-center px-6 py-24 text-center">
-          <Max pose="branding" className="mascot-float h-28 w-28" />
+          <Max pose="dap" className="mascot-float h-28 w-28" />
           <h2 className="mt-8 text-3xl font-bold md:text-4xl">Your next interview buddy is waiting.</h2>
           <p className="mt-4 max-w-lg text-muted-foreground">Schedule a practice session with a friend using an AI-generated interview script.</p>
           <button onClick={() => toast.info("Peer scheduling is coming soon — we'll pair you with someone at a similar level.")}
