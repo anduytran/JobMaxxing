@@ -11,6 +11,8 @@
 
 ## Architecture rules
 
+- ResumeScoreCard derives its random pending action, rank progress, and reward labels from the latest review and shared resume XP rules without awarding XP or changing reviews. Why: dashboard gamification must reflect the existing Resume Lab workflow.
+
 - The top-bar QuestMenu derives capped daily and weekly lists from GameProvider without creating or modifying quests. Why: mission-menu presentation must preserve existing progression and reset rules.
 
 - Featured quest display titles use the browser-safe quest-titles helper while preserving full saved titles. Why: concise card copy must not rewrite user quests or require data migrations.

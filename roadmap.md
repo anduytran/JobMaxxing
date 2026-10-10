@@ -1,5 +1,10 @@
 # Roadmap
 
+## Resume score card
+- [x] Show the actual score, grade rank, next score target, and existing XP milestones.
+- [x] Display a random pending resume improvement as a bullet, with another-item control and Resume Lab link.
+- [ ] Check rendering and interactions; signed-in verification requires an available account session.
+
 ## Quest menu
 - [x] Remove the next-power-move section.
 - [x] Add a hoverable and clickable top-bar mission menu showing at most two daily and three weekly quests from existing progress.

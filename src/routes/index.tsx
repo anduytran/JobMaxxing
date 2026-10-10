@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import gymScene from "@/assets/max/gym-scene.svg";
 import billboardScene from "@/assets/max/billboard.svg";
 import { featuredQuestTitle } from "@/lib/quest-titles";
+import { ResumeScoreCard } from "@/components/ResumeScoreCard";
 
 const MAX_ART: Record<string, string> = { setup: MAX_POSES.resume, resume: MAX_POSES.resume, interview: MAX_POSES.interview, skills: MAX_POSES.skills, hunt: MAX_POSES.hunt, branding: MAX_POSES.dap, social: MAX_POSES.dap };
 const QUEST_LINK: Record<string, "/setup" | "/interview" | "/quests" | "/skills" | "/market"> = { setup: "/setup", resume: "/setup", interview: "/interview", skills: "/skills", hunt: "/market" };
@@ -131,7 +132,8 @@ function Dashboard() {
   const done = quests.filter((q) => q.done).length;
   const pct = (levelXp / XP_PER_LEVEL) * 100;
   const [review, setReview] = useState<StoredReview | null>(null);
-  useEffect(() => { getLatestResumeReview().then((r) => { if (r.ok) setReview(r.review); }).catch(() => {}); }, []);
+  const [reviewLoading, setReviewLoading] = useState(true);
+  useEffect(() => { getLatestResumeReview().then((r) => { if (r.ok) setReview(r.review); }).catch(() => {}).finally(() => setReviewLoading(false)); }, []);
   const resumeScore = review?.score ?? (details.resume as { score?: number } | undefined)?.score;
   const resumeQuests = (review?.suggestions ?? []).filter((s) => !s.applied);
   const [seed, setSeed] = useState(0);
@@ -255,11 +257,7 @@ function Dashboard() {
         </>)}
       </div>
       <div className="grid gap-6 lg:grid-cols-[1fr_1fr_1fr_1.4fr]">
-        <Stat icon={FileText} label="Resume score">
-          <div className="text-4xl font-bold">{review && <span className="mr-2 rounded-md bg-success/20 px-2 text-2xl">{review.grade}</span>}{resumeScore ?? "—"}<span className="text-xl font-normal text-muted-foreground"> / 100</span></div>
-          <Bar pct={resumeScore ?? 0} cls="bg-success" />
-          <Link to="/setup" className="mt-3 block text-sm text-muted-foreground hover:text-primary">{review ? (resumeQuests.length ? `${resumeQuests.length} resume quests to level it up →` : "All resume quests done. Nice!") : resumeScore ? "Getting stronger with every edit" : "Upload your resume →"}</Link>
-        </Stat>
+        <ResumeScoreCard review={review} score={resumeScore} loading={reviewLoading} />
         <Stat icon={Mic} label="Quests open">
           <div className="text-4xl font-bold">{String(open.length).padStart(2, "0")}</div>
           <p className="mt-6 text-sm text-muted-foreground">Practice makes progress</p>
