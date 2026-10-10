@@ -225,8 +225,8 @@ function Dashboard() {
                   alt=""
                   aria-hidden
                   draggable={false}
-                  className="absolute left-1/2 top-1/2 h-[185%] w-[185%] -translate-x-1/2 -translate-y-1/2 object-contain"
-                  style={{ maskImage: "radial-gradient(closest-side, black 82%, transparent 97%)", WebkitMaskImage: "radial-gradient(closest-side, black 82%, transparent 97%)" }}
+                   className="absolute left-1/2 top-1/2 h-[235%] w-[235%] -translate-x-1/2 -translate-y-1/2 object-contain"
+                   style={{ maskImage: "radial-gradient(closest-side, black 84%, transparent 97%)", WebkitMaskImage: "radial-gradient(closest-side, black 84%, transparent 97%)" }}
                 />
               )}
               <div className="relative h-full w-full"><img key={featArt} src={featArt} alt={featured ? `Max ready for: ${featured.title}` : "Max with a microphone, ready to interview you"} width={816} height={816} decoding="sync" draggable={false} className="h-full w-full object-contain" /></div>
