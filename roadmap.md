@@ -58,3 +58,8 @@
 - [x] Job Radar page: preferences editor, refresh, ranked matches with skill chips, status pipeline, external role links.
 - [x] One-click "Practice interview" hands a role's description to the mock interview and auto-analyzes it.
 - [x] Verify the whole flow signed-in in the preview: refresh matches, save a role (+25 XP), view roles, run a tailored practice interview (+50 XP); build clean.
+
+## Full-screen featured card
+- [x] Featured quest fills the whole screen edge to edge (height = viewport minus the top bar); the greeting, Interviews / Resume Lab shortcuts, resume + Career cards and "Max says" move below the fold.
+- [x] Scenes, Max and the floating chips scale with the taller card (clamp on viewport height) and stay clear of the arrows, headline and help button.
+- [x] Verified in the browser: card height 1736 of a 1800 viewport with a 64px bar, no element overlaps, no horizontal scroll, no console errors; build clean.
