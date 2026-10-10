@@ -80,4 +80,4 @@
 - [x] Add the supplied portrait gym image as the skills card's mobile source (served from the CDN, preloaded with the other scenes); verified at 390x844 that the portrait gym is the image actually painted, edge to edge, with no console errors.
 
 
-- Max is horizontally centered in every featured card at every width (verified: mascot centre = card centre, 0px off, desktop and phone).
+- Max is centred on both axes of the featured card on wide screens (verified signed-in at 1830x1075: mascot centre = card centre, 0px horizontal, 0.5px vertical, no overlap with the headline, Lock In, dots, counter or Missions panel); on phones he keeps the horizontal centre but sits low so the stacked text stays readable.
