@@ -14,6 +14,7 @@ import { useGame } from "@/lib/game";
 import {
   generateInterviewQuestions, getInterviewAgents, gradeInterviewTranscript, parseJobDescription, sendInterviewTurn, speakInterviewLine, startLiveInterview,
 } from "@/lib/interview.functions";
+import { awardRadarPracticeXp, setRadarStatus } from "@/lib/radar.functions";
 import {
   LENGTHS, type AgentStatus, type InterviewGrade, type InterviewLength, type InterviewQuestion,
   type InterviewType, type ParsedJob, type TranscriptTurn,
@@ -33,6 +34,9 @@ export const Route = createFileRoute("/interview")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
+  validateSearch: (s: Record<string, unknown>) => ({
+    radar: typeof s.radar === "string" && /^[0-9]{1,20}$/.test(s.radar) ? s.radar : undefined,
+  }),
   loader: () => getInterviewAgents(),
   staleTime: 5 * 60_000, // agent status rarely changes; skip the refetch on every visit
   component: Interview,
@@ -42,9 +46,12 @@ type Stage = "intro" | "setup" | "review" | "options" | "live" | "your_questions
 
 function Interview() {
   const agents = Route.useLoaderData() as AgentStatus;
+  const search = Route.useSearch();
   const { roast, setRoast, completeQuest, gainXp, details } = useGame();
   const [stage, setStage] = useState<Stage>("intro");
   const [jd, setJd] = useState("");
+  const radarJobId = useRef<string | null>(null);
+  const radarBootstrapped = useRef(false);
   const [type, setType] = useState<InterviewType>("mixed");
   const [length, setLength] = useState<InterviewLength>("standard");
   const [job, setJob] = useState<ParsedJob | null>(null);
