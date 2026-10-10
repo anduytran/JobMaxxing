@@ -211,12 +211,12 @@ function Dashboard() {
               {featured ? (
                 <div className="mt-8 flex flex-wrap items-center gap-3">
                   <Button asChild className="h-auto rounded-xl px-8 py-4 text-base"><Link to={featLink}>
-                    Start this quest <ArrowRight className="h-5 w-5" />
+                    Lock In <ArrowRight className="h-5 w-5" />
                   </Link></Button>
                 </div>
               ) : (
                 <Button asChild className="mt-8 h-auto rounded-xl px-8 py-4 text-base"><Link to="/interview" search={{ radar: undefined }}>
-                  Start a mock interview <ArrowRight className="h-5 w-5" />
+                  Lock In <ArrowRight className="h-5 w-5" />
                 </Link></Button>
               )}
               <p className="mt-6 flex items-center gap-2 text-sm text-muted-foreground"><Clock className="h-4 w-4" />{featured ? `+${featured.xp} XP waiting for you` : "15 minutes to a more confident you"}</p>

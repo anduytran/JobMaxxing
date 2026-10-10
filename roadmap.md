@@ -63,3 +63,8 @@
 - [x] Featured quest fills the whole screen edge to edge (height = viewport minus the top bar); the greeting, Interviews / Resume Lab shortcuts, resume + Career cards and "Max says" move below the fold.
 - [x] Scenes, Max and the floating chips scale with the taller card (clamp on viewport height) and stay clear of the arrows, headline and help button.
 - [x] Verified in the browser: card height 1736 of a 1800 viewport with a 64px bar, no element overlaps, no horizontal scroll, no console errors; build clean.
+
+## Lock In moves onto the card
+- [x] Top nav trimmed to Home · Collection · Career · Store; the diamond Lock In tab is gone from desktop and mobile.
+- [x] The featured card's primary button now reads "Lock In" on both the quest slide and the mock interview slide; verified in the browser with no console errors and a clean build.
+- [ ] The Interview / Resume Lab / Job Radar page at /lock-in now has no button pointing to it, so Job Radar cannot be reached by clicking anything — decide whether to link it from the top bar or the dashboard.
