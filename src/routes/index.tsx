@@ -14,7 +14,7 @@ import gymScene from "@/assets/max/gym-scene.svg";
 import billboardScene from "@/assets/max/billboard.svg";
 import { featuredQuestTitle } from "@/lib/quest-titles";
 import { ResumeScoreCard } from "@/components/ResumeScoreCard";
-import { CareerProgressCard, QuestsProgressCard, XpProgressCard } from "@/components/DashboardProgressCards";
+import { XpCareerCard } from "@/components/DashboardProgressCards";
 
 const MAX_ART: Record<string, string> = { setup: MAX_POSES.resume, resume: MAX_POSES.resume, interview: MAX_POSES.interview, skills: MAX_POSES.skills, hunt: MAX_POSES.hunt, branding: MAX_POSES.dap, social: MAX_POSES.dap };
 const QUEST_LINK: Record<string, "/setup" | "/interview" | "/quests" | "/skills" | "/market"> = { setup: "/setup", resume: "/setup", interview: "/interview", skills: "/skills", hunt: "/market" };
@@ -127,7 +127,7 @@ function SceneBackdrop({ kind }: { kind: string }) {
 }
 
 function Dashboard() {
-  const { name, title, level, levelXp, xp, quests, completeQuest, details, lastGain } = useGame();
+  const { name, title, level, levelXp, xp, quests, details, lastGain } = useGame();
   const first = name.split(" ")[0] || "there";
   const open = quests.filter((q) => !q.done);
   const done = quests.filter((q) => q.done).length;
@@ -135,7 +135,6 @@ function Dashboard() {
   const [reviewLoading, setReviewLoading] = useState(true);
   useEffect(() => { getLatestResumeReview().then((r) => { if (r.ok) setReview(r.review); }).catch(() => {}).finally(() => setReviewLoading(false)); }, []);
   const resumeScore = review?.score ?? (details.resume as { score?: number } | undefined)?.score;
-  const resumeQuests = (review?.suggestions ?? []).filter((s) => !s.applied);
   const [seed, setSeed] = useState(0);
   const [pick, setPick] = useState<number | null>(null);
   const [dir, setDir] = useState(1);
