@@ -140,7 +140,6 @@ function Dashboard() {
     setPick(((((pick ?? featIdx) + d) % openCount) + openCount) % openCount);
   };
   const jump = (i: number) => { setDir(i >= featIdx ? 1 : -1); setPick(i); };
-  const surprise = () => { setDir(1); setPick(null); setSeed(Math.random()); };
   const featKey = featured?.category?.toLowerCase() ?? "interview";
   const featArt = MAX_ART[featKey] ?? MAX_POSES.interview;
   // Decode Max and the scene backdrop together so they appear at the same moment.
