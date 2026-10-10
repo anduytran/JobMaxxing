@@ -23,7 +23,7 @@ function Page() {
   const { level } = useGame();
   return (
     <div className="mx-auto max-w-6xl">
-      <PageHeader eyebrow="Build your next chapter" title="Peer Interviews" sub="Turn your potential into progress, one step at a time." pose="branding" />
+      <PageHeader eyebrow="Build your next chapter" title="Peer Interviews" sub="Turn your potential into progress, one step at a time." />
       <div className="panel">
         <PanelHead title="Make the most of peer interviews" level={level} />
         <div className="flex flex-col items-center px-6 py-24 text-center">
