@@ -17,6 +17,8 @@ const ENV = {
   grader: "RAIA_GRADER_AGENT_SECRET_KEY",
   resume: "RAIA_RESUME_AGENT_SECRET_KEY",
   voice: "ELEVENLABS_API_KEY",
+  adzunaId: "ADZUNA_APPLICATION_ID",
+  adzunaKey: "ADZUNA_API_KEY",
 } as const;
 
 const key = (name: string) => process.env[name]?.trim() || undefined;
