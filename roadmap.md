@@ -86,3 +86,7 @@
 - [x] Missions panel now hangs off the card's right edge (8px in) and is wider (up to 512px, shrinking with the window so Max and the arrow keep their space); styled with the app's own tokens (cream card, dark text, sage/orange accents) instead of black glass.
 - [x] #OPENTOWORK ring now renders behind Max, in front of the billboard scene, by preceding his image in the DOM.
 - [x] Verified signed-in at 1830x1075 and 1100x800: panel 512/366px wide, 8px from the right edge, next arrow cream with a dark chevron and ~12px clear of the panel, no panel/arrow/Max overlaps, ring behind Max; no console errors, build clean.
+
+## Mock interview Max cleaned
+- [x] Removed the pale gray ground oval under his feet and the white wedge left in the crook of his bent arm, by clearing those pixels' alpha (no redraw, no change to his shape or colours); published as a new CDN asset and repointed the interview pose in `MAX_POSES`.
+- [x] Verified on the live signed-in dashboard: the mock interview slide paints the cleaned file, with no shadow oval, no white patch in the arm's negative space, and his feet and arm contours complete; build clean.
