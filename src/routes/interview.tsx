@@ -11,7 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useGame } from "@/lib/game";
 import {
-  generateInterviewQuestions, getInterviewAgents, gradeInterviewTranscript, parseJobDescription,
+  generateInterviewQuestions, getInterviewAgents, gradeInterviewTranscript, parseJobDescription, sendInterviewTurn, speakInterviewLine, startLiveInterview,
 } from "@/lib/interview.functions";
 import {
   LENGTHS, type AgentStatus, type InterviewGrade, type InterviewLength, type InterviewQuestion,
@@ -275,10 +275,11 @@ function Interview() {
             {turns.map((m, i) => (
               <div key={i} className={cn("max-w-[85%] rounded-lg px-3 py-2 text-sm", m.speaker === "interviewer" ? "border bg-secondary/50" : "ml-auto bg-primary text-primary-foreground")}>{m.text}</div>
             ))}
+            {thinking && <div className="max-w-[85%] animate-pulse rounded-lg border bg-secondary/50 px-3 py-2 text-sm text-muted-foreground">Interviewer is thinking…</div>}
             {stage === "grading" && <div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Grading your interview…</div>}
           </div>
           <div className="flex flex-wrap gap-2 border-t p-3">
-            <Button variant="outline" onClick={speak} disabled={listening || stage === "grading"}><Mic /> {listening ? "Listening…" : "Speak"}</Button>
+            <Button variant="outline" onClick={speak} disabled={listening || thinking || stage === "grading"}><Mic /> {listening ? "Listening…" : "Speak"}</Button>
             <form className="flex min-w-[12rem] flex-1 gap-2" onSubmit={(e) => { e.preventDefault(); answer(text); }}>
               <Input value={text} onChange={(e) => setText(e.target.value)} disabled={stage === "grading"}
                 placeholder={stage === "live" ? "Type your answer…" : "Ask the interviewer a question…"} />
