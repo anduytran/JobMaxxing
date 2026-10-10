@@ -240,22 +240,23 @@ export const completeQuest = createServerFn({ method: "POST" })
   });
 
 export const addQuest = createServerFn({ method: "POST" })
-  .inputValidator((input: { id: unknown; title: unknown; xp: unknown; category: unknown }) => {
+  .inputValidator((input: { id: unknown; title: unknown; xp: unknown; category: unknown; period?: unknown }) => {
     const id = questId(input.id);
     const title = clean(input.title, 120);
     const category = clean(input.category, 40);
     const xp = int(input.xp, 1, 5000);
+    const period = input.period === "daily" || input.period === "weekly" ? input.period : "once";
     if (!id || !title || !category || xp === null) throw new Error("Invalid quest.");
-    return { id, title, category, xp };
+    return { id, title, category, xp, period };
   })
   .handler(async ({ data }): Promise<SaveResult> => {
     try {
       const PROFILE_ID = (await requireUser()).id;
       await neonExecute(
-        `insert into public.devup_quest (id, title, xp, category, sort_order, user_id)
-         values ($1, $2, $3, $4, -1, $5)
+        `insert into public.devup_quest (id, title, xp, category, period, sort_order, user_id)
+         values ($1, $2, $3, $4, $5, -1, $6)
          on conflict (user_id, id) do nothing`,
-        [data.id, data.title, data.xp, data.category, PROFILE_ID],
+        [data.id, data.title, data.xp, data.category, data.period, PROFILE_ID],
       );
       return { ok: true };
     } catch (err) {
