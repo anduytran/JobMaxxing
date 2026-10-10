@@ -13,7 +13,7 @@ const FULL_NOTICE: [string, string][] = [
   ["AI can be wrong", "AI output may be inaccurate, incomplete, or biased. Treat it as practice, not as professional career, legal, or employment advice."],
 ];
 
-/** Always-visible notice on the AI Mock Interview screen, with the full disclosure expandable. */
+/** Pre-start notice shown on the interview options screen, with the full disclosure expandable. */
 export function InterviewDisclosure({ job, className }: { job: ParsedJob | null; className?: string }) {
   const [open, setOpen] = useState(false);
   return (
