@@ -33,7 +33,8 @@ async function askRaia<T>(secretEnv: string, message: string, context: string): 
   try {
     const conv = await fetch(`${RAIA}/conversations`, {
       method: "POST", headers,
-      body: JSON.stringify({ title: "DevUp mock interview", conversationUserId: "devup-demo-user" }),
+      // Raia requires conversationUserId to be a real UUID.
+      body: JSON.stringify({ title: "DevUp mock interview", conversationUserId: crypto.randomUUID() }),
     });
     if (!conv.ok) { console.error("Raia conversation failed", conv.status, await conv.text()); return null; }
     const { id } = (await conv.json()) as { id: string };
