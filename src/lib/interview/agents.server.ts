@@ -30,8 +30,10 @@ export function agentStatus(): AgentStatus {
 }
 
 /** Send one prompt to a Raia agent and parse its JSON reply. Returns null on any failure.
- *  Uses the stateless /external/prompts endpoint — no conversation user required. */
-async function askRaia<T>(secretEnv: string, message: string, context: string): Promise<T | null> {
+ *  Uses the stateless /external/prompts endpoint — no conversation user required.
+ *  A slow agent must not hang the caller: the request is cut off at `timeoutMs`
+ *  (grading a resume realistically takes 20-30 s) and the caller falls back. */
+async function askRaia<T>(secretEnv: string, message: string, context: string, timeoutMs = 45_000): Promise<T | null> {
   const secret = key(secretEnv);
   if (!secret) return null;
   try {
@@ -39,6 +41,7 @@ async function askRaia<T>(secretEnv: string, message: string, context: string): 
       method: "POST",
       headers: { "Agent-Secret-Key": secret, "Content-Type": "application/json" },
       body: JSON.stringify({ prompt: context ? `${context}\n\n${message}` : message }),
+      signal: AbortSignal.timeout(timeoutMs),
     });
     if (!res.ok) { console.error("Raia prompt failed", res.status, await res.text()); return null; }
     const body = (await res.json()) as { response?: string };
