@@ -64,6 +64,7 @@ function Setup() {
   const [paste, setPaste] = useState(false);
   const [text, setText] = useState("");
   const [applying, setApplying] = useState<string | null>(null);
+  const [seconds, setSeconds] = useState(0);
   const input = useRef<HTMLInputElement>(null);
   const bootstrapped = useRef(false);
 
@@ -79,6 +80,14 @@ function Setup() {
       setStatus([`> scan://${res.review.fileName}`, `> grade ${res.review.grade} · ${res.review.score}/100 saved`]);
     });
   }, []);
+
+  // Grading takes half a minute, so the wait counts up instead of looking stuck.
+  useEffect(() => {
+    if (!busy) return;
+    setSeconds(0);
+    const t = setInterval(() => setSeconds((s) => s + 1), 1000);
+    return () => clearInterval(t);
+  }, [busy]);
 
   const run = async (name: string, body: string) => {
     const words = body.split(/\s+/).filter(Boolean).length;
