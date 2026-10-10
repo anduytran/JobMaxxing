@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { motion, useReducedMotion } from "framer-motion";
-import { ArrowRight, Check, ChevronRight, Clock, Code2, FileText, Flame, Mic, Radar, Sparkles, Users, Zap } from "lucide-react";
+import { ArrowRight, Check, ChevronLeft, ChevronRight, Clock, Code2, FileText, Flame, Mic, Radar, Sparkles, Users, Zap } from "lucide-react";
 import { levelTitle, useGame, XP_PER_LEVEL } from "@/lib/game";
 import { Mascot } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { useEffect, useMemo, useState } from "react";
 import { getLatestResumeReview } from "@/lib/resume.functions";
 import type { StoredReview } from "@/lib/resume";
 import { MAX_POSES } from "@/components/Max";
+import { cn } from "@/lib/utils";
 
 const MAX_ART: Record<string, string> = { setup: MAX_POSES.resume, resume: MAX_POSES.resume, interview: MAX_POSES.interview, skills: MAX_POSES.skills, hunt: MAX_POSES.hunt, branding: MAX_POSES.dap, social: MAX_POSES.dap };
 const QUEST_LINK: Record<string, "/setup" | "/interview" | "/quests" | "/skills" | "/market"> = { setup: "/setup", resume: "/setup", interview: "/interview", skills: "/skills", hunt: "/market" };
@@ -79,8 +80,20 @@ function Dashboard() {
   const resumeScore = review?.score ?? (details.resume as { score?: number } | undefined)?.score;
   const resumeQuests = (review?.suggestions ?? []).filter((s) => !s.applied);
   const [seed, setSeed] = useState(0);
+  const [pick, setPick] = useState<number | null>(null);
+  const [dir, setDir] = useState(1);
   useEffect(() => { setSeed(Math.random()); }, []);
-  const featured = useMemo(() => (open.length ? open[Math.floor(seed * open.length) % open.length] : null), [open, seed]);
+  const openCount = open.length;
+  const startIdx = useMemo(() => (openCount ? Math.floor(seed * openCount) % openCount : 0), [seed, openCount]);
+  const featIdx = pick === null ? Math.min(startIdx, Math.max(openCount - 1, 0)) : Math.min(pick, Math.max(openCount - 1, 0));
+  const featured = openCount ? open[featIdx] : null;
+  const shift = (d: number) => {
+    if (!openCount) return;
+    setDir(d);
+    setPick(((((pick ?? featIdx) + d) % openCount) + openCount) % openCount);
+  };
+  const jump = (i: number) => { setDir(i >= featIdx ? 1 : -1); setPick(i); };
+  const surprise = () => { setDir(1); setPick(null); setSeed(Math.random()); };
   const featKey = featured?.category?.toLowerCase() ?? "interview";
   const featArt = MAX_ART[featKey] ?? MAX_POSES.interview;
   const featLink = QUEST_LINK[featKey] ?? "/quests";
