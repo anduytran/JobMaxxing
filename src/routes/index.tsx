@@ -218,20 +218,20 @@ function Dashboard() {
             )}
           </div>
           <motion.div key={featured?.id ?? "none"} initial={reducedMotion ? false : { opacity: 0, x: 28 * dir }} animate={sceneReady ? { opacity: 1, x: 0 } : { opacity: 0, x: reducedMotion ? 0 : 28 * dir }} transition={{ duration: 0.45 }} className="pointer-events-none absolute inset-x-0 bottom-14 flex h-[28svh] items-end justify-center md:inset-0 md:h-auto md:items-center">
-            <div className="relative h-[clamp(160px,28svh,400px)] w-[clamp(160px,28svh,400px)]">
+            <div className="relative h-[clamp(140px,21svh,300px)] w-[clamp(140px,21svh,300px)]">
               {featKey === "branding" && (
                 <img
                   src={openToWork.url}
                   alt=""
                   aria-hidden
                   draggable={false}
-                   className="absolute left-1/2 top-1/2 h-[200%] w-[200%] max-w-none -translate-x-1/2 -translate-y-1/2 object-contain"
+                   className="absolute left-1/2 top-1/2 h-[150%] w-[150%] max-w-none -translate-x-1/2 -translate-y-1/2 object-contain"
                 />
               )}
               <div className="relative h-full w-full"><img key={featArt} src={featArt} alt={featured ? `Max ready for: ${featured.title}` : "Max with a microphone, ready to interview you"} width={816} height={816} decoding="sync" draggable={false} className="h-full w-full object-contain" /></div>
             </div>
           </motion.div>
-          <aside aria-label="Quick overview" className="absolute right-20 top-1/2 z-10 hidden w-1/2 -translate-y-1/2 justify-end lg:flex">
+          <aside aria-label="Quick overview" className="absolute right-20 top-1/2 z-10 hidden w-1/2 -translate-y-1/2 justify-end">
             <div className="w-[min(32rem,calc(50vw_-_15svh_-_8rem))] max-w-full overflow-hidden rounded-md border border-border bg-card/95 text-card-foreground shadow-2xl ring-1 ring-foreground/10 backdrop-blur-xl">
               <p className="border-b border-border bg-muted/40 px-5 py-3 text-center text-xs font-bold uppercase tracking-[0.25em]">Goals</p>
               <ul className="divide-y divide-border">
