@@ -2,7 +2,7 @@ import { Link, useLocation, useRouter, useRouterState } from "@tanstack/react-ro
 import { signOut } from "@/lib/auth.functions";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  LayoutGrid, FileText, Mic, Users, Radar, LineChart, Network, UsersRound, Swords, Settings, Menu, LogOut,
+  LayoutGrid, FileText, Mic, Users, Radar, LineChart, Network, UsersRound, Swords, Settings, Menu, LogOut, Zap, ArrowRight, Flame, CircleHelp,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { useGame, levelTitle } from "@/lib/game";
@@ -11,21 +11,21 @@ import mascot from "@/assets/mascot.png";
 
 type Item = { to: string; label: string; icon: typeof LayoutGrid; badge?: string };
 const GROUPS: { label: string; items: Item[] }[] = [
-  { label: "Practice", items: [
+  { label: "Your career, levelled up", items: [
     { to: "/", label: "Dashboard", icon: LayoutGrid },
     { to: "/setup", label: "Resume Lab", icon: FileText },
-    { to: "/interview", label: "Mock Interview", icon: Mic },
+    { to: "/interview", label: "AI Mock Interview", icon: Mic },
+    { to: "/peers", label: "Peer Interviews", icon: Users },
+  ] },
+  { label: "Opportunities", items: [
+    { to: "/market", label: "Job Radar", icon: Radar, badge: "New" },
+    { to: "/progress", label: "Career Progress", icon: LineChart },
+  ] },
+  { label: "Growth", items: [
     { to: "/quests", label: "Quests", icon: Swords },
+    { to: "/skills", label: "Skill Tree", icon: Network },
   ] },
-  { label: "Track", items: [
-    { to: "/progress", label: "Progress", icon: LineChart },
-    { to: "/skills", label: "Skills", icon: Network },
-  ] },
-  { label: "Preview", items: [
-    { to: "/market", label: "Job Radar", icon: Radar, badge: "Soon" },
-    { to: "/peers", label: "Peer Interviews", icon: Users, badge: "Soon" },
-    { to: "/crew", label: "Job Maxxers", icon: UsersRound, badge: "Soon" },
-  ] },
+  { label: "Your crew", items: [{ to: "/crew", label: "Job Maxxers", icon: UsersRound, badge: "3" }] },
 ];
 const ALL = GROUPS.flatMap((g) => g.items).concat({ to: "/settings", label: "Settings", icon: Settings });
 
@@ -34,7 +34,7 @@ export function Mascot({ className }: { className?: string }) {
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const { level, lastGain, name, xp } = useGame();
+  const { level, lastGain, name } = useGame();
   const loc = useLocation();
   const router = useRouter();
   const navigating = useRouterState({ select: (s) => s.status === "pending" });
@@ -74,44 +74,63 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
           ))}
         </nav>
-        <div className="mt-6 border-t pt-4 text-sm">
-          <div className="flex items-center gap-3 px-2">
+        <div className="mt-6 rounded-2xl bg-muted/60 p-4 transition-shadow hover:shadow-md">
+          <Zap className="h-5 w-5 text-primary" />
+          <p className="mt-2 text-sm font-semibold">A little boost. A big leap.</p>
+          <p className="mt-1 text-xs text-muted-foreground">Unlock your full career potential.</p>
+          <Link to="/settings" onClick={() => setOpen(false)} className="mt-3 flex items-center justify-between rounded-xl border bg-card px-4 py-2.5 text-sm font-medium hover:bg-muted">Explore Pro <ArrowRight className="h-4 w-4" /></Link>
+        </div>
+        <Link to="/settings" onClick={() => setOpen(false)} className="mt-4 flex items-center gap-3 rounded-xl px-3 py-2.5 text-[15px] text-foreground/80 hover:bg-muted">
+          <Settings className="h-[18px] w-[18px]" /> Settings
+        </Link>
+        <div className="mt-4 rounded-2xl border bg-background p-3 text-sm">
+          <div className="flex items-center gap-3">
             <div className="grid h-9 w-9 place-items-center rounded-full bg-sidebar-accent text-xs font-semibold text-primary">{initials}</div>
             <div className="min-w-0 flex-1">
               <div className="truncate font-medium">{name}</div>
               <div className="text-xs text-muted-foreground">Level {level} · {levelTitle(level)}</div>
             </div>
           </div>
-          <div className="mt-3 flex gap-1 text-sm">
-            <Link to="/settings" onClick={() => setOpen(false)} className="flex flex-1 items-center gap-2 rounded-lg px-2 py-2 text-foreground/80 hover:bg-muted"><Settings className="h-4 w-4" />Settings</Link>
-            <button className="flex items-center gap-2 rounded-lg px-2 py-2 text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-60" disabled={signingOut}
+          <div className="mt-3 flex gap-2 text-xs">
+            <Link to="/settings" onClick={() => setOpen(false)} className="flex items-center gap-1 rounded-lg px-2 py-1 text-muted-foreground hover:bg-muted"><Settings className="h-3.5 w-3.5" />Settings</Link>
+            <button className="ml-auto flex items-center gap-1 rounded-lg px-2 py-1 text-primary hover:bg-muted disabled:opacity-60" disabled={signingOut}
               onClick={async () => { setSigningOut(true); try { await signOut(); await router.invalidate(); } finally { setSigningOut(false); } }}>
-              <LogOut className="h-4 w-4" />{signingOut ? "Signing out…" : "Sign out"}</button>
+              <LogOut className="h-3.5 w-3.5" />{signingOut ? "Signing out…" : "Sign out"}</button>
           </div>
         </div>
       </aside>
 
       <div className="flex-1 md:pl-72">
-        <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-card px-4 md:px-10">
+        <header className="sticky top-0 z-30 flex h-20 items-center gap-4 border-b bg-card/90 px-4 backdrop-blur md:px-10">
           <button className="md:hidden" onClick={() => setOpen(!open)} aria-label="Menu"><Menu /></button>
-          <span className="hidden text-sm font-medium sm:inline">{current}</span>
-          <div className="relative ml-auto text-sm tabular-nums text-muted-foreground">
-            <span className="font-semibold text-foreground">{xp.toLocaleString()}</span> XP · Level {level}
-            <AnimatePresence>
-              {lastGain && (
-                <motion.span key={lastGain.key} initial={{ opacity: 1, y: 0 }} animate={{ opacity: 0, y: -24 }} transition={{ duration: 1.6 }}
-                  className="absolute -top-3 right-0 font-semibold text-success">+{lastGain.amount}</motion.span>
-              )}
-            </AnimatePresence>
+          <div className="hidden items-center gap-3 text-[15px] sm:flex">
+            <span className="text-muted-foreground">Workspace</span><span className="text-muted-foreground">›</span><span>{current}</span>
+          </div>
+          <div className="ml-auto flex items-center gap-4">
+            <div className="relative flex items-center gap-3 rounded-2xl border bg-card px-4 py-2.5 text-sm transition-shadow hover:shadow-md">
+              <Flame className="animate-flame h-5 w-5 text-primary" />
+              <span className="font-semibold">5 day streak</span>
+              <span className="hidden border-l pl-3 text-muted-foreground sm:inline">Keep it going!</span>
+              <AnimatePresence>
+                {lastGain && (
+                  <motion.span key={lastGain.key} initial={{ opacity: 1, y: 0 }} animate={{ opacity: 0, y: -28 }} transition={{ duration: 1.6 }}
+                    className="absolute -top-2 right-0 font-bold text-success">+{lastGain.amount}</motion.span>
+                )}
+              </AnimatePresence>
+            </div>
+            <div className="grid h-10 w-10 place-items-center rounded-full bg-sidebar-accent text-sm font-semibold">{initials}</div>
           </div>
         </header>
-        <motion.main key={loc.pathname} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} className="p-4 md:px-10 md:py-10">
+        <motion.main key={loc.pathname} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="p-4 md:px-10 md:py-10">
           {children}
-          <footer className="mx-auto mt-16 flex max-w-5xl justify-between border-t pt-6 text-xs text-muted-foreground">
-            <span>JobMaxxing</span><span>Not affiliated with any employer listed on this site.</span>
+          <footer className="mx-auto mt-16 flex max-w-6xl justify-between border-t pt-6 text-xs text-muted-foreground">
+            <span>Made for your next chapter.</span><span>Privacy · Terms · AI-powered. Human-centered.</span>
           </footer>
         </motion.main>
       </div>
+      <button aria-label="Help" className="hover-pop fixed bottom-6 right-6 z-40 grid h-11 w-11 place-items-center rounded-full border bg-card shadow-md hover:bg-muted">
+        <CircleHelp className="h-5 w-5" />
+      </button>
     </div>
   );
 }
