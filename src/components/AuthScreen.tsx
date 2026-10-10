@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { signIn, signUp } from "@/lib/auth.functions";
-import wave from "@/assets/max/max-wave.svg";
+import wave from "@/assets/max/clean-max-wave.svg";
 
 const FEATURES = [
   { icon: FileSearch, title: "Resume Lab", text: "An AI recruiter grades your resume, rewrites weak bullets and checks it against applicant tracking systems." },
