@@ -327,15 +327,15 @@ const strList = (v: unknown, max: number, cap: number): string[] =>
   Array.isArray(v) ? [...new Set(v.map((x) => str(x, max)).filter((x): x is string => !!x))].slice(0, cap) : [];
 
 /** Trust nothing the agent returns: clamp every number, drop empty suggestions, keep ids usable. */
-function normalizeReview(ai: Record<string, unknown>, source: "raia" | "fallback"): ResumeReview | null {
+function normalizeReview(ai: any, source: "raia" | "fallback"): ResumeReview | null {
   const score = num(ai?.score, 0, 100);
   if (score === null) return null;
-  const grade = (GRADES as string[]).includes(String(ai?.grade)) ? (ai!.grade as Grade) : gradeFromScore(score);
+  const grade = (GRADES as string[]).includes(String(ai?.grade)) ? (ai.grade as Grade) : gradeFromScore(score);
   const seen = new Set<string>();
-  const suggestions: ResumeSuggestion[] = (Array.isArray(ai?.suggestions) ? ai!.suggestions : [])
+  const suggestions: ResumeSuggestion[] = (Array.isArray(ai?.suggestions) ? ai.suggestions : [])
     .slice(0, 12)
-    .map((raw: unknown, i: number) => {
-      const s = (raw ?? {}) as Record<string, unknown>;
+    .map((raw: any, i: number) => {
+      const s = raw ?? {};
       return {
         id: str(s.id, 60)?.toLowerCase().replace(/[^a-z0-9_-]/g, "-") ?? `s${i + 1}`,
         title: str(s.title, 140) ?? "Improve this section",
@@ -346,18 +346,18 @@ function normalizeReview(ai: Record<string, unknown>, source: "raia" | "fallback
       };
     })
     .filter((s) => (seen.has(s.id) ? false : (seen.add(s.id), true)));
-  const f = (ai?.fields ?? {}) as Record<string, unknown>;
+  const f = ai?.fields ?? {};
   const experience = (Array.isArray(f.experience) ? f.experience : [])
     .slice(0, 12)
-    .map((raw: unknown) => {
-      const e = (raw ?? {}) as Record<string, unknown>;
+    .map((raw: any) => {
+      const e = raw ?? {};
       return { company: str(e.company, 120), role: str(e.role, 120), start: str(e.start, 20), end: str(e.end, 20) };
     })
     .filter((e) => e.company || e.role);
   const education = (Array.isArray(f.education) ? f.education : [])
     .slice(0, 8)
-    .map((raw: unknown) => {
-      const e = (raw ?? {}) as Record<string, unknown>;
+    .map((raw: any) => {
+      const e = raw ?? {};
       return { school: str(e.school, 140), degree: str(e.degree, 140), year: str(e.year, 12) };
     })
     .filter((e) => e.school || e.degree);
