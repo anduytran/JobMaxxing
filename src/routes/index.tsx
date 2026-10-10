@@ -229,7 +229,7 @@ function Dashboard() {
                   style={{ maskImage: "radial-gradient(closest-side, black 82%, transparent 97%)", WebkitMaskImage: "radial-gradient(closest-side, black 82%, transparent 97%)" }}
                 />
               )}
-              <div className="mascot-float relative h-full w-full"><img key={featArt} src={featArt} alt={featured ? `Max ready for: ${featured.title}` : "Max with a microphone, ready to interview you"} width={816} height={816} decoding="sync" draggable={false} className="h-full w-full object-contain" /></div>
+              <div className="relative h-full w-full"><img key={featArt} src={featArt} alt={featured ? `Max ready for: ${featured.title}` : "Max with a microphone, ready to interview you"} width={816} height={816} decoding="sync" draggable={false} className="h-full w-full object-contain" /></div>
             </div>
           </motion.div>
           <aside aria-label="Quick overview" className="absolute right-2 top-1/2 z-10 hidden w-1/2 -translate-y-1/2 justify-end lg:flex">
