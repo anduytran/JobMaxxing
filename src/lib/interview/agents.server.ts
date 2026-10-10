@@ -5,12 +5,16 @@ import type {
   AgentStatus, InterviewGrade, InterviewLength, InterviewQuestion, InterviewType, ParsedJob, TranscriptTurn,
 } from "./types";
 import { LENGTHS } from "./types";
+import {
+  GRADES, gradeFromScore, type Grade, type ResumeFields, type ResumeReview, type ResumeSuggestion,
+} from "../resume";
 
 const RAIA = "https://api.raia2.com/external";
 const ENV = {
   parser: "RAIA_JOB_PARSER_AGENT_SECRET_KEY",
   questions: "RAIA_QUESTION_AGENT_SECRET_KEY",
   grader: "RAIA_GRADER_AGENT_SECRET_KEY",
+  resume: "RAIA_RESUME_AGENT_SECRET_KEY",
   voice: "ELEVENLABS_API_KEY",
 } as const;
 
