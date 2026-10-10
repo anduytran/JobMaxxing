@@ -32,6 +32,7 @@ export const Route = createFileRoute("/interview")({
     ],
   }),
   loader: () => getInterviewAgents(),
+  staleTime: 5 * 60_000, // agent status rarely changes; skip the refetch on every visit
   component: Interview,
 });
 

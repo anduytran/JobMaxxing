@@ -41,7 +41,7 @@ export const ACHIEVEMENTS = [
 type Game = {
   name: string; title: string; xp: number; level: number; levelXp: number;
   quests: Quest[]; roast: boolean; lastGain: { amount: number; key: number } | null;
-  setProfile: (n: string, t: string) => void;
+  setProfile: (n: string, t: string) => Promise<boolean>;
   completeQuest: (id: string) => void;
   addQuest: (q: Omit<Quest, "done">) => void;
   gainXp: (n: number, reason?: string) => void;
@@ -103,12 +103,11 @@ export function GameProvider({
     name, title, xp, quests, roast, lastGain,
     level: Math.floor(xp / XP_PER_LEVEL) + 1,
     levelXp: xp % XP_PER_LEVEL,
-    setProfile: (n, t) => {
+    setProfile: async (n, t) => {
       const prevName = name, prevTitle = title;
       setName(n); setTitle(t);
-      saveProfileFn({ data: { name: n, title: t } }).then((res) => {
-        rejected(res, () => { setName(prevName); setTitle(prevTitle); });
-      });
+      const res = await saveProfileFn({ data: { name: n, title: t } });
+      return !rejected(res, () => { setName(prevName); setTitle(prevTitle); });
     },
     completeQuest: (id) => {
       const q = quests.find((q) => q.id === id);
@@ -127,6 +126,7 @@ export function GameProvider({
         )
           return;
         if (res.ok && typeof res.xp === "number") setXpState(res.xp);
+        toast.success(`Quest complete: ${q.title}`, { description: `+${q.xp} XP saved` });
       });
     },
     addQuest: (q) => {

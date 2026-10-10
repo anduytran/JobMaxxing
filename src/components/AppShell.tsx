@@ -1,4 +1,4 @@
-import { Link, useLocation, useRouter } from "@tanstack/react-router";
+import { Link, useLocation, useRouter, useRouterState } from "@tanstack/react-router";
 import { signOut } from "@/lib/auth.functions";
 import { AnimatePresence, motion } from "framer-motion";
 import { LayoutDashboard, Swords, Video, BarChart3, FileUp, Settings, Zap, Menu } from "lucide-react";
@@ -19,10 +19,13 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { level, levelXp, lastGain, name } = useGame();
   const loc = useLocation();
   const router = useRouter();
+  const navigating = useRouterState({ select: (s) => s.status === "pending" });
+  const [signingOut, setSigningOut] = useState(false);
   const [open, setOpen] = useState(false);
 
   return (
     <div className="flex min-h-screen">
+      {navigating && <div role="progressbar" aria-label="Loading page" className="fixed inset-x-0 top-0 z-50 h-0.5 animate-pulse bg-primary glow" />}
       <aside className={cn(
         "fixed inset-y-0 left-0 z-40 w-64 border-r bg-sidebar p-5 transition-transform md:translate-x-0",
         open ? "translate-x-0" : "-translate-x-full",
@@ -50,7 +53,9 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="absolute bottom-5 left-5 right-5 rounded-lg border bg-sidebar-accent p-3 font-mono text-xs text-muted-foreground">
           <div className="text-foreground">{name}</div>
           LVL {level} · {levelTitle(level)}
-          <button className="mt-2 block text-primary hover:underline" onClick={async () => { await signOut(); await router.invalidate(); }}>Sign out</button>
+          <button className="mt-2 block text-primary hover:underline disabled:opacity-60" disabled={signingOut}
+            onClick={async () => { setSigningOut(true); try { await signOut(); await router.invalidate(); } finally { setSigningOut(false); } }}>
+            {signingOut ? "Signing out…" : "Sign out"}</button>
         </div>
       </aside>
 

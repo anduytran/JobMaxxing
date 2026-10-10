@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,13 +25,16 @@ function SettingsPage() {
   const [name, setName] = useState(g.name);
   const [title, setTitle] = useState(g.title);
   const d = g.details;
+  const [saving, setSaving] = useState<"" | "profile" | "details">("");
   const [skills, setSkills] = useState(d.skills.join(", "));
   const [student, setStudent] = useState(d.student);
   const [prefs, setPrefs] = useState(d.jobPrefs);
   const saveDetails = async () => {
+    setSaving("details");
     const ok = await g.saveDetails({
       skills: skills.split(",").map((s) => s.trim()).filter(Boolean), student, jobPrefs: prefs,
     });
+    setSaving("");
     if (ok) toast.success("Details saved");
   };
   const field = <T extends Record<string, string | undefined>>(obj: T, set: (v: T) => void, key: keyof T & string, label: string) => (
@@ -43,7 +47,8 @@ function SettingsPage() {
       <div className="panel space-y-4 p-6">
         <div className="space-y-2"><Label htmlFor="n">Name</Label><Input id="n" value={name} onChange={(e) => setName(e.target.value)} /></div>
         <div className="space-y-2"><Label htmlFor="t">Current title</Label><Input id="t" value={title} onChange={(e) => setTitle(e.target.value)} /></div>
-        <Button onClick={() => { g.setProfile(name, title); toast.success("Profile saved"); }}>Save profile</Button>
+        <Button disabled={!!saving} onClick={async () => { setSaving("profile"); const ok = await g.setProfile(name, title); setSaving(""); if (ok) toast.success("Profile saved"); }}>
+          {saving === "profile" && <Loader2 className="animate-spin" />}{saving === "profile" ? "Saving…" : "Save profile"}</Button>
       </div>
       <div className="panel space-y-4 p-6">
         <div className="font-semibold">Your skills</div>
@@ -60,7 +65,7 @@ function SettingsPage() {
           {field(prefs, setPrefs, "workMode", "Remote / hybrid / onsite")}{field(prefs, setPrefs, "salary", "Salary range")}
         </div>
         <div className="text-sm text-muted-foreground">Current resume: {d.resume ? d.resume.fileName : "none uploaded yet"} · signed in as {g.email}</div>
-        <Button onClick={saveDetails}>Save details</Button>
+        <Button disabled={!!saving} onClick={saveDetails}>{saving === "details" && <Loader2 className="animate-spin" />}{saving === "details" ? "Saving…" : "Save details"}</Button>
       </div>
       <div className="panel flex items-center justify-between p-6">
         <div><div className="font-semibold">Roast Mode</div><div className="text-sm text-muted-foreground">Aggressive interviewer, red-hot theme.</div></div>
