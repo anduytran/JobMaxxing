@@ -36,8 +36,8 @@ function Dashboard() {
           <h1 className="mt-2 text-4xl font-bold md:text-5xl">Looking good, {first} <span className="text-accent">✦</span></h1>
           <p className="mt-2 text-lg text-muted-foreground">Small steps today. Big career energy tomorrow.</p>
         </div>
-        <div className="panel flex items-center gap-3 px-5 py-3 text-sm">
-          <Flame className="h-5 w-5 text-primary" /><b>{done} quests done</b><span className="border-l pl-3 text-muted-foreground">Keep it going!</span>
+        <div className="panel flex items-center gap-3 px-5 py-3 text-sm transition-shadow hover:shadow-md">
+          <Flame className="animate-flame h-5 w-5 text-primary" /><b>{done} quests done</b><span className="border-l pl-3 text-muted-foreground">Keep it going!</span>
         </div>
       </div>
 
@@ -104,8 +104,8 @@ function Dashboard() {
             {open.slice(0, 3).map((q) => {
               const Icon = CAT_ICON[q.category?.toLowerCase()] ?? Zap;
               return (
-                <div key={q.id} className="flex items-center gap-5 p-5">
-                  <div className="grid h-14 w-14 shrink-0 place-items-center rounded-xl bg-sidebar-accent text-primary"><Icon className="h-6 w-6" /></div>
+                <div key={q.id} className="group flex items-center gap-5 p-5 transition-colors hover:bg-muted/60">
+                  <div className="grid h-14 w-14 shrink-0 place-items-center rounded-xl bg-sidebar-accent text-primary transition-transform group-hover:scale-110"><Icon className="h-6 w-6" /></div>
                   <div className="min-w-0 flex-1">
                     <div className="font-semibold">{q.title}</div>
                     <div className="mt-1 text-xs uppercase tracking-widest text-muted-foreground">{q.category}</div>
@@ -137,7 +137,7 @@ function Dashboard() {
 }
 
 function Stat({ icon: Icon, label, children }: { icon: typeof Zap; label: string; children: React.ReactNode }) {
-  return <div className="panel p-6"><div className="mb-5 flex items-center gap-2 text-muted-foreground"><Icon className="h-5 w-5" />{label}</div>{children}</div>;
+  return <div className="panel hover-lift p-6"><div className="mb-5 flex items-center gap-2 text-muted-foreground"><Icon className="h-5 w-5" />{label}</div>{children}</div>;
 }
 function Bar({ pct, cls }: { pct: number; cls: string }) {
   return <div className="mt-5 h-1.5 overflow-hidden rounded-full bg-muted"><motion.div className={`h-full rounded-full ${cls}`} initial={{ width: 0 }} animate={{ width: `${pct}%` }} /></div>;
