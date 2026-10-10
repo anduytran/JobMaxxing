@@ -78,6 +78,14 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
+  loader: async () => {
+    try {
+      return await loadGame();
+    } catch (err) {
+      console.error(err);
+      return null;
+    }
+  },
   head: () => ({
     meta: [
       { charSet: "utf-8" },
