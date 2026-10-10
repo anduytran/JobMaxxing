@@ -10,6 +10,7 @@ import type { StoredReview } from "@/lib/resume";
 import { MAX_POSES } from "@/components/Max";
 import { cn } from "@/lib/utils";
 import gymScene from "@/assets/max/gym-scene.svg";
+import billboardScene from "@/assets/max/billboard.svg";
 
 const MAX_ART: Record<string, string> = { setup: MAX_POSES.resume, resume: MAX_POSES.resume, interview: MAX_POSES.interview, skills: MAX_POSES.skills, hunt: MAX_POSES.hunt, branding: MAX_POSES.dap, social: MAX_POSES.dap };
 const QUEST_LINK: Record<string, "/setup" | "/interview" | "/quests" | "/skills" | "/market"> = { setup: "/setup", resume: "/setup", interview: "/interview", skills: "/skills", hunt: "/market" };
@@ -74,14 +75,8 @@ const DEFAULT_SCENE: Scene = {
 function SceneBackdrop({ kind }: { kind: string }) {
   if (kind === "branding" || kind === "social") {
     return (
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div className="absolute bottom-0 left-1/2 flex w-72 -translate-x-1/2 justify-between px-12">
-          <div className="h-40 w-3 rounded-t bg-foreground/15" /><div className="h-40 w-3 rounded-t bg-foreground/15" />
-        </div>
-        <div className="relative -mt-6 flex h-56 w-80 flex-col justify-between rounded-2xl border-4 border-foreground/15 bg-card/80 p-4">
-          <div className="flex gap-1.5">{[0, 1, 2, 3, 4].map((i) => <span key={i} className="h-2 w-2 rounded-full bg-accent/70" />)}</div>
-          <p className="text-center text-[10px] font-bold uppercase tracking-[0.4em] text-primary/60">JobMaxxing · Now hiring you</p>
-        </div>
+      <div className="absolute inset-0 overflow-hidden">
+        <img src={billboardScene} alt="" aria-hidden className="absolute inset-0 h-full w-full object-contain" draggable={false} />
       </div>
     );
   }
@@ -213,9 +208,14 @@ function Dashboard() {
         </div>
         <motion.div key={featured?.id ?? "none"} initial={reducedMotion ? false : { opacity: 0, x: 28 * dir }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.45 }} className="pointer-events-none absolute inset-y-0 right-0 hidden w-1/2 md:block">
           <SceneBackdrop kind={featKey} />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="mascot-float">{featured ? <img key={featArt} src={featArt} alt={`Max ready for: ${featured.title}`} width={816} height={816} className="h-56 w-56 object-contain" /> : <Mascot className="h-44 w-44" />}</div>
-          </div>
+          {(() => {
+            const inBillboard = featKey === "branding" || featKey === "social";
+            return (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className={cn("mascot-float", inBillboard && "relative -top-[9%]")}>{featured ? <img key={featArt} src={featArt} alt={`Max ready for: ${featured.title}`} width={816} height={816} className={cn("object-contain", inBillboard ? "h-24 w-24" : "h-56 w-56")} /> : <Mascot className="h-44 w-44" />}</div>
+              </div>
+            );
+          })()}
           <div className="absolute left-10 top-6 flex -rotate-6 items-center gap-2 rounded-xl bg-card px-4 py-3 text-sm shadow-md"><Zap className="h-4 w-4" />+{featured?.xp ?? 150} XP</div>
           <div className={`absolute right-8 top-8 rotate-6 rounded-2xl bg-card p-3 shadow-md ${scene.chip}`}><scene.icon className="h-6 w-6" /></div>
           {scene.props.slice(0, 2).map(([label], i) => (
