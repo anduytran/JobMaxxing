@@ -39,5 +39,24 @@ export function createBrowserVoice(): VoiceAgent {
   };
 }
 
-// TODO(ElevenLabs): implement createElevenLabsVoice() using @elevenlabs/react's useConversation
-// with a server-minted conversation token, feeding each generated question as a contextual update.
+/** ElevenLabs voice: the server synthesizes each line; listening still uses browser speech recognition.
+ *  Falls back to the browser voice for any line ElevenLabs can't produce. */
+export function createElevenLabsVoice(synth: (text: string) => Promise<string | null>): VoiceAgent {
+  const browser = createBrowserVoice();
+  let audio: HTMLAudioElement | null = null;
+  return {
+    speak: async (text) => {
+      audio?.pause();
+      const b64 = await synth(text).catch(() => null);
+      if (!b64) return browser.speak(text);
+      await new Promise<void>((resolve) => {
+        audio = new Audio(`data:audio/mpeg;base64,${b64}`);
+        audio.onended = () => resolve();
+        audio.onerror = () => resolve();
+        audio.play().catch(() => resolve());
+      });
+    },
+    listen: () => { audio?.pause(); return browser.listen(); },
+    stop: () => { audio?.pause(); browser.stop(); },
+  };
+}
