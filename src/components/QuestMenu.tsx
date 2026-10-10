@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useGame } from "@/lib/game";
 import { questTitleLines } from "@/lib/quest-titles";
+import { ResetCountdown } from "@/components/ResetCountdown";
+import type { ResetPeriod } from "@/lib/reset-times";
 
 export function QuestMenu() {
   const { quests } = useGame();
@@ -14,7 +16,7 @@ export function QuestMenu() {
   const show = () => { cancel(); setOpen(true); };
   const hide = () => { cancel(); timer.current = setTimeout(() => setOpen(false), 200); };
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
-  const groups = [{ label: "Daily", period: "daily", limit: 4 }, { label: "Weekly", period: "weekly", limit: 3 }];
+  const groups: { label: string; period: ResetPeriod; limit: number }[] = [{ label: "Daily", period: "daily", limit: 4 }, { label: "Weekly", period: "weekly", limit: 3 }];
   const tracked = quests.filter(q => q.period === "daily" || q.period === "weekly");
   const doneCount = tracked.filter(q => q.done).length;
   return <Popover open={open} onOpenChange={setOpen}>
@@ -25,7 +27,10 @@ export function QuestMenu() {
         const all = quests.filter(q => q.period === group.period);
         const rows = all.sort((a,b) => Number(a.done)-Number(b.done)).slice(0,group.limit);
         return <section key={group.period} aria-label={`${group.label} quests`} className="border-b px-5 py-4">
-          <div className="mb-3 flex justify-between text-xs font-semibold uppercase tracking-wider"><h3>{group.label} quests</h3><span className="text-muted-foreground">{all.filter(q=>q.done).length} / {all.length}</span></div>
+          <div className="mb-3">
+            <div className="flex justify-between text-xs font-semibold uppercase tracking-wider"><h3>{group.label} quests</h3><span className="text-muted-foreground">{all.filter(q=>q.done).length} / {all.length}</span></div>
+            <ResetCountdown period={group.period} label="Expiration in" className="mt-1 text-[11px] font-medium text-primary/80" />
+          </div>
           {rows.length ? <div className="space-y-3">{rows.map(q => <Link key={q.id} to="/quests" onClick={()=>setOpen(false)} title={q.title} className="group flex items-center gap-3">
             <span className={`grid h-8 w-8 shrink-0 place-items-center border ${q.done ? "border-success/40 bg-success/10 text-success" : "border-primary/30 bg-primary/10 text-primary"}`}>{q.done ? <Check className="h-4 w-4" /> : <Zap className="h-4 w-4" />}</span>
             <div className="min-w-0 flex-1"><p className="min-h-[2.75em] text-sm font-medium leading-snug group-hover:text-primary"><span className="block">{questTitleLines(q.title)[0]}</span><span className="block">{questTitleLines(q.title)[1]}</span></p><div className="mt-1.5 h-1 bg-muted"><div className={`h-full bg-success ${q.done ? "w-full" : "w-0"}`} /></div></div>
