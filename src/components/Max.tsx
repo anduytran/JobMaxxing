@@ -1,12 +1,12 @@
 import { cn } from "@/lib/utils";
-import wave from "@/assets/max/clean-max-wave.svg";
-import resume from "@/assets/max/clean-max-resume.svg";
-import interview from "@/assets/max/clean-max-interview.svg";
-import skills from "@/assets/max/clean-max-skills.svg";
+import waveAsset from "@/assets/max/original-wave.png.asset.json";
+import resumeAsset from "@/assets/max/original-resume.png.asset.json";
+import interviewAsset from "@/assets/max/original-interview.png.asset.json";
+import skillsAsset from "@/assets/max/original-skills.png.asset.json";
 import hunt from "@/assets/max/max-hunt.svg";
-import dap from "@/assets/max/clean-max-dap.svg";
+import dapAsset from "@/assets/max/original-dap.png.asset.json";
 
-export const MAX_POSES = { wave, resume, interview, skills, hunt, dap } as const;
+export const MAX_POSES = { wave: waveAsset.url, resume: resumeAsset.url, interview: interviewAsset.url, skills: skillsAsset.url, hunt, dap: dapAsset.url } as const;
 export type MaxPose = keyof typeof MAX_POSES;
 
 export function Max({ pose = "wave", className, alt = "" }: { pose?: MaxPose; className?: string | undefined; alt?: string }) {
