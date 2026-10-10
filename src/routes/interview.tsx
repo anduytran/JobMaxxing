@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Bot, Flame, Loader2, Mic, Send, Square, Timer, Volume2, VolumeX } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { AcknowledgeDisclosure, InterviewDisclosure, InterviewNoticeBadge, ReportDisclaimer } from "@/components/InterviewDisclosure";
+import { AcknowledgeDisclosure, InterviewDisclosure } from "@/components/InterviewDisclosure";
 import { SkillText } from "@/components/skill-text";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -158,8 +158,6 @@ function Interview() {
 
       <AgentBadges agents={agents} />
 
-      <InterviewDisclosure job={job} />
-
       {stage === "setup" && (
         <section className="panel space-y-4 p-6">
           <div>
@@ -167,7 +165,6 @@ function Interview() {
             <p className="text-sm text-muted-foreground">Find a posting that matches the role you want and paste the full text.</p>
           </div>
           <Textarea value={jd} onChange={(e) => setJd(e.target.value)} rows={10} placeholder="Senior Frontend Engineer — We're looking for 4+ years of React and TypeScript…" />
-          <p className="text-xs text-muted-foreground">Paste the posting as published. Leave out your home address, phone number, and other people's personal details — this text is sent to an AI parser and saved to your account.</p>
           <Button onClick={analyze} disabled={busy || jd.trim().length < 40}>
             {busy && <Loader2 className="animate-spin" />} Analyze job
           </Button>
@@ -219,6 +216,7 @@ function Interview() {
             <Choice label="Length" value={length} onChange={setLength}
               options={(Object.keys(LENGTHS) as InterviewLength[]).map((k) => [k, LENGTHS[k].label])} />
           </div>
+          <InterviewDisclosure job={job} />
           <AcknowledgeDisclosure checked={ack} onChange={setAck} />
           <div className="flex flex-wrap items-center gap-2">
             <Button variant="outline" onClick={() => setStage("review")}>Back</Button>
@@ -233,10 +231,7 @@ function Interview() {
           <div className="flex items-center gap-3 border-b p-4">
             <div className="grid h-9 w-9 place-items-center rounded bg-primary text-primary-foreground"><Bot className="h-4 w-4" /></div>
             <div className="flex-1">
-              <div className="flex flex-wrap items-center gap-2 text-sm font-semibold">
-                {roast ? "Gordon, Senior Hiring Manager" : "Ava, Friendly Recruiter"}
-                <InterviewNoticeBadge />
-              </div>
+              <div className="text-sm font-semibold">{roast ? "Gordon, Senior Hiring Manager" : "Ava, Friendly Recruiter"}</div>
               <div className="font-mono text-[10px] text-muted-foreground">
                 {stage === "live" ? `Question ${qi + 1} / ${questions.length}` : "Your questions for the interviewer"}
               </div>
@@ -289,7 +284,6 @@ function Interview() {
             <summary className="cursor-pointer font-mono text-xs text-muted-foreground">TRANSCRIPT</summary>
             <div className="mt-2 space-y-1">{turns.map((t, i) => <p key={i}><b>{t.speaker === "interviewer" ? "Interviewer" : "You"}:</b> {t.text}</p>)}</div>
           </details>
-          <ReportDisclaimer />
           <Button onClick={reset}>New interview</Button>
         </section>
       )}
