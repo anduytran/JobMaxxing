@@ -1,5 +1,9 @@
 # Roadmap
 
+## Dashboard mastery cards
+- [ ] Revamp resume, quests, total XP, and career cards with clear objectives, real progress, choice, and encouraging feedback.
+- [ ] Verify card states and navigation; do not change progression or invent competitive data.
+
 ## Resume score card
 - [x] Show the actual score, grade rank, next score target, and existing XP milestones.
 - [x] Display a random pending resume improvement as a bullet, with another-item control and Resume Lab link.
