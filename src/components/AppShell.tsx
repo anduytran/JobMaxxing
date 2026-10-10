@@ -62,10 +62,10 @@ export function AppShell({ children }: { children: ReactNode }) {
                 const active = loc.pathname === to;
                 return (
                   <Link key={to} to={to} onClick={() => setOpen(false)}
-                    className={cn("relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-[15px] transition-colors",
+                    className={cn("group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-[15px] transition-all hover-slide",
                       active ? "font-medium text-primary" : "text-foreground/80 hover:bg-muted")}>
                     {active && <motion.span layoutId="nav" className="absolute inset-0 rounded-xl border border-primary/20 bg-sidebar-accent" />}
-                    <Icon className="relative h-[18px] w-[18px]" />
+                    <Icon className="icon-wiggle relative h-[18px] w-[18px]" />
                     <span className="relative flex-1">{label}</span>
                     {badge && <span className="relative rounded-md bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">{badge}</span>}
                   </Link>
