@@ -178,6 +178,24 @@ export const saveRoast = createServerFn({ method: "POST" })
     }
   });
 
+export const saveReducedMotion = createServerFn({ method: "POST" })
+  .inputValidator((input: { reducedMotion: unknown }) => {
+    if (typeof input.reducedMotion !== "boolean") throw new Error("Motion preference must be true or false.");
+    return { reducedMotion: input.reducedMotion };
+  })
+  .handler(async ({ data }): Promise<SaveResult> => {
+    try {
+      const PROFILE_ID = (await requireUser()).id;
+      await neonExecute(
+        "update public.devup_profile set reduced_motion = $1, updated_at = now() where id = $2",
+        [data.reducedMotion, PROFILE_ID],
+      );
+      return { ok: true };
+    } catch (err) {
+      return fail(err);
+    }
+  });
+
 /**
  * Marks one quest done and awards its XP in a single transaction. The CTE only
  * returns a row when the quest flips from not-done to done, so a double click
