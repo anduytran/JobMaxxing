@@ -23,6 +23,7 @@ export function AuthScreen() {
       const res = await fn({ data: { email, password, name } });
       if (!res.ok) return void toast.error(res.error);
       await router.invalidate();
+      toast.message("Signed in — if you're still on this screen, your browser blocked the login cookie. Open the app in a new tab.");
     } catch (err) {
       toast.error((err as Error).message);
     } finally {
