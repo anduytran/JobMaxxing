@@ -325,14 +325,6 @@ function Dashboard() {
         </section>
       </div>
 
-      <section>
-        <div className="mb-5 flex items-center justify-between"><h2 className="text-2xl font-semibold">Your next power move</h2><span className="text-xs tracking-[0.2em] text-muted-foreground">BUILT AROUND YOU</span></div>
-        <div className="grid gap-6 md:grid-cols-2">
-          <Power to="/setup" icon={FileText} tag="POWERED BY RAIA" title="A resume that opens doors." body="Get AI-powered feedback and turn your experience into your strongest story." cta="Enter Resume Lab" cls="bg-hero/60" />
-          <Power to="/peers" icon={Users} tag="BETTER, TOGETHER" title="Practice with a real person." body="Find your career buddy and build confidence, one conversation at a time." cta="Find an interview partner" cls="bg-lavender" />
-        </div>
-      </section>
-
       <div className="flex items-center gap-5 rounded-2xl border bg-hero/60 p-6">
         <Button variant="ghost" aria-label="Another thought from Max" title="Another thought from Max" className="h-20 w-20 shrink-0 p-0 hover:bg-transparent" onClick={() => setTip((t) => (t + 1) % tips.length)}><Mascot className="h-20 w-20" /></Button>
         <div className="min-w-0"><div className="font-semibold">Max says</div><motion.p key={tip} initial={reducedMotion ? false : { opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="min-h-12 text-muted-foreground" aria-live="polite">{tips[tip]}</motion.p></div>
@@ -346,14 +338,4 @@ function Stat({ icon: Icon, label, children }: { icon: typeof Zap; label: string
 }
 function Bar({ pct, cls }: { pct: number; cls: string }) {
   return <div className="mt-5 h-1.5 overflow-hidden rounded-full bg-muted"><motion.div className={`h-full rounded-full ${cls}`} initial={{ width: 0 }} animate={{ width: `${pct}%` }} /></div>;
-}
-function Power({ to, icon: Icon, tag, title, body, cta, cls }: { to: "/setup" | "/peers"; icon: typeof Zap; tag: string; title: string; body: string; cta: string; cls: string }) {
-  return (
-    <Link to={to} className={`power-move group rounded-2xl border p-8 ${cls}`}>
-      <div className="flex justify-between"><Icon className="h-8 w-8 text-muted-foreground" /><span className="text-[10px] tracking-[0.2em] text-muted-foreground">{tag}</span></div>
-      <h3 className="mt-8 text-2xl font-semibold">{title}</h3>
-      <p className="mt-3 text-muted-foreground">{body}</p>
-      <div className="mt-8 flex items-center justify-between text-muted-foreground group-hover:text-primary">{cta}<ChevronRight className="h-5 w-5" /></div>
-    </Link>
-  );
 }
