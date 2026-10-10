@@ -183,9 +183,9 @@ function Dashboard() {
             <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-foreground/70"><span className="h-1.5 w-1.5 rounded-full bg-foreground/60" />{featured ? `Today's featured quest · ${featured.category}` : "Your main event · Mock interview"}</p>
             <div className="pb-8 pt-8 md:py-10">
               {featured ? (
-                <h2 ref={headRef} title={featured.title} className="min-h-[2.2em] break-words text-3xl font-bold leading-[1.1] sm:text-4xl lg:text-5xl"><span className="block">{featLines[0]}</span><span className="block">{featLines[1]}</span></h2>
+                <h2 ref={headRef} title={featured.title} className="min-h-[2.2em] break-words text-foreground text-3xl font-bold leading-[1.1] sm:text-4xl lg:text-5xl"><span className="block">{featLines[0]}</span><span className="block">{featLines[1]}</span></h2>
               ) : (
-                <h2 className="min-h-[2.2em] break-words text-3xl font-bold leading-[1.1] sm:text-4xl lg:text-5xl"><span className="block">Practice your</span><span className="block">mock interview</span></h2>
+                <h2 className="min-h-[2.2em] break-words text-foreground text-3xl font-bold leading-[1.1] sm:text-4xl lg:text-5xl"><span className="block">Practice your</span><span className="block">mock interview</span></h2>
               )}
               <p ref={subRef} className="mt-5 max-w-lg text-lg text-muted-foreground">{scene.blurb}</p>
               {featured ? (
@@ -216,7 +216,7 @@ function Dashboard() {
             </div>
           </motion.div>
           {total > 1 && (
-            <span className="absolute bottom-5 left-1/2 z-20 -translate-x-1/2 rounded-full border bg-card/90 px-3 py-1 text-xs font-medium tabular-nums text-muted-foreground shadow-sm">{featIdx + 1} / {total}</span>
+            <span className="absolute bottom-5 left-1/2 z-20 -translate-x-1/2 rounded-full border bg-card/90 px-3 py-1 text-xs font-medium tabular-nums text-card-foreground shadow-sm">{featIdx + 1} / {total}</span>
           )}
         </section>
         {total > 1 && (<>

@@ -76,4 +76,4 @@
 ## Uploaded full-screen quest scenes
 - [x] Replace partitioned scenes with uploaded stage, gym and meadow backgrounds spanning the entire featured screen.
 - [x] Use portrait stage and meadow images on mobile; keep Max and quest controls above the art.
-- [ ] Verify full-screen backgrounds and mobile image selection in the browser.
+- [x] Isolated browser check: all three scenes load at full screen width/height, portrait sources select on mobile, carousel works with no runtime errors; live account check remains unavailable.
