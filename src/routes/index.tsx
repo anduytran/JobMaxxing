@@ -190,7 +190,7 @@ function Dashboard() {
       </div>
 
       <section className="relative overflow-hidden rounded-3xl border bg-hero p-8 md:p-12">
-        <div className="relative z-10 max-w-xl">
+        <div className="relative z-10 max-w-xl md:max-w-[46%]">
           <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-foreground/70"><span className="h-1.5 w-1.5 rounded-full bg-foreground/60" />Your next chapter starts here</p>
           <h2 className="mt-5 text-4xl font-bold leading-tight md:text-5xl">You've got potential.<br />Let's put it to work.</h2>
           <p className="mt-4 text-muted-foreground">Your dream role is closer than you think. Build your skills, sharpen your story, and make your next move.</p>
@@ -230,10 +230,10 @@ function Dashboard() {
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="mascot-float">{featured ? <img key={featArt} src={featArt} alt={`Max ready for: ${featured.title}`} width={816} height={816} className="h-56 w-56 object-contain" /> : <Mascot className="h-44 w-44" />}</div>
           </div>
-          <div className="absolute left-6 top-6 flex -rotate-6 items-center gap-2 rounded-xl bg-card px-4 py-3 text-sm shadow-md"><Zap className="h-4 w-4" />+{featured?.xp ?? 150} XP</div>
+          <div className="absolute left-10 top-6 flex -rotate-6 items-center gap-2 rounded-xl bg-card px-4 py-3 text-sm shadow-md"><Zap className="h-4 w-4" />+{featured?.xp ?? 150} XP</div>
           <div className={`absolute right-8 top-8 rotate-6 rounded-2xl bg-card p-3 shadow-md ${scene.chip}`}><scene.icon className="h-6 w-6" /></div>
           {scene.props.slice(0, 2).map(([label], i) => (
-            <div key={label} className={cn("absolute rounded-xl bg-card/90 px-3 py-1.5 text-xs font-medium shadow-sm", i === 0 ? "left-8 top-1/2 -rotate-3" : "right-8 top-1/2 rotate-3")}>{label}</div>
+            <div key={label} className={cn("absolute rounded-xl bg-card/90 px-3 py-1.5 text-xs font-medium shadow-sm", i === 0 ? "right-6 top-24 -rotate-3" : "right-6 top-1/2 rotate-3")}>{label}</div>
           ))}
           <div className="absolute bottom-6 right-8 flex items-center gap-2 rounded-xl bg-card px-4 py-3 text-sm shadow-md"><Check className="h-4 w-4 text-success" />{scene.phrase}</div>
         </motion.div>
