@@ -84,7 +84,7 @@ function SceneBackdrop({ kind }: { kind: string }) {
   if (kind === "skills") {
     return (
       <div className="absolute inset-0 overflow-hidden">
-        <img src={gymScene} alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover object-bottom" draggable={false} />
+        <img src={gymScene} alt="" aria-hidden style={{ backgroundColor: "#FDF7E7" /* matches the gym art wall */ }} className="absolute inset-0 h-full w-full object-contain object-bottom" draggable={false} />
       </div>
     );
   }
