@@ -225,7 +225,7 @@ function Dashboard() {
                   aria-hidden
                   draggable={false}
                   className="absolute left-1/2 top-1/2 h-[135%] w-[135%] -translate-x-1/2 -translate-y-1/2 object-contain"
-                  style={{ maskImage: "radial-gradient(closest-side, black 62%, transparent 78%)", WebkitMaskImage: "radial-gradient(closest-side, black 62%, transparent 78%)" }}
+                  style={{ maskImage: "radial-gradient(closest-side, black 82%, transparent 97%)", WebkitMaskImage: "radial-gradient(closest-side, black 82%, transparent 97%)" }}
                 />
               )}
               <div className="mascot-float relative h-full w-full"><img key={featArt} src={featArt} alt={featured ? `Max ready for: ${featured.title}` : "Max with a microphone, ready to interview you"} width={816} height={816} decoding="sync" draggable={false} className="h-full w-full object-contain" /></div>
