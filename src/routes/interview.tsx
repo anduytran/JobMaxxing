@@ -1,179 +1,314 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Camera, CameraOff, Flame, Mic, MicOff, Send, Square, Bot } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { Bot, Flame, Loader2, Mic, Send, Sparkles as _unused, Square, Timer, Volume2, VolumeX } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import { useGame } from "@/lib/game";
+import {
+  generateInterviewQuestions, getInterviewAgents, gradeInterviewTranscript, parseJobDescription,
+} from "@/lib/interview.functions";
+import {
+  LENGTHS, type AgentStatus, type InterviewGrade, type InterviewLength, type InterviewQuestion,
+  type InterviewType, type ParsedJob, type TranscriptTurn,
+} from "@/lib/interview/types";
+import { createBrowserVoice, type VoiceAgent } from "@/lib/interview/voice";
 import { cn } from "@/lib/utils";
+
+void _unused;
 
 export const Route = createFileRoute("/interview")({
   head: () => ({
     meta: [
-      { title: "Interview Simulator — DevUp" },
-      { name: "description", content: "Practice mock interviews with webcam eye-contact tracking and instant feedback." },
-      { property: "og:title", content: "Interview Simulator — DevUp" },
-      { property: "og:description", content: "Practice mock interviews with webcam tracking and instant feedback." },
+      { title: "AI Mock Interview — DevUp" },
+      { name: "description", content: "Paste a real job post and run a timed AI mock interview, then get graded feedback and XP." },
+      { property: "og:title", content: "AI Mock Interview — DevUp" },
+      { property: "og:description", content: "Job-specific AI mock interviews with graded feedback and XP rewards." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
+  loader: () => getInterviewAgents(),
   component: Interview,
 });
 
-const Q_NICE = [
-  "Welcome! Tell me a bit about yourself and what drew you to software engineering.",
-  "Describe a challenging bug you solved. How did you approach it?",
-  "How would you design a URL shortener for millions of users?",
-  "Where do you see yourself growing in the next two years?",
-];
-const Q_ROAST = [
-  "Your resume says 'passionate'. Everyone says that. What have you actually shipped?",
-  "That bug you're proud of — why did you write it in the first place?",
-  "Design a URL shortener. And no, 'just use a database' is not an answer.",
-  "Why should we hire you over the 400 other applicants with the same bootcamp?",
-];
-
-type Msg = { from: "ai" | "me"; text: string };
+type Stage = "setup" | "review" | "live" | "your_questions" | "grading" | "report";
 
 function Interview() {
+  const agents = Route.useLoaderData() as AgentStatus;
   const { roast, setRoast, completeQuest, gainXp } = useGame();
-  const video = useRef<HTMLVideoElement>(null);
-  const stream = useRef<MediaStream | null>(null);
-  const [cam, setCam] = useState(true);
-  const [mic, setMic] = useState(true);
-  const [camErr, setCamErr] = useState(false);
-  const [msgs, setMsgs] = useState<Msg[]>([]);
+  const [stage, setStage] = useState<Stage>("setup");
+  const [jd, setJd] = useState("");
+  const [type, setType] = useState<InterviewType>("mixed");
+  const [length, setLength] = useState<InterviewLength>("standard");
+  const [job, setJob] = useState<ParsedJob | null>(null);
+  const [questions, setQuestions] = useState<InterviewQuestion[]>([]);
   const [qi, setQi] = useState(0);
+  const [turns, setTurns] = useState<TranscriptTurn[]>([]);
+  const [grade, setGrade] = useState<InterviewGrade | null>(null);
+  const [busy, setBusy] = useState(false);
   const [text, setText] = useState("");
   const [listening, setListening] = useState(false);
-  const [report, setReport] = useState(false);
-  const [eye, setEye] = useState(82);
-  const qs = roast ? Q_ROAST : Q_NICE;
+  const [voiceOn, setVoiceOn] = useState(true);
+  const [left, setLeft] = useState(LENGTHS.standard.seconds);
+  const voice = useRef<VoiceAgent | null>(null);
+  const scroller = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    navigator.mediaDevices?.getUserMedia({ video: true, audio: true })
-      .then((s) => { stream.current = s; if (video.current) video.current.srcObject = s; })
-      .catch(() => setCamErr(true));
-    return () => stream.current?.getTracks().forEach((t) => t.stop());
-  }, []);
+  useEffect(() => { voice.current = createBrowserVoice(); return () => voice.current?.stop(); }, []);
+  useEffect(() => { scroller.current?.scrollTo({ top: 1e6, behavior: "smooth" }); }, [turns]);
 
-  useEffect(() => { stream.current?.getVideoTracks().forEach((t) => (t.enabled = cam)); }, [cam]);
-  useEffect(() => { stream.current?.getAudioTracks().forEach((t) => (t.enabled = mic)); }, [mic]);
-  useEffect(() => { setMsgs([{ from: "ai", text: qs[0] ?? "" }]); setQi(0); }, [roast]); // eslint-disable-line react-hooks/exhaustive-deps
+  const say = (t: string, phase: TranscriptTurn["phase"], questionId?: string) => {
+    setTurns((x) => [...x, { speaker: "interviewer", phase, text: t, questionId }]);
+    if (voiceOn) void voice.current?.speak(t);
+  };
+
+  // Guardrail: physical time limit.
   useEffect(() => {
-    const t = setInterval(() => setEye((e) => Math.max(60, Math.min(98, e + (Math.random() * 10 - 5)))), 1200);
+    if (stage !== "live") return;
+    const t = setInterval(() => setLeft((s) => s - 1), 1000);
     return () => clearInterval(t);
-  }, []);
+  }, [stage]);
+  useEffect(() => { if (stage === "live" && left <= 0) toTail("Looks like we're at time."); }, [left, stage]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const analyze = async () => {
+    setBusy(true);
+    try {
+      setJob(await parseJobDescription({ data: { jd } }));
+      setStage("review");
+    } catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
+  };
+
+  const start = async () => {
+    if (!job) return;
+    setBusy(true);
+    try {
+      const qs = await generateInterviewQuestions({ data: { job, type, length, roast } });
+      setQuestions(qs); setQi(0); setTurns([]); setLeft(LENGTHS[length].seconds); setStage("live");
+      say(qs[0]!.text, "interview", qs[0]!.id);
+    } catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
+  };
+
+  const toTail = (lead: string) => {
+    setStage("your_questions");
+    say(`${lead} Before we wrap up — do you have any questions for me?`, "candidate_questions");
+  };
 
   const answer = (a: string) => {
-    if (!a.trim()) return;
-    const next = qi + 1;
-    const reply = next < qs.length ? (qs[next] ?? "") : roast ? "That's all. I've seen worse. Barely. Hit End Interview." : "Great, that wraps it up! Click End Interview for your report.";
-    setMsgs((m) => [...m, { from: "me", text: a }, { from: "ai", text: reply }]);
-    setQi(next);
+    const v = a.trim();
+    if (!v) return;
     setText("");
+    if (stage === "live") {
+      const q = questions[qi];
+      setTurns((x) => [...x, { speaker: "candidate", phase: "interview", text: v, questionId: q?.id }]);
+      const next = qi + 1;
+      // Guardrail: question budget.
+      if (next >= questions.length) return toTail("Thanks, that covers my questions.");
+      setQi(next);
+      say(questions[next]!.text, "interview", questions[next]!.id);
+    } else if (stage === "your_questions") {
+      setTurns((x) => [...x, { speaker: "candidate", phase: "candidate_questions", text: v }]);
+      say(roast ? "Fair question. I'll note it. Anything else, or are we done?" : "Great question — the team would love to dig into that. Anything else?", "candidate_questions");
+    }
   };
 
-  const speak = () => {
-    const SR = (window as unknown as { SpeechRecognition?: any; webkitSpeechRecognition?: any }).SpeechRecognition
-      ?? (window as unknown as { webkitSpeechRecognition?: any }).webkitSpeechRecognition;
-    if (!SR) { answer("(Spoken answer) I'd break the problem into steps and validate each one."); return; }
-    const r = new SR();
-    r.onresult = (e: any) => answer(e.results[0][0].transcript);
-    r.onend = () => setListening(false);
+  const speak = async () => {
     setListening(true);
-    r.start();
+    try { answer(await voice.current!.listen()); }
+    catch (e) { toast.error((e as Error).message); }
+    finally { setListening(false); }
   };
 
-  const end = () => {
-    setReport(true);
-    completeQuest("mock1");
-    gainXp(roast ? 150 : 100);
+  const finish = async () => {
+    voice.current?.stop();
+    if (!job) return;
+    setStage("grading");
+    try {
+      const g = await gradeInterviewTranscript({ data: { transcript: turns, job } });
+      setGrade(g);
+      setStage("report");
+      completeQuest("mock1");
+      if (g.xp > 0) gainXp(g.xp, "mock interview");
+    } catch (e) { toast.error((e as Error).message); setStage("your_questions"); }
   };
 
-  const score = Math.round(Math.min(95, 60 + qi * 8 + (roast ? 5 : 0)));
+  const reset = () => { setStage("setup"); setGrade(null); setTurns([]); setJob(null); };
 
   return (
-    <div className="mx-auto max-w-7xl space-y-4">
+    <div className="mx-auto max-w-6xl space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-3xl font-bold">Interview Simulator</h1>
+        <div>
+          <h1 className="text-3xl font-bold">AI Mock Interview</h1>
+          <Stepper stage={stage} />
+        </div>
         <label className={cn("flex cursor-pointer items-center gap-3 rounded-lg border-2 px-4 py-2 transition", roast ? "border-roast bg-roast/15 glow" : "border-accent/50 bg-accent/10")}>
           <Flame className={cn("h-5 w-5", roast ? "text-roast" : "text-accent")} />
-          <span className="text-sm font-semibold">Enable Roast Mode (Aggressive Interviewer)</span>
-          <Switch checked={roast} onCheckedChange={setRoast} />
+          <span className="text-sm font-semibold">Roast Mode</span>
+          <Switch checked={roast} onCheckedChange={setRoast} disabled={stage !== "setup" && stage !== "review"} />
         </label>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <section className="panel overflow-hidden">
-          <div className="relative aspect-video bg-background">
-            <video ref={video} autoPlay muted playsInline className={cn("h-full w-full -scale-x-100 object-cover", !cam && "invisible")} />
-            {(!cam || camErr) && (
-              <div className="absolute inset-0 grid place-items-center text-center text-muted-foreground">
-                <div><CameraOff className="mx-auto mb-2 h-10 w-10" />{camErr ? "Camera access denied or unavailable" : "Camera off"}</div>
-              </div>
-            )}
-            {cam && !camErr && (
-              <div className="pointer-events-none absolute inset-0">
-                <div className="absolute left-1/2 top-1/2 h-1/2 w-1/3 -translate-x-1/2 -translate-y-1/2">
-                  {["left-0 top-0 border-l-2 border-t-2", "right-0 top-0 border-r-2 border-t-2", "left-0 bottom-0 border-l-2 border-b-2", "right-0 bottom-0 border-r-2 border-b-2"].map((c) => (
-                    <span key={c} className={cn("absolute h-6 w-6 border-primary", c)} />
-                  ))}
-                  <span className="absolute inset-x-0 h-px bg-primary glow animate-scan" />
-                </div>
-                <div className="absolute left-3 top-3 space-y-1 rounded bg-background/70 px-2 py-1 font-mono text-[10px] text-primary">
-                  <div>● FACE LOCK</div><div>EYE CONTACT {eye.toFixed(0)}%</div><div>EXPRESSION: {roast ? "NERVOUS" : "CALM"}</div>
-                </div>
-              </div>
-            )}
+      <AgentBadges agents={agents} />
+
+      {stage === "setup" && (
+        <section className="panel space-y-4 p-6">
+          <div>
+            <h2 className="font-display text-xl">1 · Paste a real job description</h2>
+            <p className="text-sm text-muted-foreground">Find a posting that matches the role you want and paste the full text.</p>
           </div>
-          <div className="flex items-center justify-center gap-3 p-4">
-            <Button variant={mic ? "secondary" : "destructive"} size="icon" onClick={() => setMic(!mic)} aria-label="Toggle mic">{mic ? <Mic /> : <MicOff />}</Button>
-            <Button variant={cam ? "secondary" : "destructive"} size="icon" onClick={() => setCam(!cam)} aria-label="Toggle camera">{cam ? <Camera /> : <CameraOff />}</Button>
-            <Button variant="destructive" onClick={end}><Square /> End Interview</Button>
+          <Textarea value={jd} onChange={(e) => setJd(e.target.value)} rows={10} placeholder="Senior Frontend Engineer — We're looking for 4+ years of React and TypeScript…" />
+          <div className="grid gap-4 md:grid-cols-2">
+            <Choice label="Interview type" value={type} onChange={setType}
+              options={[["mixed", "Mixed"], ["technical", "Technical"], ["behavioral", "Behavioral"]]} />
+            <Choice label="Length" value={length} onChange={setLength}
+              options={(Object.keys(LENGTHS) as InterviewLength[]).map((k) => [k, LENGTHS[k].label])} />
+          </div>
+          <Button onClick={analyze} disabled={busy || jd.trim().length < 40}>
+            {busy && <Loader2 className="animate-spin" />} Analyze job
+          </Button>
+        </section>
+      )}
+
+      {stage === "review" && job && (
+        <section className="panel space-y-4 p-6">
+          <h2 className="font-display text-xl">2 · What we found{job.title ? ` — ${job.title}` : ""}</h2>
+          <p className="text-sm text-muted-foreground">{job.summary}</p>
+          <div>
+            <div className="mb-2 font-mono text-xs text-muted-foreground">SKILLS</div>
+            <div className="flex flex-wrap gap-2">
+              {job.skills.length ? job.skills.map((s) => <span key={s} className="rounded border border-primary/50 bg-primary/10 px-2 py-1 text-xs">{s}</span>)
+                : <span className="text-sm text-muted-foreground">No known skills detected — questions will be general.</span>}
+            </div>
+          </div>
+          {job.qualifications.length > 0 && (
+            <div>
+              <div className="mb-2 font-mono text-xs text-muted-foreground">QUALIFICATIONS</div>
+              <ul className="list-disc space-y-1 pl-5 text-sm">{job.qualifications.map((q) => <li key={q}>{q}</li>)}</ul>
+            </div>
+          )}
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setStage("setup")}>Back</Button>
+            <Button onClick={start} disabled={busy}>{busy && <Loader2 className="animate-spin" />} Start {LENGTHS[length].label} {type} interview</Button>
           </div>
         </section>
+      )}
 
-        <section className="panel flex h-[32rem] flex-col">
-          <div className="flex items-center gap-2 border-b p-4">
-            <div className="grid h-8 w-8 place-items-center rounded bg-primary text-primary-foreground"><Bot className="h-4 w-4" /></div>
-            <div><div className="text-sm font-semibold">{roast ? "Gordon, Senior Hiring Manager" : "Ava, Friendly Recruiter"}</div><div className="font-mono text-[10px] text-muted-foreground">Question {Math.min(qi + 1, qs.length)} / {qs.length}</div></div>
+      {(stage === "live" || stage === "your_questions" || stage === "grading") && (
+        <section className="panel flex h-[36rem] flex-col">
+          <div className="flex items-center gap-3 border-b p-4">
+            <div className="grid h-9 w-9 place-items-center rounded bg-primary text-primary-foreground"><Bot className="h-4 w-4" /></div>
+            <div className="flex-1">
+              <div className="text-sm font-semibold">{roast ? "Gordon, Senior Hiring Manager" : "Ava, Friendly Recruiter"}</div>
+              <div className="font-mono text-[10px] text-muted-foreground">
+                {stage === "live" ? `Question ${qi + 1} / ${questions.length}` : "Your questions for the interviewer"}
+              </div>
+            </div>
+            <div className={cn("flex items-center gap-1 font-mono text-sm", left < 30 && stage === "live" && "text-destructive")}>
+              <Timer className="h-4 w-4" /> {fmt(Math.max(0, left))}
+            </div>
+            <Button variant="ghost" size="icon" onClick={() => { setVoiceOn(!voiceOn); voice.current?.stop(); }} aria-label="Toggle interviewer voice">
+              {voiceOn ? <Volume2 /> : <VolumeX />}
+            </Button>
           </div>
-          <div className="flex-1 space-y-3 overflow-y-auto p-4">
-            {msgs.map((m, i) => (
-              <div key={i} className={cn("max-w-[85%] rounded-lg px-3 py-2 text-sm", m.from === "ai" ? "border bg-secondary/50" : "ml-auto bg-primary text-primary-foreground")}>{m.text}</div>
+          {stage === "live" && <Progress value={(qi / Math.max(1, questions.length)) * 100} className="h-1 rounded-none" />}
+          <div ref={scroller} className="flex-1 space-y-3 overflow-y-auto p-4">
+            {turns.map((m, i) => (
+              <div key={i} className={cn("max-w-[85%] rounded-lg px-3 py-2 text-sm", m.speaker === "interviewer" ? "border bg-secondary/50" : "ml-auto bg-primary text-primary-foreground")}>{m.text}</div>
             ))}
+            {stage === "grading" && <div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Grading your interview…</div>}
           </div>
-          <div className="flex gap-2 border-t p-3">
-            <Button variant="outline" onClick={speak} disabled={listening}><Mic /> {listening ? "Listening…" : "Speak Answer"}</Button>
-            <form className="flex flex-1 gap-2" onSubmit={(e) => { e.preventDefault(); answer(text); }}>
-              <Input value={text} onChange={(e) => setText(e.target.value)} placeholder="Or type your answer…" />
-              <Button type="submit" size="icon" aria-label="Send"><Send /></Button>
+          <div className="flex flex-wrap gap-2 border-t p-3">
+            <Button variant="outline" onClick={speak} disabled={listening || stage === "grading"}><Mic /> {listening ? "Listening…" : "Speak"}</Button>
+            <form className="flex min-w-[12rem] flex-1 gap-2" onSubmit={(e) => { e.preventDefault(); answer(text); }}>
+              <Input value={text} onChange={(e) => setText(e.target.value)} disabled={stage === "grading"}
+                placeholder={stage === "live" ? "Type your answer…" : "Ask the interviewer a question…"} />
+              <Button type="submit" size="icon" aria-label="Send" disabled={stage === "grading"}><Send /></Button>
             </form>
+            {stage === "live" && <Button variant="secondary" onClick={() => toTail("Let's stop the questions here.")}>Skip to my questions</Button>}
+            {stage === "your_questions" && <Button variant="destructive" onClick={finish}><Square /> End interview</Button>}
           </div>
         </section>
-      </div>
+      )}
 
-      <Dialog open={report} onOpenChange={setReport}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle className="font-display text-2xl">Post-Interview Report</DialogTitle></DialogHeader>
+      {stage === "report" && grade && (
+        <section className="panel space-y-5 p-6">
           <div className="text-center">
-            <div className="font-display text-6xl font-bold text-primary text-glow">{score}</div>
-            <div className="font-mono text-xs text-muted-foreground">OVERALL SCORE · +{roast ? 350 : 300} XP EARNED</div>
+            <div className="font-display text-6xl font-bold text-primary text-glow">{grade.overall}</div>
+            <div className="font-mono text-xs text-muted-foreground">OVERALL SCORE · +{grade.xp} XP EARNED</div>
           </div>
-          <div className="space-y-3">
-            {[["Eye contact maintained", 85], ["Confident expression", 72], ["Speaking pace", 78], ["Answer structure", 66]].map(([l, v]) => (
-              <div key={l as string}><div className="mb-1 flex justify-between text-sm"><span>{l}</span><span className="font-mono">{v}%</span></div><Progress value={v as number} /></div>
-            ))}
+          <div className="grid gap-4 md:grid-cols-2">
+            <Metric label="Quality & accuracy" m={grade.metrics.quality} />
+            <Metric label="Conciseness" m={grade.metrics.conciseness} />
+            <Metric label="Your questions" m={grade.metrics.candidateQuestions} />
+            {grade.metrics.tone ? <Metric label="Tone" m={grade.metrics.tone} />
+              : <div className="rounded border border-dashed p-3 text-sm text-muted-foreground">Tone scoring — coming soon</div>}
           </div>
-          <ul className="space-y-2 text-sm text-muted-foreground">
-            <li>✓ Strong opener — you framed your background clearly.</li>
-            <li>→ Use the STAR method for behavioral answers; your results were vague.</li>
-            <li>→ In system design, mention caching and rate limiting early.</li>
-          </ul>
-        </DialogContent>
-      </Dialog>
+          <div className="grid gap-4 md:grid-cols-2 text-sm">
+            <ul className="space-y-1">{grade.strengths.map((s) => <li key={s}>✓ {s}</li>)}</ul>
+            <ul className="space-y-1 text-muted-foreground">{grade.improvements.map((s) => <li key={s}>→ {s}</li>)}</ul>
+          </div>
+          <details className="text-sm">
+            <summary className="cursor-pointer font-mono text-xs text-muted-foreground">TRANSCRIPT</summary>
+            <div className="mt-2 space-y-1">{turns.map((t, i) => <p key={i}><b>{t.speaker === "interviewer" ? "Interviewer" : "You"}:</b> {t.text}</p>)}</div>
+          </details>
+          <Button onClick={reset}>New interview</Button>
+        </section>
+      )}
+    </div>
+  );
+}
+
+const fmt = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+
+function Choice<T extends string>({ label, value, onChange, options }: { label: string; value: T; onChange: (v: T) => void; options: [T, string][] }) {
+  return (
+    <div>
+      <div className="mb-2 font-mono text-xs text-muted-foreground">{label.toUpperCase()}</div>
+      <div className="flex flex-wrap gap-2">
+        {options.map(([v, l]) => (
+          <Button key={v} type="button" size="sm" variant={value === v ? "default" : "outline"} onClick={() => onChange(v)}>{l}</Button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function Metric({ label, m }: { label: string; m: { score: number; feedback: string } }) {
+  return (
+    <div className="rounded border p-3">
+      <div className="mb-1 flex justify-between text-sm"><span>{label}</span><span className="font-mono">{m.score}</span></div>
+      <Progress value={m.score} />
+      <p className="mt-2 text-xs text-muted-foreground">{m.feedback}</p>
+    </div>
+  );
+}
+
+const STEPS: [Stage[], string][] = [
+  [["setup"], "Job"], [["review"], "Review"], [["live"], "Interview"], [["your_questions"], "Your Qs"], [["grading", "report"], "Report"],
+];
+function Stepper({ stage }: { stage: Stage }) {
+  const idx = useMemo(() => STEPS.findIndex(([s]) => s.includes(stage)), [stage]);
+  return (
+    <div className="mt-1 flex gap-2 font-mono text-[10px]">
+      {STEPS.map(([, l], i) => <span key={l} className={i <= idx ? "text-primary" : "text-muted-foreground"}>{i + 1}.{l}</span>)}
+    </div>
+  );
+}
+
+function AgentBadges({ agents }: { agents: AgentStatus }) {
+  const items: [string, boolean][] = [
+    ["Job parser", agents.parser === "raia"], ["Question agent", agents.questions === "raia"],
+    ["Voice (ElevenLabs)", agents.voice === "elevenlabs"], ["Grader agent", agents.grader === "raia"],
+  ];
+  return (
+    <div className="flex flex-wrap gap-2 font-mono text-[10px]">
+      {items.map(([l, live]) => (
+        <span key={l} className={cn("rounded border px-2 py-1", live ? "border-primary text-primary" : "text-muted-foreground")}>
+          {l}: {live ? "AI agent" : "built-in"}
+        </span>
+      ))}
     </div>
   );
 }
