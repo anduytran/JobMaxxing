@@ -35,7 +35,7 @@ export const Route = createFileRoute("/interview")({
   component: Interview,
 });
 
-type Stage = "setup" | "review" | "live" | "your_questions" | "grading" | "report";
+type Stage = "setup" | "review" | "options" | "live" | "your_questions" | "grading" | "report";
 
 function Interview() {
   const agents = Route.useLoaderData() as AgentStatus;
@@ -45,6 +45,9 @@ function Interview() {
   const [type, setType] = useState<InterviewType>("mixed");
   const [length, setLength] = useState<InterviewLength>("standard");
   const [job, setJob] = useState<ParsedJob | null>(null);
+  const [mine, setMine] = useState<string[]>([]);
+  const [confirmed, setConfirmed] = useState(false);
+  const toggleMine = (s: string) => setMine((m) => (m.includes(s) ? m.filter((x) => x !== s) : [...m, s]));
   const [questions, setQuestions] = useState<InterviewQuestion[]>([]);
   const [qi, setQi] = useState(0);
   const [turns, setTurns] = useState<TranscriptTurn[]>([]);
@@ -77,7 +80,7 @@ function Interview() {
     setBusy(true);
     try {
       setJob(await parseJobDescription({ data: { jd } }));
-      setStage("review");
+      setMine([]); setConfirmed(false); setStage("review");
     } catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
   };
 
@@ -146,7 +149,7 @@ function Interview() {
         <label className={cn("flex cursor-pointer items-center gap-3 rounded-lg border-2 px-4 py-2 transition", roast ? "border-roast bg-roast/15 glow" : "border-accent/50 bg-accent/10")}>
           <Flame className={cn("h-5 w-5", roast ? "text-roast" : "text-accent")} />
           <span className="text-sm font-semibold">Roast Mode</span>
-          <Switch checked={roast} onCheckedChange={setRoast} disabled={stage !== "setup" && stage !== "review"} />
+          <Switch checked={roast} onCheckedChange={setRoast} disabled={stage !== "setup" && stage !== "review" && stage !== "options"} />
         </label>
       </div>
 
@@ -171,32 +174,50 @@ function Interview() {
           {job.location && <p className="font-mono text-xs text-accent">📍 {job.location}</p>}
           <p className="text-sm text-muted-foreground">{job.summary}</p>
           <div>
-            <div className="mb-2 font-mono text-xs text-muted-foreground">SKILLS</div>
+            <div className="mb-2 font-mono text-xs text-muted-foreground">SKILLS — tap the ones you have; they light up below</div>
             <div className="flex flex-wrap gap-2">
-              {job.skills.length ? job.skills.map((s) => <span key={s} className="rounded border border-primary/50 bg-primary/10 px-2 py-1 text-xs">{s}</span>)
+              {job.skills.length ? job.skills.map((s) => (
+                <button key={s} type="button" aria-pressed={mine.includes(s)} onClick={() => toggleMine(s)}
+                  className={cn("rounded border px-2 py-1 text-xs transition-colors", mine.includes(s) ? "border-primary bg-primary/20 text-primary" : "border-border text-muted-foreground hover:border-primary/50")}>
+                  {mine.includes(s) ? "✓ " : ""}{s}
+                </button>))
                 : <span className="text-sm text-muted-foreground">No known skills detected — questions will be general.</span>}
             </div>
           </div>
           {job.qualifications.length > 0 && (
             <div>
               <div className="mb-2 font-mono text-xs text-muted-foreground">QUALIFICATIONS</div>
-              <ul className="list-disc space-y-1 pl-5 text-sm">{job.qualifications.map((q) => <li key={q}><SkillText text={q} skills={job.skills} /></li>)}</ul>
+              <ul className="list-disc space-y-1 pl-5 text-sm">{job.qualifications.map((q) => <li key={q}><SkillText text={q} skills={mine} /></li>)}</ul>
             </div>
           )}
           {job.specialNotes.length > 0 && (
             <div>
               <div className="mb-2 font-mono text-xs text-muted-foreground">SPECIAL NOTES</div>
-              <ul className="list-disc space-y-1 pl-5 text-sm text-accent">{job.specialNotes.map((n) => <li key={n}><SkillText className="text-accent" text={n} skills={job.skills} /></li>)}</ul>
+              <ul className="list-disc space-y-1 pl-5 text-sm text-accent">{job.specialNotes.map((n) => <li key={n}><SkillText className="text-accent" text={n} skills={mine} /></li>)}</ul>
             </div>
           )}
-          <div className="grid gap-4 border-t pt-4 md:grid-cols-2">
+          <label className="flex items-center gap-2 border-t pt-4 text-sm">
+            <input type="checkbox" className="h-4 w-4 accent-[var(--primary)]" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} />
+            This information looks correct
+          </label>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setStage("setup")}>Back</Button>
+            <Button onClick={() => setStage("options")} disabled={!confirmed}>Continue</Button>
+          </div>
+        </section>
+      )}
+
+      {stage === "options" && job && (
+        <section className="panel space-y-4 p-6">
+          <h2 className="font-display text-xl">3 · Interview options{job.title ? ` — ${job.title}` : ""}</h2>
+          <div className="grid gap-4 md:grid-cols-2">
             <Choice label="Interview type" value={type} onChange={setType}
               options={[["mixed", "Mixed"], ["technical", "Technical"], ["behavioral", "Behavioral"]]} />
             <Choice label="Length" value={length} onChange={setLength}
               options={(Object.keys(LENGTHS) as InterviewLength[]).map((k) => [k, LENGTHS[k].label])} />
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setStage("setup")}>Back</Button>
+            <Button variant="outline" onClick={() => setStage("review")}>Back</Button>
             <Button onClick={start} disabled={busy}>{busy && <Loader2 className="animate-spin" />} Start {LENGTHS[length].label} {type} interview</Button>
           </div>
         </section>
@@ -293,7 +314,7 @@ function Metric({ label, m }: { label: string; m: { score: number; feedback: str
 }
 
 const STEPS: [Stage[], string][] = [
-  [["setup"], "Job"], [["review"], "Review"], [["live"], "Interview"], [["your_questions"], "Your Qs"], [["grading", "report"], "Report"],
+  [["setup"], "Job"], [["review"], "Review"], [["options"], "Options"], [["live"], "Interview"], [["your_questions"], "Your Qs"], [["grading", "report"], "Report"],
 ];
 function Stepper({ stage }: { stage: Stage }) {
   const idx = useMemo(() => STEPS.findIndex(([s]) => s.includes(stage)), [stage]);
