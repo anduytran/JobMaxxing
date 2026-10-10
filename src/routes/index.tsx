@@ -219,50 +219,50 @@ function Dashboard() {
           </div>
           <motion.div key={featured?.id ?? "none"} initial={reducedMotion ? false : { opacity: 0, x: 28 * dir }} animate={sceneReady ? { opacity: 1, x: 0 } : { opacity: 0, x: reducedMotion ? 0 : 28 * dir }} transition={{ duration: 0.45 }} className="pointer-events-none absolute inset-x-0 bottom-14 flex h-[28svh] items-end justify-center md:inset-0 md:h-auto md:items-center">
             <div className="relative h-[clamp(160px,28svh,400px)] w-[clamp(160px,28svh,400px)]">
-              <div className="mascot-float relative h-full w-full"><img key={featArt} src={featArt} alt={featured ? `Max ready for: ${featured.title}` : "Max with a microphone, ready to interview you"} width={816} height={816} decoding="sync" draggable={false} className="h-full w-full object-contain" /></div>
               {featKey === "branding" && (
                 <img
                   src={openToWork.url}
                   alt=""
                   aria-hidden
                   draggable={false}
-                  className="absolute left-1/2 top-1/2 z-10 h-[185%] w-[185%] -translate-x-1/2 -translate-y-1/2 object-contain"
+                  className="absolute left-1/2 top-1/2 h-[185%] w-[185%] -translate-x-1/2 -translate-y-1/2 object-contain"
                   style={{ maskImage: "radial-gradient(closest-side, black 82%, transparent 97%)", WebkitMaskImage: "radial-gradient(closest-side, black 82%, transparent 97%)" }}
                 />
               )}
+              <div className="mascot-float relative h-full w-full"><img key={featArt} src={featArt} alt={featured ? `Max ready for: ${featured.title}` : "Max with a microphone, ready to interview you"} width={816} height={816} decoding="sync" draggable={false} className="h-full w-full object-contain" /></div>
             </div>
           </motion.div>
-          <aside aria-label="Quick overview" className="absolute right-0 top-1/2 z-10 hidden w-1/2 -translate-y-1/2 justify-center lg:flex">
-            <div className="w-80 max-w-[85%] overflow-hidden rounded-md border border-white/10 bg-black/45 text-white shadow-xl backdrop-blur-md">
-              <p className="border-b border-white/10 px-5 py-3 text-center text-xs font-bold uppercase tracking-[0.25em]">Missions</p>
-              <ul className="divide-y divide-white/10">
+          <aside aria-label="Quick overview" className="absolute right-2 top-1/2 z-10 hidden w-1/2 -translate-y-1/2 justify-end lg:flex">
+            <div className="w-[min(32rem,calc(50vw_-_15svh_-_2rem))] max-w-full overflow-hidden rounded-md border border-border bg-card/90 text-card-foreground shadow-xl backdrop-blur-md">
+              <p className="border-b border-border bg-muted/40 px-5 py-3 text-center text-xs font-bold uppercase tracking-[0.25em]">Missions</p>
+              <ul className="divide-y divide-border">
                 {[...quests.filter((q) => q.period === "daily"), ...quests.filter((q) => q.period === "weekly")].sort((a, b) => Number(a.done) - Number(b.done)).slice(0, 5).map((q) => (
                   <li key={q.id}>
-                    <Link to="/quests" title={q.title} className="group flex items-center gap-3 px-5 py-3 hover:bg-white/5">
-                      <span className={cn("grid h-7 w-7 shrink-0 place-items-center border", q.done ? "border-success/50 bg-success/15 text-success" : "border-white/25 bg-white/5 text-white/80")}>{q.done ? <Check className="h-3.5 w-3.5" /> : <Zap className="h-3.5 w-3.5" />}</span>
+                    <Link to="/quests" title={q.title} className="group flex items-center gap-3 px-5 py-3 hover:bg-muted/50">
+                      <span className={cn("grid h-7 w-7 shrink-0 place-items-center border", q.done ? "border-success/50 bg-success/15 text-success" : "border-border bg-muted text-muted-foreground")}>{q.done ? <Check className="h-3.5 w-3.5" /> : <Zap className="h-3.5 w-3.5" />}</span>
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-medium">{q.title}</p>
-                        <div className="mt-1.5 h-1 bg-white/15"><div className={cn("h-full bg-success transition-all", q.done ? "w-full" : "w-0")} /></div>
+                        <div className="mt-1.5 h-1 bg-muted"><div className={cn("h-full bg-success transition-all", q.done ? "w-full" : "w-0")} /></div>
                       </div>
-                      <span className="shrink-0 text-xs font-semibold tabular-nums text-white/70">+{q.xp} XP</span>
+                      <span className="shrink-0 text-xs font-semibold tabular-nums text-muted-foreground">+{q.xp} XP</span>
                     </Link>
                   </li>
                 ))}
-                {quests.length === 0 && <li className="px-5 py-4 text-sm text-white/60">No missions yet.</li>}
+                {quests.length === 0 && <li className="px-5 py-4 text-sm text-muted-foreground">No missions yet.</li>}
               </ul>
-              <div className="flex items-center justify-center gap-2 border-t border-white/10 px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-white/70">
+              <div className="flex items-center justify-center gap-2 border-t border-border px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                 <Clock className="h-3.5 w-3.5" />
                 <ResetCountdown period="daily" label="Daily expiration in" />
               </div>
-              <p className="border-t border-white/10 bg-white/5 px-5 py-3 text-center text-xs font-bold uppercase tracking-[0.25em]">Featured modes</p>
-              <div className="divide-y divide-white/10">
-                <Link to="/interview" search={{ radar: undefined }} className="group flex items-center gap-4 px-5 py-4 hover:bg-white/5">
-                  <span className="grid h-10 w-10 place-items-center rounded-full border border-white/25 bg-white/10"><Mic className="h-5 w-5" /></span>
+              <p className="border-t border-border bg-muted/40 px-5 py-3 text-center text-xs font-bold uppercase tracking-[0.25em]">Featured modes</p>
+              <div className="divide-y divide-border">
+                <Link to="/interview" search={{ radar: undefined }} className="group flex items-center gap-4 px-5 py-4 hover:bg-muted/50">
+                  <span className="grid h-10 w-10 place-items-center rounded-full border border-border bg-muted"><Mic className="h-5 w-5" /></span>
                   <span className="flex-1 text-sm font-bold uppercase tracking-wider">AI Interview</span>
-                  <span className="text-xs text-white/60">~15 mins</span>
+                  <span className="text-xs text-muted-foreground">~15 mins</span>
                 </Link>
-                <Link to="/setup" className="group flex items-center gap-4 px-5 py-4 hover:bg-white/5">
-                  <span className="grid h-10 w-10 place-items-center rounded-full border border-white/25 bg-white/10"><FileText className="h-5 w-5" /></span>
+                <Link to="/setup" className="group flex items-center gap-4 px-5 py-4 hover:bg-muted/50">
+                  <span className="grid h-10 w-10 place-items-center rounded-full border border-border bg-muted"><FileText className="h-5 w-5" /></span>
                   <span className="flex-1 text-sm font-bold uppercase tracking-wider">Resume Lab</span>
                   <span className="text-xs text-white/60">Grade & polish</span>
                 </Link>
