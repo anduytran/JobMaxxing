@@ -21,7 +21,7 @@ export function agentStatus(): AgentStatus {
     parser: key(ENV.parser) ? "raia" : "fallback",
     questions: key(ENV.questions) ? "raia" : "fallback",
     grader: key(ENV.grader) ? "raia" : "fallback",
-    voice: key(ENV.voice) && key("ELEVENLABS_INTERVIEW_AGENT_ID") ? "elevenlabs" : "browser",
+    voice: key(ENV.voice) ? "elevenlabs" : "browser",
   };
 }
 
@@ -176,4 +176,102 @@ export async function gradeInterview(transcript: TranscriptTurn[], job: ParsedJo
     "Reply JSON {overall,xp,metrics:{quality:{score,feedback},conciseness:{score,feedback},candidateQuestions:{score,feedback},tone:null|{score,feedback}},strengths[],improvements[]}; scores 0-100, xp 0-400.");
   if (ai && typeof ai.overall === "number") return { ...ai, xp: Math.max(0, Math.min(400, Math.round(ai.xp))) };
   return fallbackGrade(transcript, job);
+}
+
+// ---------- Live interview conversation (Raia conversations endpoint) ----------
+// The Question agent holds the running dialogue: each candidate turn is posted to the same
+// conversation and the agent replies with one concise spoken line.
+
+async function raiaPost<T>(secret: string, path: string, body: unknown): Promise<T> {
+  const res = await fetch(`${RAIA}${path}`, {
+    method: "POST",
+    headers: { "Agent-Secret-Key": secret, "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(`Raia ${path} failed [${res.status}]: ${(await res.text()).slice(0, 300)}`);
+  return (await res.json()) as T;
+}
+
+/** The Question agent answers in its JSON schema; pull out the line to speak. */
+function spokenLine(raw: string): string {
+  try {
+    const j = JSON.parse(raw.slice(raw.indexOf("{"), raw.lastIndexOf("}") + 1)) as { questions?: { text?: string }[] };
+    const t = j.questions?.map((q) => q.text).filter(Boolean).join(" ");
+    if (t) return t;
+  } catch { /* plain text reply */ }
+  return raw.trim();
+}
+
+const TURN_RULES =
+  "You are the live interviewer in a spoken mock interview. Speak naturally and concisely: at most 2 short sentences per turn " +
+  "(optionally a brief acknowledgment of the candidate's last answer, then ONE question). Never list multiple questions. " +
+  "Put your entire spoken line in questions[0].text.";
+
+export async function startInterviewConversation(opts: {
+  userId: string; name: string; job: ParsedJob; type: InterviewType; length: InterviewLength; roast: boolean; plan: InterviewQuestion[];
+}): Promise<{ conversationId: string; reply: string } | null> {
+  const secret = key(ENV.questions);
+  if (!secret) return null;
+  try {
+    const [first = "DevUp", ...rest] = opts.name.trim().split(/\s+/);
+    const user = await raiaPost<{ id: string }>(secret, "/users", {
+      firstName: first, lastName: rest.join(" ") || "Candidate", fkId: opts.userId, source: "devup",
+    });
+    const context =
+      `${TURN_RULES}\nTone: ${opts.roast ? "tough and blunt" : "friendly and professional"}. Interview type: ${opts.type}. ` +
+      `Budget: about ${LENGTHS[opts.length].questions} questions in ~${Math.round(LENGTHS[opts.length].seconds / 60)} minutes.\n` +
+      `Job: ${JSON.stringify(opts.job)}\nQuestion plan (adapt follow-ups to the answers): ${JSON.stringify(opts.plan.map((q) => q.text))}`;
+    const conv = await raiaPost<{ id: string }>(secret, "/conversations", {
+      conversationUserId: user.id, title: `Mock interview: ${opts.job.title ?? "role"}`.slice(0, 255), context: context.slice(0, 250000),
+    });
+    const msg = await raiaPost<{ message: string }>(secret, `/conversations/${conv.id}/messages`, {
+      message: "The candidate has joined. Greet them in one short sentence and ask your first question.",
+      context: TURN_RULES,
+    });
+    return { conversationId: conv.id, reply: spokenLine(msg.message) };
+  } catch (err) {
+    console.error("Raia conversation start failed", err);
+    return null;
+  }
+}
+
+export async function continueInterviewConversation(opts: {
+  conversationId: string; text: string; phase: TranscriptTurn["phase"]; secondsLeft: number; lastQuestion: boolean;
+}): Promise<string | null> {
+  const secret = key(ENV.questions);
+  if (!secret) return null;
+  const steer =
+    opts.phase === "candidate_questions"
+      ? "The candidate is now asking YOU questions about the role. Answer briefly and honestly (you are an AI, not the company), then ask if they have anything else."
+      : opts.lastQuestion || opts.secondsLeft < 20
+        ? "Time is nearly up. Acknowledge the answer in one sentence and ask whether the candidate has any questions for you."
+        : `About ${Math.max(0, Math.round(opts.secondsLeft))} seconds remain. Acknowledge briefly, then ask the next question (a follow-up if the answer was vague).`;
+  try {
+    const msg = await raiaPost<{ message: string }>(secret, `/conversations/${opts.conversationId}/messages`, {
+      message: opts.text,
+      context: `${TURN_RULES} ${steer}`,
+    });
+    return spokenLine(msg.message);
+  } catch (err) {
+    console.error("Raia conversation turn failed", err);
+    return null;
+  }
+}
+
+// ---------- ElevenLabs voice ----------
+const VOICE_ID = "JBFqnCBsd6RMkjVDRZzb"; // George
+
+export async function synthesize(text: string): Promise<string | null> {
+  const apiKey = key(ENV.voice);
+  if (!apiKey) return null;
+  const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}?output_format=mp3_44100_128`, {
+    method: "POST",
+    headers: { "xi-api-key": apiKey, "Content-Type": "application/json" },
+    body: JSON.stringify({ text, model_id: "eleven_turbo_v2_5", voice_settings: { stability: 0.45, similarity_boost: 0.75, style: 0.3 } }),
+  });
+  if (!res.ok) { console.error("ElevenLabs TTS failed", res.status, await res.text()); return null; }
+  const bytes = new Uint8Array(await res.arrayBuffer());
+  let bin = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(bin);
 }
