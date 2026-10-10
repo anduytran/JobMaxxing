@@ -12,6 +12,7 @@ import { MAX_POSES } from "@/components/Max";
 import { cn } from "@/lib/utils";
 import gymScene from "@/assets/max/gym-scene.svg";
 import billboardScene from "@/assets/max/billboard.svg";
+import { featuredQuestTitle } from "@/lib/quest-titles";
 
 const MAX_ART: Record<string, string> = { setup: MAX_POSES.resume, resume: MAX_POSES.resume, interview: MAX_POSES.interview, skills: MAX_POSES.skills, hunt: MAX_POSES.hunt, branding: MAX_POSES.dap, social: MAX_POSES.dap };
 const QUEST_LINK: Record<string, "/setup" | "/interview" | "/quests" | "/skills" | "/market"> = { setup: "/setup", resume: "/setup", interview: "/interview", skills: "/skills", hunt: "/market" };
@@ -206,7 +207,7 @@ function Dashboard() {
         <div className="relative z-10 max-w-xl md:max-w-[46%]">
           <p className="flex items-center gap-2 whitespace-nowrap text-xs font-semibold uppercase tracking-[0.2em] text-foreground/70"><span className="h-1.5 w-1.5 rounded-full bg-foreground/60" />{featured ? `Today's featured quest · ${featured.category}` : "Today's featured quest"}</p>
           {featured ? (
-            <h2 ref={headRef} className="mt-5 text-4xl font-bold leading-[1.08] text-balance md:text-5xl">{featured.title}</h2>
+            <h2 ref={headRef} title={featured.title} className="mt-5 line-clamp-2 min-h-[2.2em] break-words text-2xl font-bold leading-[1.1] text-balance sm:text-3xl">{featuredQuestTitle(featured.title)}</h2>
           ) : (
             <h2 className="mt-5 text-4xl font-bold leading-tight md:text-5xl">You've got potential.<br />Let's put it to work.</h2>
           )}
