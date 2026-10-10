@@ -15,7 +15,7 @@ const fromHex = (h: string) => new Uint8Array(h.match(/../g)!.map((x) => parseIn
 
 async function pbkdf2(password: string, salt: Uint8Array, iterations: number) {
   const key = await crypto.subtle.importKey("raw", enc.encode(password), "PBKDF2", false, ["deriveBits"]);
-  return new Uint8Array(await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt, iterations }, key, 256));
+  return new Uint8Array(await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt: salt as BufferSource, iterations }, key, 256));
 }
 
 export async function hashPassword(password: string) {
