@@ -14,7 +14,7 @@ import gymScene from "@/assets/max/gym-scene.svg";
 import billboardScene from "@/assets/max/billboard.svg";
 import { featuredQuestTitle } from "@/lib/quest-titles";
 import { ResumeScoreCard } from "@/components/ResumeScoreCard";
-import { CareerProgressCard, QuestsProgressCard, XpProgressCard } from "@/components/DashboardProgressCards";
+import { XpCareerCard } from "@/components/DashboardProgressCards";
 
 const MAX_ART: Record<string, string> = { setup: MAX_POSES.resume, resume: MAX_POSES.resume, interview: MAX_POSES.interview, skills: MAX_POSES.skills, hunt: MAX_POSES.hunt, branding: MAX_POSES.dap, social: MAX_POSES.dap };
 const QUEST_LINK: Record<string, "/setup" | "/interview" | "/quests" | "/skills" | "/market"> = { setup: "/setup", resume: "/setup", interview: "/interview", skills: "/skills", hunt: "/market" };
@@ -127,7 +127,7 @@ function SceneBackdrop({ kind }: { kind: string }) {
 }
 
 function Dashboard() {
-  const { name, title, level, levelXp, xp, quests, completeQuest, details, lastGain } = useGame();
+  const { name, title, level, levelXp, xp, quests, details, lastGain } = useGame();
   const first = name.split(" ")[0] || "there";
   const open = quests.filter((q) => !q.done);
   const done = quests.filter((q) => q.done).length;
@@ -135,7 +135,6 @@ function Dashboard() {
   const [reviewLoading, setReviewLoading] = useState(true);
   useEffect(() => { getLatestResumeReview().then((r) => { if (r.ok) setReview(r.review); }).catch(() => {}).finally(() => setReviewLoading(false)); }, []);
   const resumeScore = review?.score ?? (details.resume as { score?: number } | undefined)?.score;
-  const resumeQuests = (review?.suggestions ?? []).filter((s) => !s.applied);
   const [seed, setSeed] = useState(0);
   const [pick, setPick] = useState<number | null>(null);
   const [dir, setDir] = useState(1);
@@ -256,47 +255,9 @@ function Dashboard() {
           <Button variant="outline" size="icon" className="absolute right-0 top-1/2 z-20 h-10 w-10 -translate-y-1/2 rounded-full bg-card md:-right-5 xl:-right-12" onClick={() => shift(1)} aria-label="Next quest" title="Next quest"><ChevronRight className="h-5 w-5" /></Button>
         </>)}
       </div>
-      <div className="grid grid-cols-1 items-stretch gap-5 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 items-stretch gap-5 sm:grid-cols-2">
         <ResumeScoreCard review={review} score={resumeScore} loading={reviewLoading} />
-        <QuestsProgressCard quests={quests} />
-        <XpProgressCard xp={xp} level={level} levelXp={levelXp} lastGain={lastGain} />
-        <CareerProgressCard level={level} levelXp={levelXp} title={title} />
-
-        <section className="sm:col-span-2 xl:col-span-4">
-          <div className="mb-1 flex items-center justify-between">
-            <h2 className="flex items-center gap-3 text-2xl font-semibold">Your quests <span className="rounded-md bg-muted px-2 text-sm font-normal">{open.length + resumeQuests.length}</span></h2>
-            <Link to="/quests" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary">View all quests <ArrowRight className="h-4 w-4" /></Link>
-          </div>
-          <p className="mb-5 text-muted-foreground">A little progress, a little XP. A lot of possibility.</p>
-          <div className="panel divide-y overflow-hidden">
-            {open.slice(0, 3).map((q) => {
-              const art = MAX_ART[q.category?.toLowerCase()];
-              return (
-                <div key={q.id} className="group flex items-center gap-5 p-5 transition-colors hover:bg-muted/60">
-                  {art ? <img src={art} alt="" loading="lazy" width={816} height={816} className="h-14 w-14 shrink-0 rounded-xl bg-sidebar-accent object-contain p-1 transition-transform group-hover:scale-110" /> : <div className="grid h-14 w-14 shrink-0 place-items-center rounded-xl bg-sidebar-accent text-primary"><Zap className="h-6 w-6" /></div>}
-                  <div className="min-w-0 flex-1">
-                    <div className="font-semibold">{q.title}</div>
-                    <div className="mt-1 text-xs uppercase tracking-widest text-muted-foreground">{q.category}</div>
-                  </div>
-                  <span className="flex items-center gap-1 rounded-lg border border-accent/40 bg-accent/10 px-3 py-1.5 text-sm"><Zap className="h-4 w-4" />+{q.xp} XP</span>
-                  <Button variant="ghost" size="icon" onClick={() => completeQuest(q.id)} aria-label={`Complete ${q.title}`} title={`Complete ${q.title}`} className="shrink-0 rounded-lg text-muted-foreground hover:bg-muted hover:text-success"><Check className="h-5 w-5" /></Button>
-                </div>
-              );
-            })}
-            {resumeQuests.slice(0, 2).map((s) => (
-              <Link key={s.id} to="/setup" className="group flex items-center gap-5 p-5 transition-colors hover:bg-muted/60">
-                <img src={MAX_POSES.resume} alt="" loading="lazy" width={816} height={816} className="h-14 w-14 shrink-0 rounded-xl bg-sidebar-accent object-contain p-1 transition-transform group-hover:scale-110" />
-                <div className="min-w-0 flex-1">
-                  <div className="font-semibold">{s.title}</div>
-                  <div className="mt-1 line-clamp-1 text-xs text-muted-foreground"><span className="uppercase tracking-widest">Resume quest</span> · {s.detail}</div>
-                </div>
-                <span className="flex items-center gap-1 rounded-lg border border-accent/40 bg-accent/10 px-3 py-1.5 text-sm"><Zap className="h-4 w-4" />+{s.xp} XP</span>
-                <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
-              </Link>
-            ))}
-            {open.length === 0 && resumeQuests.length === 0 && <div className="p-6 text-muted-foreground">All quests cleared. Legendary.</div>}
-          </div>
-        </section>
+        <XpCareerCard xp={xp} level={level} levelXp={levelXp} lastGain={lastGain} title={title} />
       </div>
 
       <div className="flex items-center gap-5 rounded-2xl border bg-hero/60 p-6">

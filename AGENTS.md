@@ -13,7 +13,7 @@
 
 - ResumeScoreCard derives its random pending action, rank progress, and reward labels from the latest review and shared resume XP rules without awarding XP or changing reviews. Why: dashboard gamification must reflect the existing Resume Lab workflow.
 
-- DashboardProgressCards derives period completion, XP feedback, and career ranks from GameProvider; its controls only select views or navigate. Why: mastery-focused presentation must not alter quest resets, rewards, or invent leaderboards and unlocks.
+- DashboardProgressCards shows a single merged Level & XP card whose ring, progress and rank labels come from GameProvider; its controls only navigate. Why: dashboard presentation must not alter quest resets, rewards, or invent leaderboards and unlocks.
 
 - The top-bar QuestMenu derives capped daily and weekly lists from GameProvider without creating or modifying quests. Why: mission-menu presentation must preserve existing progression and reset rules.
 

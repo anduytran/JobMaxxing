@@ -1,5 +1,11 @@
 # Roadmap
 
+## Dashboard trim
+- [x] Remove the quest card and the "Your quests" list from the dashboard; quests stay reachable from the top-bar menu, the featured card and /quests.
+- [x] Merge total XP and career rank into one Level & XP card (ring, XP total, level progress, rank progression).
+- [ ] Verify the trimmed dashboard with live account data — blocked by unavailable signed-in session; checked in an isolated browser fixture with sample values.
+
+
 ## Dashboard mastery cards
 - [x] Revamp resume, quests, total XP, and career cards with clear objectives, real progress, choice, and encouraging feedback.
 - [x] Verify four-column rendering, resume shuffle, daily/weekly controls, and link destinations in an isolated browser fixture; progression unchanged, no competitive data invented.
