@@ -135,17 +135,13 @@ function Dashboard() {
   const [reviewLoading, setReviewLoading] = useState(true);
   useEffect(() => { getLatestResumeReview().then((r) => { if (r.ok) setReview(r.review); }).catch(() => {}).finally(() => setReviewLoading(false)); }, []);
   const resumeScore = review?.score ?? (details.resume as { score?: number } | undefined)?.score;
-  const [seed, setSeed] = useState(0);
   const [pick, setPick] = useState<number | null>(null);
   const [dir, setDir] = useState(1);
-  useEffect(() => { setSeed(Math.random()); }, []);
   const openCount = open.length;
   // Slide 0 is always the mock interview — the core product; quest slides follow.
   const total = openCount + 1;
-  const startIdx = useMemo(() => (openCount ? (Math.floor(seed * openCount) % openCount) + 1 : 0), [seed, openCount]);
   const featIdx = pick === null ? 0 : Math.min(pick, total - 1);
   const featured = featIdx === 0 ? null : open[featIdx - 1];
-  void startIdx;
   const shift = (d: number) => {
     setDir(d);
     setPick(((((pick ?? featIdx) + d) % total) + total) % total);
@@ -209,11 +205,11 @@ function Dashboard() {
       <div className="relative">
         <section className="relative overflow-hidden rounded-3xl border bg-hero px-14 py-8 md:px-16 md:py-12" aria-label="Featured quest">
         <div className="relative z-10 max-w-xl md:max-w-[46%]">
-          <p className="flex items-center gap-2 whitespace-nowrap text-xs font-semibold uppercase tracking-[0.2em] text-foreground/70"><span className="h-1.5 w-1.5 rounded-full bg-foreground/60" />{featured ? `Today's featured quest · ${featured.category}` : "Today's featured quest"}</p>
+          <p className="flex items-center gap-2 whitespace-nowrap text-xs font-semibold uppercase tracking-[0.2em] text-foreground/70"><span className="h-1.5 w-1.5 rounded-full bg-foreground/60" />{featured ? `Today's featured quest · ${featured.category}` : "Your main event · Mock interview"}</p>
           {featured ? (
             <h2 ref={headRef} title={featured.title} className="mt-5 min-h-[2.2em] break-words text-2xl font-bold leading-[1.1] sm:text-3xl"><span className="block">{featLines[0]}</span><span className="block">{featLines[1]}</span></h2>
           ) : (
-            <h2 className="mt-5 text-4xl font-bold leading-tight md:text-5xl">You've got potential.<br />Let's put it to work.</h2>
+            <h2 className="mt-5 min-h-[2.2em] break-words text-2xl font-bold leading-[1.1] sm:text-3xl"><span className="block">Practice your</span><span className="block">mock interview</span></h2>
           )}
           <p ref={subRef} className="mt-4 text-muted-foreground">{scene.blurb}</p>
           {featured ? (<>
