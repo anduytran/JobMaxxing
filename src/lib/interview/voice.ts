@@ -26,11 +26,42 @@ export function createBrowserVoice(): VoiceAgent {
         const w = window as unknown as { SpeechRecognition?: SR; webkitSpeechRecognition?: SR };
         const Ctor = w.SpeechRecognition ?? w.webkitSpeechRecognition;
         if (!Ctor) return reject(new Error("Voice input isn't supported in this browser — type your answer instead."));
+        // Generous on pauses: keep listening through short silences and only finish
+        // after SILENCE_MS of quiet once the candidate has started talking.
+        const SILENCE_MS = 3500;
+        const START_MS = 10000; // time allowed before the first word
+        let finalText = "";
+        let interim = "";
+        let done = false;
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        const finish = () => {
+          if (done) return;
+          done = true;
+          clearTimeout(timer);
+          try { rec?.stop(); } catch { /* already stopped */ }
+          const text = `${finalText} ${interim}`.trim();
+          if (text) resolve(text); else reject(new Error("Didn't catch that — try again or type your answer."));
+        };
+        const arm = (ms: number) => { clearTimeout(timer); timer = setTimeout(finish, ms); };
         rec = new Ctor();
-        rec.continuous = false;
-        rec.onresult = (e: any) => resolve(e.results[0][0].transcript as string);
-        rec.onerror = (e: any) => reject(new Error(e.error ?? "Voice input failed"));
+        rec.continuous = true;
+        rec.interimResults = true;
+        rec.onresult = (e: any) => {
+          interim = "";
+          for (let i = e.resultIndex; i < e.results.length; i++) {
+            const t = e.results[i][0].transcript as string;
+            if (e.results[i].isFinal) finalText += ` ${t}`; else interim += ` ${t}`;
+          }
+          arm(SILENCE_MS);
+        };
+        rec.onerror = (e: any) => {
+          if (e.error === "no-speech" || e.error === "aborted") return finish();
+          done = true; clearTimeout(timer); reject(new Error(e.error ?? "Voice input failed"));
+        };
+        // Some browsers end the session on their own after a pause — restart until our timer decides.
+        rec.onend = () => { if (!done) { try { rec.start(); } catch { finish(); } } };
         rec.start();
+        arm(START_MS);
       }),
     stop: () => {
       rec?.abort?.();
