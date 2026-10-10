@@ -1,4 +1,5 @@
-import { Link, useLocation } from "@tanstack/react-router";
+import { Link, useLocation, useRouter } from "@tanstack/react-router";
+import { signOut } from "@/lib/auth.functions";
 import { AnimatePresence, motion } from "framer-motion";
 import { LayoutDashboard, Swords, Video, BarChart3, FileUp, Settings, Zap, Menu } from "lucide-react";
 import { useState, type ReactNode } from "react";
@@ -17,6 +18,7 @@ const NAV = [
 export function AppShell({ children }: { children: ReactNode }) {
   const { level, levelXp, lastGain, name } = useGame();
   const loc = useLocation();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
 
   return (
@@ -48,6 +50,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="absolute bottom-5 left-5 right-5 rounded-lg border bg-sidebar-accent p-3 font-mono text-xs text-muted-foreground">
           <div className="text-foreground">{name}</div>
           LVL {level} · {levelTitle(level)}
+          <button className="mt-2 block text-primary hover:underline" onClick={async () => { await signOut(); await router.invalidate(); }}>Sign out</button>
         </div>
       </aside>
 

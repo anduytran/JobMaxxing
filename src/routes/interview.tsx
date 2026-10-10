@@ -39,7 +39,7 @@ type Stage = "setup" | "review" | "options" | "live" | "your_questions" | "gradi
 
 function Interview() {
   const agents = Route.useLoaderData() as AgentStatus;
-  const { roast, setRoast, completeQuest, gainXp } = useGame();
+  const { roast, setRoast, completeQuest, gainXp, details } = useGame();
   const [stage, setStage] = useState<Stage>("setup");
   const [jd, setJd] = useState("");
   const [type, setType] = useState<InterviewType>("mixed");
@@ -78,8 +78,9 @@ function Interview() {
   const analyze = async () => {
     setBusy(true);
     try {
-      setJob(await parseJobDescription({ data: { jd } }));
-      setMine([]); setStage("review");
+      const res = await parseJobDescription({ data: { jd } });
+      setJob(res);
+      setMine(res.skills.filter((s) => details.skills.some((u) => u.toLowerCase() === s.toLowerCase()))); setStage("review");
     } catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
   };
 
@@ -173,7 +174,7 @@ function Interview() {
           {job.location && <p className="font-mono text-xs text-accent">📍 {job.location}</p>}
           <p className="text-sm text-muted-foreground">{job.summary}</p>
           <div>
-            <div className="mb-2 font-mono text-xs text-muted-foreground">SKILLS — tap the ones you have; they light up below</div>
+            <div className="mb-2 font-mono text-xs text-muted-foreground">SKILLS — yours are pre-selected from your profile; tap to adjust</div>
             <div className="flex flex-wrap gap-2">
               {job.skills.length ? job.skills.map((s) => (
                 <button key={s} type="button" aria-pressed={mine.includes(s)} onClick={() => toggleMine(s)}

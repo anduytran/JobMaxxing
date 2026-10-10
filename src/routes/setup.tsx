@@ -25,7 +25,7 @@ const LINES = [
 ];
 
 function Setup() {
-  const { completeQuest, quests } = useGame();
+  const { completeQuest, quests, saveDetails } = useGame();
   const [file, setFile] = useState<string | null>(null);
   const [lines, setLines] = useState<string[]>([]);
   const [drag, setDrag] = useState(false);
@@ -45,6 +45,7 @@ function Setup() {
   }, [file]);
 
   useEffect(() => {
+    if (done && file) void saveDetails({ resume: { fileName: file, text: "", uploadedAt: new Date().toISOString() } });
     if (done && !quests.find((q) => q.id === "resume")?.done) completeQuest("resume");
   }, [done]); // eslint-disable-line react-hooks/exhaustive-deps
 

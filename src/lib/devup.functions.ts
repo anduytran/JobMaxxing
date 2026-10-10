@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { neonExecute, neonQuery, neonUserError } from "./neon.server";
+import { currentUser, requireUser } from "./auth.server";
 
 // ---------------------------------------------------------------------------
 // Shared shapes
@@ -13,8 +14,17 @@ export type Quest = {
   done: boolean;
 };
 
+export type StudentInfo = { school?: string; degree?: string; major?: string; gradYear?: string };
+export type JobPrefs = { roles?: string; locations?: string; workMode?: string; salary?: string };
+export type ResumeInfo = { fileName: string; text: string; uploadedAt: string } | null;
+
 export type GameState = {
   ok: true;
+  email: string;
+  skills: string[];
+  student: StudentInfo;
+  jobPrefs: JobPrefs;
+  resume: ResumeInfo;
   name: string;
   title: string;
   xp: number;
@@ -24,9 +34,9 @@ export type GameState = {
 
 export type SaveResult = { ok: true; xp?: number } | { ok: false; error: string };
 
-const PROFILE_ID = "default";
 
 function fail(err: unknown): SaveResult {
+  if (err instanceof Error && err.message === "Please sign in.") return { ok: false, error: err.message };
   const { message } = neonUserError(err);
   console.error(err);
   return { ok: false, error: message };
@@ -58,22 +68,31 @@ const int = (v: unknown, min: number, max: number): number | null => {
 // ---------------------------------------------------------------------------
 
 export const loadGame = createServerFn({ method: "GET" }).handler(
-  async (): Promise<GameState | { ok: false; error: string }> => {
+  async (): Promise<GameState | { ok: false; error: string; signedOut?: boolean }> => {
     try {
+      const user = await currentUser();
+      if (!user) return { ok: false, error: "Not signed in", signedOut: true };
+      const PROFILE_ID = user.id;
       const { results } = await neonQuery<{ results: any[] }>([
         {
           query:
-            "select name, title, xp, roast from public.devup_profile where id = $1 limit 1",
+            "select name, title, xp, roast, skills, student, job_prefs, resume from public.devup_profile where id = $1 limit 1",
           params: [PROFILE_ID],
         },
         {
           query:
-            "select id, title, xp, category, done from public.devup_quest order by sort_order asc, id asc limit 200",
+            "select id, title, xp, category, done from public.devup_quest where user_id = $1 order by sort_order asc, id asc limit 200",
+          params: [PROFILE_ID],
         },
       ]);
       const profile = results[0]?.rows?.[0];
       return {
         ok: true,
+        email: user.email,
+        skills: Array.isArray(profile?.skills) ? profile.skills.map(String) : [],
+        student: (profile?.student ?? {}) as StudentInfo,
+        jobPrefs: (profile?.job_prefs ?? {}) as JobPrefs,
+        resume: (profile?.resume ?? null) as ResumeInfo,
         name: String(profile?.name ?? "Alex Rivera"),
         title: String(profile?.title ?? "Junior Full-Stack Developer"),
         xp: Number(profile?.xp ?? 0),
@@ -107,6 +126,7 @@ export const saveProfile = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }): Promise<SaveResult> => {
     try {
+      const PROFILE_ID = (await requireUser()).id;
       await neonExecute(
         "update public.devup_profile set name = $1, title = $2, updated_at = now() where id = $3",
         [data.name, data.title, PROFILE_ID],
@@ -124,6 +144,7 @@ export const saveRoast = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }): Promise<SaveResult> => {
     try {
+      const PROFILE_ID = (await requireUser()).id;
       await neonExecute(
         "update public.devup_profile set roast = $1, updated_at = now() where id = $2",
         [data.roast, PROFILE_ID],
@@ -147,16 +168,17 @@ export const completeQuest = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }): Promise<SaveResult> => {
     try {
+      const PROFILE_ID = (await requireUser()).id;
       const { rows } = await neonExecute(
         `with q as (
            update public.devup_quest
               set done = true, completed_at = now()
-            where id = $1 and done = false
+            where id = $1 and user_id = $2 and done = false
             returning xp
          ),
          e as (
-           insert into public.devup_xp_event (amount, reason)
-           select xp, 'quest:' || $1 from q
+           insert into public.devup_xp_event (amount, reason, user_id)
+           select xp, 'quest:' || $1, $2 from q
          ),
          p as (
            update public.devup_profile
@@ -187,11 +209,12 @@ export const addQuest = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }): Promise<SaveResult> => {
     try {
+      const PROFILE_ID = (await requireUser()).id;
       await neonExecute(
-        `insert into public.devup_quest (id, title, xp, category, sort_order)
-         values ($1, $2, $3, $4, -1)
-         on conflict (id) do nothing`,
-        [data.id, data.title, data.xp, data.category],
+        `insert into public.devup_quest (id, title, xp, category, sort_order, user_id)
+         values ($1, $2, $3, $4, -1, $5)
+         on conflict (user_id, id) do nothing`,
+        [data.id, data.title, data.xp, data.category, PROFILE_ID],
       );
       return { ok: true };
     } catch (err) {
@@ -208,10 +231,11 @@ export const gainXp = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }): Promise<SaveResult> => {
     try {
+      const PROFILE_ID = (await requireUser()).id;
       const { results } = await neonExecute<{ results: any[] }>([
         {
-          query: "insert into public.devup_xp_event (amount, reason) values ($1, $2)",
-          params: [data.amount, data.reason],
+          query: "insert into public.devup_xp_event (amount, reason, user_id) values ($1, $2, $3)",
+          params: [data.amount, data.reason, PROFILE_ID],
         },
         {
           query:
@@ -220,6 +244,53 @@ export const gainXp = createServerFn({ method: "POST" })
         },
       ]);
       return { ok: true, xp: Number(results[1]?.rows?.[0]?.xp ?? 0) };
+    } catch (err) {
+      return fail(err);
+    }
+  });
+
+const obj = (v: unknown, keys: string[]): Record<string, string> => {
+  const out: Record<string, string> = {};
+  if (v && typeof v === "object") for (const k of keys) {
+    const x = (v as Record<string, unknown>)[k];
+    if (typeof x === "string" && x.trim()) out[k] = x.trim().slice(0, 200);
+  }
+  return out;
+};
+
+/** Saves the profile details the MVP needs: skills, student info, job preferences, current resume. */
+export const saveDetails = createServerFn({ method: "POST" })
+  .inputValidator((input: { skills?: unknown; student?: unknown; jobPrefs?: unknown; resume?: unknown }) => {
+    const skills = Array.isArray(input.skills)
+      ? [...new Set(input.skills.map((x) => clean(x, 40)).filter((x): x is string => !!x))].slice(0, 60)
+      : null;
+    const student = input.student === undefined ? null : obj(input.student, ["school", "degree", "major", "gradYear"]);
+    const jobPrefs = input.jobPrefs === undefined ? null : obj(input.jobPrefs, ["roles", "locations", "workMode", "salary"]);
+    let resume: unknown = undefined;
+    if (input.resume !== undefined) {
+      const r = input.resume as { fileName?: unknown; text?: unknown } | null;
+      resume = r === null ? null : {
+        fileName: clean(r.fileName, 200) ?? "resume",
+        text: typeof r.text === "string" ? r.text.slice(0, 50_000) : "",
+        uploadedAt: new Date().toISOString(),
+      };
+    }
+    return { skills, student, jobPrefs, resume };
+  })
+  .handler(async ({ data }): Promise<SaveResult> => {
+    try {
+      const PROFILE_ID = (await requireUser()).id;
+      await neonExecute(
+        `update public.devup_profile set
+           skills = coalesce($2::text[], skills),
+           student = coalesce($3::jsonb, student),
+           job_prefs = coalesce($4::jsonb, job_prefs),
+           resume = case when $5::boolean then $6::jsonb else resume end,
+           updated_at = now()
+         where id = $1`,
+        [PROFILE_ID, data.skills, data.student, data.jobPrefs, data.resume !== undefined, data.resume ?? null],
+      );
+      return { ok: true };
     } catch (err) {
       return fail(err);
     }

@@ -6,6 +6,10 @@ import {
   gainXp as gainXpFn,
   saveProfile as saveProfileFn,
   saveRoast as saveRoastFn,
+  saveDetails as saveDetailsFn,
+  type JobPrefs,
+  type ResumeInfo,
+  type StudentInfo,
   type GameState,
   type Quest,
   type SaveResult,
@@ -15,7 +19,8 @@ export const XP_PER_LEVEL = 1000;
 const TITLES = ["Rookie", "Apprentice", "Contender", "Challenger", "Specialist", "Veteran", "Elite", "Legend"];
 export const levelTitle = (lvl: number) => TITLES[Math.min(lvl - 1, TITLES.length - 1)];
 
-export type { Quest };
+export type { Quest, JobPrefs, ResumeInfo, StudentInfo };
+export type Details = { skills: string[]; student: StudentInfo; jobPrefs: JobPrefs; resume: ResumeInfo };
 
 /** Used only when Neon can't be reached, so the UI still has something to show. */
 const FALLBACK_QUESTS: Quest[] = [
@@ -42,6 +47,9 @@ type Game = {
   gainXp: (n: number, reason?: string) => void;
   setRoast: (v: boolean) => void;
   setXp: (n: number) => void;
+  email: string;
+  details: Details;
+  saveDetails: (d: Partial<Details>) => Promise<boolean>;
 };
 
 const Ctx = createContext<Game | null>(null);
@@ -59,6 +67,9 @@ export function GameProvider({
   const [xp, setXpState] = useState(loaded?.xp ?? 2350);
   const [quests, setQuests] = useState<Quest[]>(loaded?.quests ?? FALLBACK_QUESTS);
   const [roast, setRoastState] = useState(loaded?.roast ?? false);
+  const [details, setDetails] = useState<Details>({
+    skills: loaded?.skills ?? [], student: loaded?.student ?? {}, jobPrefs: loaded?.jobPrefs ?? {}, resume: loaded?.resume ?? null,
+  });
   const [lastGain, setLastGain] = useState<Game["lastGain"]>(null);
 
   useEffect(() => {
@@ -131,6 +142,14 @@ export function GameProvider({
       });
     },
     setXp: (n) => setXpState(n),
+    email: loaded?.email ?? "",
+    details,
+    saveDetails: async (d) => {
+      const prev = details;
+      setDetails({ ...details, ...d });
+      const res = await saveDetailsFn({ data: d });
+      return !rejected(res, () => setDetails(prev));
+    },
   };
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
