@@ -225,7 +225,7 @@ function Dashboard() {
                   alt=""
                   aria-hidden
                   draggable={false}
-                   className="absolute left-1/2 top-1/2 h-[235%] w-[235%] -translate-x-1/2 -translate-y-1/2 object-contain"
+                   className="absolute left-1/2 top-1/2 h-[300%] w-[300%] -translate-x-1/2 -translate-y-1/2 object-contain"
                    style={{ maskImage: "radial-gradient(closest-side, black 84%, transparent 97%)", WebkitMaskImage: "radial-gradient(closest-side, black 84%, transparent 97%)" }}
                 />
               )}
