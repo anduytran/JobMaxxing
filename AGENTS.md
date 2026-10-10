@@ -11,7 +11,7 @@
 
 ## Architecture rules
 
-- Max assets remain pure vector SVGs with smooth Bézier contours and explicit viewBoxes; preserve facial highlights and hand creases when simplifying paths. Why: enlarging embedded bitmaps or overtraced contours cannot produce crisp mascot artwork.
+- Max assets remain pure vector SVGs with smooth Bézier contours and explicit viewBoxes; reference redraws use manually authored shapes and detail strokes through the shared MAX_POSES map, preserving facial highlights and hand creases. Why: enlarging embedded bitmaps or overtraced contours cannot produce crisp mascot artwork.
 
 - Shared motion lives in global CSS and AppShell's reduced-motion-aware MotionConfig; stateful encouragement stays in frontend components. Why: animation polish must not change persistence or existing interview and resume workflows.
 
