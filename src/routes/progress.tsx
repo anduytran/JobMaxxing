@@ -22,7 +22,7 @@ function Page() {
   const done = quests.filter((q) => q.done);
   return (
     <div className="mx-auto max-w-6xl">
-      <PageHeader eyebrow="Build your next chapter" title="Career Progress" sub="Turn your potential into progress, one step at a time." />
+      <PageHeader eyebrow="Build your next chapter" title="Career Progress" sub="Turn your potential into progress, one step at a time." pose="skills" />
       <div className="panel">
         <PanelHead title="Look how far you've come" level={level} />
         <div className="px-8 pb-10 pt-6 md:px-12">

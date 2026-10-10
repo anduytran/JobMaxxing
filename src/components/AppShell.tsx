@@ -6,9 +6,8 @@ import {
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { useGame, levelTitle } from "@/lib/game";
+import { Max, type MaxPose } from "@/components/Max";
 import { cn } from "@/lib/utils";
-import mascotAsset from "@/assets/mascot.png.asset.json";
-const mascot = mascotAsset.url;
 import { Button } from "@/components/ui/button";
 
 type Item = { to: string; label: string; icon: typeof LayoutGrid; badge?: string };
@@ -32,7 +31,7 @@ const GROUPS: { label: string; items: Item[] }[] = [
 const ALL = GROUPS.flatMap((g) => g.items).concat({ to: "/settings", label: "Settings", icon: Settings });
 
 export function Mascot({ className }: { className?: string }) {
-  return <img src={mascot} alt="" width={816} height={816} className={cn("mascot-personality object-contain", className)} />;
+  return <Max className={className} />;
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -158,12 +157,15 @@ export function PanelHead({ title, level }: { title: string; level: number }) {
   );
 }
 
-export function PageHeader({ eyebrow, title, sub }: { eyebrow: string; title: string; sub: string }) {
+export function PageHeader({ eyebrow, title, sub, pose }: { eyebrow: string; title: string; sub: string; pose?: MaxPose }) {
   return (
-    <div className="mb-8">
+    <div className="mb-8 flex items-end justify-between gap-6">
+      <div>
       <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">{eyebrow}</p>
       <h1 className="mt-2 text-4xl font-bold md:text-5xl">{title}</h1>
       <p className="mt-2 text-lg text-muted-foreground">{sub}</p>
+      </div>
+      {pose && <Max pose={pose} className="hidden h-24 w-24 shrink-0 sm:block" />}
     </div>
   );
 }

@@ -7,17 +7,9 @@ import { Button } from "@/components/ui/button";
 import { useEffect, useMemo, useState } from "react";
 import { getLatestResumeReview } from "@/lib/resume.functions";
 import type { StoredReview } from "@/lib/resume";
-import maxResumeAsset from "@/assets/max-resume.png.asset.json";
-import maxInterviewAsset from "@/assets/max-interview.png.asset.json";
-import maxSkillsAsset from "@/assets/max-skills.png.asset.json";
-import maxHunt from "@/assets/max-hunt.png";
-import maxBranding from "@/assets/max-branding.png";
+import { MAX_POSES } from "@/components/Max";
 
-const maxResume = maxResumeAsset.url;
-const maxInterview = maxInterviewAsset.url;
-const maxSkills = maxSkillsAsset.url;
-
-const MAX_ART: Record<string, string> = { setup: maxResume, resume: maxResume, interview: maxInterview, skills: maxSkills, hunt: maxHunt, branding: maxBranding, social: maxBranding };
+const MAX_ART: Record<string, string> = { setup: MAX_POSES.resume, resume: MAX_POSES.resume, interview: MAX_POSES.interview, skills: MAX_POSES.skills, hunt: MAX_POSES.hunt, branding: MAX_POSES.branding, social: MAX_POSES.branding };
 const QUEST_LINK: Record<string, "/setup" | "/interview" | "/quests" | "/skills" | "/market"> = { setup: "/setup", resume: "/setup", interview: "/interview", skills: "/skills", hunt: "/market" };
 
 export const Route = createFileRoute("/")({
@@ -50,7 +42,7 @@ function Dashboard() {
   useEffect(() => { setSeed(Math.random()); }, []);
   const featured = useMemo(() => (open.length ? open[Math.floor(seed * open.length) % open.length] : null), [open, seed]);
   const featKey = featured?.category?.toLowerCase() ?? "interview";
-  const featArt = MAX_ART[featKey] ?? maxInterview;
+  const featArt = MAX_ART[featKey] ?? MAX_POSES.interview;
   const featLink = QUEST_LINK[featKey] ?? "/quests";
   const reducedMotion = useReducedMotion();
   const [tip, setTip] = useState(0);
@@ -161,7 +153,7 @@ function Dashboard() {
             })}
             {resumeQuests.slice(0, 2).map((s) => (
               <Link key={s.id} to="/setup" className="group flex items-center gap-5 p-5 transition-colors hover:bg-muted/60">
-                <img src={maxResume} alt="" loading="lazy" width={816} height={816} className="h-14 w-14 shrink-0 rounded-xl bg-sidebar-accent object-contain p-1 transition-transform group-hover:scale-110" />
+                <img src={MAX_POSES.resume} alt="" loading="lazy" width={816} height={816} className="h-14 w-14 shrink-0 rounded-xl bg-sidebar-accent object-contain p-1 transition-transform group-hover:scale-110" />
                 <div className="min-w-0 flex-1">
                   <div className="font-semibold">{s.title}</div>
                   <div className="mt-1 line-clamp-1 text-xs text-muted-foreground"><span className="uppercase tracking-widest">Resume quest</span> · {s.detail}</div>
