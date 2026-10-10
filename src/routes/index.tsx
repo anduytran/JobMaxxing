@@ -232,9 +232,9 @@ function Dashboard() {
               <div className="relative h-full w-full"><img key={featArt} src={featArt} alt={featured ? `Max ready for: ${featured.title}` : "Max with a microphone, ready to interview you"} width={816} height={816} decoding="sync" draggable={false} className="h-full w-full object-contain" /></div>
             </div>
           </motion.div>
-          <aside aria-label="Quick overview" className="absolute right-2 top-1/2 z-10 hidden w-1/2 -translate-y-1/2 justify-end lg:flex">
-            <div className="w-[min(32rem,calc(50vw_-_15svh_-_4rem))] max-w-full overflow-hidden rounded-md border border-border bg-card/90 text-card-foreground shadow-xl backdrop-blur-md">
-              <p className="border-b border-border bg-muted/40 px-5 py-3 text-center text-xs font-bold uppercase tracking-[0.25em]">Missions</p>
+          <aside aria-label="Quick overview" className="absolute right-20 top-1/2 z-10 hidden w-1/2 -translate-y-1/2 justify-end lg:flex">
+            <div className="w-[min(32rem,calc(50vw_-_15svh_-_8rem))] max-w-full overflow-hidden rounded-md border border-border bg-card/95 text-card-foreground shadow-2xl ring-1 ring-foreground/10 backdrop-blur-xl">
+              <p className="border-b border-border bg-muted/40 px-5 py-3 text-center text-xs font-bold uppercase tracking-[0.25em]">Goals</p>
               <ul className="divide-y divide-border">
                 {[...quests.filter((q) => q.period === "daily"), ...quests.filter((q) => q.period === "weekly")].sort((a, b) => Number(a.done) - Number(b.done)).slice(0, 5).map((q) => (
                   <li key={q.id}>
@@ -254,7 +254,7 @@ function Dashboard() {
                 <Clock className="h-3.5 w-3.5" />
                 <ResetCountdown period="daily" label="Daily expiration in" />
               </div>
-              <p className="border-t border-border bg-muted/40 px-5 py-3 text-center text-xs font-bold uppercase tracking-[0.25em]">Featured modes</p>
+              <p className="border-t border-border bg-muted/40 px-5 py-3 text-center text-xs font-bold uppercase tracking-[0.25em]">Improve</p>
               <div className="divide-y divide-border">
                 <Link to="/interview" search={{ radar: undefined }} className="group flex items-center gap-4 px-5 py-4 hover:bg-muted/50">
                   <span className="grid h-10 w-10 place-items-center rounded-full border border-border bg-muted"><Mic className="h-5 w-5" /></span>
@@ -275,7 +275,7 @@ function Dashboard() {
         </section>
         {total > 1 && (<>
           <Button variant="outline" size="icon" className="absolute left-3 top-[70%] md:top-1/2 z-20 h-11 w-11 -translate-y-1/2 rounded-full bg-card md:left-6" onClick={() => shift(-1)} aria-label="Previous quest" title="Previous quest"><ChevronLeft className="h-5 w-5" /></Button>
-          <Button variant="outline" size="icon" className="absolute right-3 top-[70%] md:top-1/2 z-20 h-11 w-11 -translate-y-1/2 rounded-full bg-card md:right-6 lg:right-[calc(min(32rem,calc(50vw_-_15svh_-_4rem))_+_1.25rem)]" onClick={() => shift(1)} aria-label="Next quest" title="Next quest"><ChevronRight className="h-5 w-5" /></Button>
+          <Button variant="outline" size="icon" className="absolute right-3 top-[70%] md:top-1/2 z-20 h-11 w-11 -translate-y-1/2 rounded-full bg-card md:right-6" onClick={() => shift(1)} aria-label="Next quest" title="Next quest"><ChevronRight className="h-5 w-5" /></Button>
         </>)}
       </div>
 
