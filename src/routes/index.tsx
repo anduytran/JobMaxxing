@@ -14,6 +14,7 @@ import type { StoredReview } from "@/lib/resume";
 import { MAX_POSES } from "@/components/Max";
 import { cn } from "@/lib/utils";
 import gymDesktop from "@/assets/quest-scenes/gym-desktop.png.asset.json";
+import gymMobile from "@/assets/quest-scenes/gym-mobile.png.asset.json";
 
 import { questTitleLines } from "@/lib/quest-titles";
 import { ResumeScoreCard } from "@/components/ResumeScoreCard";
@@ -90,7 +91,7 @@ function sceneSources(kind: string) {
   if (kind === "interview" || kind === "branding" || kind === "social") {
     return { desktop: stageDesktop.url, mobile: stageMobile.url };
   }
-  if (kind === "skills") return { desktop: gymDesktop.url, mobile: gymDesktop.url };
+  if (kind === "skills") return { desktop: gymDesktop.url, mobile: gymMobile.url };
   return { desktop: meadowDesktop.url, mobile: meadowMobile.url };
 }
 function SceneBackdrop({ kind }: { kind: string }) {
