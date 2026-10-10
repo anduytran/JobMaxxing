@@ -227,20 +227,6 @@ function Dashboard() {
           <div className="absolute bottom-6 right-8 flex items-center gap-2 rounded-xl bg-card px-4 py-3 text-sm shadow-md"><Check className="h-4 w-4 text-success" />{scene.phrase}</div>
         </motion.div>
       </section>
-      {canEdit && featured && (
-        <div className="panel -mt-4 hidden flex-wrap items-center gap-4 px-5 py-3 text-sm md:flex">
-          <b>Card layout · {layoutKind}</b>
-          <Button size="sm" variant={editing ? "default" : "outline"} onClick={() => setEditing((v) => !v)}>{editing ? "Done editing" : "Edit layout"}</Button>
-          {editing && (<>
-            <span className="text-muted-foreground">Drag Max or the background.</span>
-            <label className="flex items-center gap-2">Max size<input type="range" min={80} max={480} value={lay.maxSize} onChange={(e) => patch({ maxSize: Number(e.target.value) })} /></label>
-            <label className="flex items-center gap-2">Background size<input type="range" min={30} max={300} value={Math.round(lay.bgScale * 100)} onChange={(e) => patch({ bgScale: Number(e.target.value) / 100 })} /></label>
-            <Button size="sm" variant="ghost" onClick={() => patch(DEFAULT_LAYOUT)}>Reset</Button>
-            <Button size="sm" onClick={saveLayout} disabled={saving}>{saving ? "Saving…" : "Save"}</Button>
-          </>)}
-        </div>
-      )}
-
       <div className="grid gap-6 lg:grid-cols-[1fr_1fr_1fr_1.4fr]">
         <Stat icon={FileText} label="Resume score">
           <div className="text-4xl font-bold">{review && <span className="mr-2 rounded-md bg-success/20 px-2 text-2xl">{review.grade}</span>}{resumeScore ?? "—"}<span className="text-xl font-normal text-muted-foreground"> / 100</span></div>
