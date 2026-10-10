@@ -42,7 +42,7 @@ function Dashboard() {
   useEffect(() => { setSeed(Math.random()); }, []);
   const featured = useMemo(() => (open.length ? open[Math.floor(seed * open.length) % open.length] : null), [open, seed]);
   const featKey = featured?.category?.toLowerCase() ?? "interview";
-  const featArt = MAX_ART[featKey] ?? maxInterview;
+  const featArt = MAX_ART[featKey] ?? MAX_POSES.interview;
   const featLink = QUEST_LINK[featKey] ?? "/quests";
   const reducedMotion = useReducedMotion();
   const [tip, setTip] = useState(0);
@@ -153,7 +153,7 @@ function Dashboard() {
             })}
             {resumeQuests.slice(0, 2).map((s) => (
               <Link key={s.id} to="/setup" className="group flex items-center gap-5 p-5 transition-colors hover:bg-muted/60">
-                <img src={maxResume} alt="" loading="lazy" width={816} height={816} className="h-14 w-14 shrink-0 rounded-xl bg-sidebar-accent object-contain p-1 transition-transform group-hover:scale-110" />
+                <img src={MAX_POSES.resume} alt="" loading="lazy" width={816} height={816} className="h-14 w-14 shrink-0 rounded-xl bg-sidebar-accent object-contain p-1 transition-transform group-hover:scale-110" />
                 <div className="min-w-0 flex-1">
                   <div className="font-semibold">{s.title}</div>
                   <div className="mt-1 line-clamp-1 text-xs text-muted-foreground"><span className="uppercase tracking-widest">Resume quest</span> · {s.detail}</div>

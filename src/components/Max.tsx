@@ -9,6 +9,6 @@ import branding from "@/assets/max/max-branding.svg";
 export const MAX_POSES = { wave, resume, interview, skills, hunt, branding } as const;
 export type MaxPose = keyof typeof MAX_POSES;
 
-export function Max({ pose = "wave", className, alt = "" }: { pose?: MaxPose; className?: string; alt?: string }) {
+export function Max({ pose = "wave", className, alt = "" }: { pose?: MaxPose; className?: string | undefined; alt?: string }) {
   return <img src={MAX_POSES[pose]} alt={alt} width={640} height={640} draggable={false} className={cn("mascot-personality object-contain", className)} />;
 }
