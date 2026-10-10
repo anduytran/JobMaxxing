@@ -33,43 +33,50 @@ export const Route = createFileRoute("/")({
 const CAT_ICON: Record<string, typeof FileText> = { resume: FileText, interview: Mic, social: Users };
 
 // Per-type featured-quest scenes: tinted backdrop, floating icon and prop chips.
-type Scene = { icon: typeof FileText; bg: string; ring: string; chip: string; props: [string, string][]; phrase: string };
+type Scene = { icon: typeof FileText; bg: string; ring: string; chip: string; props: [string, string][]; phrase: string; blurb: string };
 const SCENES: Record<string, Scene> = {
   skills: {
     icon: Code2, bg: "bg-success/15", ring: "border-success/30", chip: "text-success",
     props: [["</>", "right-72 top-40 -rotate-6"], ["{ algo }", "right-52 bottom-28 rotate-3"], ["O(n)", "right-80 bottom-44 -rotate-3"]],
     phrase: "Sharpen the blade.",
+    blurb: "One problem at a time — that's how sharp gets built. Solve a few today and the next one feels easier.",
   },
   interview: {
     icon: Mic, bg: "bg-primary/15", ring: "border-primary/30", chip: "text-primary",
     props: [["Q&A", "right-72 top-40 -rotate-6"], ["STAR method", "right-52 bottom-28 rotate-3"], ["Tell me about…", "right-80 bottom-44 -rotate-3"]],
     phrase: "Talk it out.",
+    blurb: "Say it out loud once and it stops being scary. Practice the answer before the real one asks.",
   },
   resume: {
     icon: FileText, bg: "bg-accent/20", ring: "border-accent/40", chip: "text-accent-foreground",
     props: [["ATS-friendly", "right-72 top-40 -rotate-6"], ["Impact verbs", "right-52 bottom-28 rotate-3"], ["+1 metric", "right-80 bottom-44 -rotate-3"]],
     phrase: "Polish your story.",
+    blurb: "Your experience is good — let's make sure it reads that way. One edit at a time.",
   },
   hunt: {
     icon: Radar, bg: "bg-success/15", ring: "border-success/30", chip: "text-success",
     props: [["Remote", "right-72 top-40 -rotate-6"], ["92% match", "right-52 bottom-28 rotate-3"], ["New role", "right-80 bottom-44 -rotate-3"]],
     phrase: "Scan the horizon.",
+    blurb: "The right role is out there. Look a little wider today and it gets a little closer.",
   },
   branding: {
     icon: Users, bg: "bg-primary/15", ring: "border-primary/30", chip: "text-primary",
     props: [["Coffee chat", "right-72 top-40 -rotate-6"], ["LinkedIn", "right-52 bottom-28 rotate-3"], ["Dap!", "right-80 bottom-44 -rotate-3"]],
     phrase: "Grow your crew.",
+    blurb: "Opportunities show up more when people know your name. Start one conversation today.",
   },
   social: {
     icon: Users, bg: "bg-primary/15", ring: "border-primary/30", chip: "text-primary",
     props: [["Coffee chat", "right-72 top-40 -rotate-6"], ["LinkedIn", "right-52 bottom-28 rotate-3"], ["Dap!", "right-80 bottom-44 -rotate-3"]],
     phrase: "Grow your crew.",
+    blurb: "Opportunities show up more when people know your name. Start one conversation today.",
   },
 };
 const DEFAULT_SCENE: Scene = {
   icon: Sparkles, bg: "bg-accent/20", ring: "border-accent/40", chip: "text-accent-foreground",
   props: [["Small win", "right-72 top-40 -rotate-6"], ["Momentum", "right-52 bottom-28 rotate-3"], ["+XP", "right-80 bottom-44 -rotate-3"]],
   phrase: "One step closer.",
+  blurb: "Your dream role is closer than you think. Build your skills, sharpen your story, and make your next move.",
 };
 
 // Illustrated backdrop behind Max for the featured quest; one scene per quest type.
@@ -155,7 +162,7 @@ function Dashboard() {
   useEffect(() => { [gymScene, billboardScene, meadowScene, ...Object.values(MAX_POSES)].forEach((s) => { const i = new Image(); i.src = s; }); }, []);
   const sceneReady = readyKey === sceneKey;
   const featLink = QUEST_LINK[featKey] ?? "/quests";
-  const scene = SCENES[featKey] ?? DEFAULT_SCENE;
+  const scene = SCENES[featKey] ?? (featKey === "setup" ? SCENES.resume : DEFAULT_SCENE);
   const reducedMotion = useReducedMotion();
   const [tip, setTip] = useState(0);
   const tips = [
@@ -187,7 +194,11 @@ function Dashboard() {
           ) : (
             <h2 className="mt-5 text-4xl font-bold leading-tight md:text-5xl">You've got potential.<br />Let's put it to work.</h2>
           )}
-          <p className="mt-4 text-muted-foreground">Your dream role is closer than you think. Build your skills, sharpen your story, and make your next move.</p>
+          {featured ? (
+            <motion.p key={featured.id} initial={reducedMotion ? false : { opacity: 0, x: -10 * dir }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.3, delay: 0.05 }} className="mt-4 text-muted-foreground">{scene.blurb}</motion.p>
+          ) : (
+            <p className="mt-4 text-muted-foreground">{DEFAULT_SCENE.blurb}</p>
+          )}
           {featured ? (<>
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <Button asChild className="h-auto rounded-xl px-7 py-4 text-base"><Link to={featLink}>
