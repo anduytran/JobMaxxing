@@ -4,7 +4,7 @@ import { ArrowRight, Check, ChevronLeft, ChevronRight, Clock, Code2, FileText, F
 import { useGame } from "@/lib/game";
 import { Mascot } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getLatestResumeReview } from "@/lib/resume.functions";
 import meadowScene from "@/assets/max/meadow.svg";
 import type { StoredReview } from "@/lib/resume";
