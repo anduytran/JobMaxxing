@@ -1,32 +1,32 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, FileUp, Loader2, Sparkle } from "lucide-react";
+import { AlertTriangle, ArrowRight, Check, FileUp, History, Loader2, Lock, RotateCcw, Save, ScanLine, Sparkle } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { levelTitle, useGame } from "@/lib/game";
 import {
   applyResumeSuggestion,
-  getLatestResumeReview,
-  reviewResume as reviewResumeFn,
+  getResumeState,
+  getResumeVersion,
+  saveResumeVersion,
+  scanResume,
 } from "@/lib/resume.functions";
-import { CATEGORY_LABEL, GRADE_META, type ResumeReview, type ResumeSuggestion } from "@/lib/resume";
+import {
+  CATEGORY_LABEL, GRADE_META, XP_RULES,
+  type ResumeSection, type ResumeSuggestion, type ResumeVersion, type StoredReview,
+} from "@/lib/resume";
 import { cn } from "@/lib/utils";
 import pdfWorkerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 
 export const Route = createFileRoute("/setup")({
+  validateSearch: (s: Record<string, unknown>): { welcome?: string } => (s["welcome"] ? { welcome: String(s["welcome"]) } : {}),
   head: () => ({
     meta: [
       { title: "Resume Lab — JobMaxxing" },
-      {
-        name: "description",
-        content: "Upload your resume to get a grade, the fixes worth XP that raise it, and your profile fields filled in for you.",
-      },
+      { name: "description", content: "Get your resume graded, see ATS risks, accept AI bullet rewrites, and earn XP for every fix." },
       { property: "og:title", content: "Resume Lab — JobMaxxing" },
-      {
-        property: "og:description",
-        content: "Upload your resume to get a grade, the fixes worth XP that raise it, and your profile fields filled in for you.",
-      },
+      { property: "og:description", content: "Get your resume graded, see ATS risks, accept AI bullet rewrites, and earn XP for every fix." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -34,56 +34,73 @@ export const Route = createFileRoute("/setup")({
   component: Setup,
 });
 
-const MIN_CHARS = 80;
+const ACCEPT = "application/pdf,image/png,image/jpeg,image/webp";
 
-/** Reads text out of a PDF in the browser. pdf.js loads only when a file is picked. */
+/** Reads selectable text from a PDF in the browser — a backup if the agent can't take the file. */
 async function extractPdfText(file: File): Promise<string> {
-  const pdfjs = (await import("pdfjs-dist")) as unknown as {
-    GlobalWorkerOptions: { workerSrc: string };
-    getDocument(src: {
-      data: ArrayBuffer;
-    }): { promise: Promise<{ numPages: number; getPage(n: number): Promise<{ getTextContent(): Promise<{ items: { str: string }[] }> }> }> };
-  };
-  pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
-  const doc = await pdfjs.getDocument({ data: await file.arrayBuffer() }).promise;
-  const pages: string[] = [];
-  for (let n = 1; n <= Math.min(doc.numPages, 12); n++) {
-    const page = await doc.getPage(n);
-    const content = await page.getTextContent();
-    pages.push(content.items.map((i) => i.str).join(" "));
+  try {
+    const pdfjs = (await import("pdfjs-dist")) as unknown as {
+      GlobalWorkerOptions: { workerSrc: string };
+      getDocument(src: { data: ArrayBuffer }): { promise: Promise<{ numPages: number; getPage(n: number): Promise<{ getTextContent(): Promise<{ items: { str: string }[] }> }> }> };
+    };
+    pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
+    const doc = await pdfjs.getDocument({ data: await file.arrayBuffer() }).promise;
+    const pages: string[] = [];
+    for (let n = 1; n <= Math.min(doc.numPages, 12); n++) {
+      const content = await (await doc.getPage(n)).getTextContent();
+      pages.push(content.items.map((i) => i.str).join(" "));
+    }
+    return pages.join("\n").replace(/[ \t]+/g, " ").trim();
+  } catch {
+    return "";
   }
-  return pages.join("\n").replace(/[ \t]+/g, " ").trim();
 }
 
+const toBase64 = (file: File) =>
+  new Promise<string>((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(String(r.result).split(",")[1] ?? "");
+    r.onerror = () => reject(r.error);
+    r.readAsDataURL(file);
+  });
+
+const replaceLine = (sections: ResumeSection[], lineId: string, text: string) =>
+  sections.map((s) => ({ ...s, lines: s.lines.map((l) => (l.id === lineId ? { ...l, text } : l)) }));
+
+const findLine = (sections: ResumeSection[], lineId?: string | null) =>
+  lineId ? sections.flatMap((s) => s.lines).find((l) => l.id === lineId) : undefined;
+
 function Setup() {
-  const { completeQuest, quests, saveDetails, xp, level, setXp } = useGame();
-  const [fileName, setFileName] = useState<string | null>(null);
-  const [status, setStatus] = useState<string[]>([]);
-  const [busy, setBusy] = useState(false);
-  const [review, setReview] = useState<ResumeReview | null>(null);
-  const [reviewId, setReviewId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const { completeQuest, quests, xp, level, setXp } = useGame();
+  const { welcome } = Route.useSearch();
+  const navigate = useNavigate();
+  const [review, setReview] = useState<StoredReview | null>(null);
+  const [sections, setSections] = useState<ResumeSection[]>([]);
+  const [saved, setSaved] = useState<string>("[]");
+  const [versions, setVersions] = useState<ResumeVersion[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState<null | "scan" | "save">(null);
+  const [seconds, setSeconds] = useState(0);
+  const [applying, setApplying] = useState<string | null>(null);
+  const [focusLine, setFocusLine] = useState<string | null>(null);
   const [paste, setPaste] = useState(false);
   const [text, setText] = useState("");
-  const [applying, setApplying] = useState<string | null>(null);
-  const [seconds, setSeconds] = useState(0);
   const input = useRef<HTMLInputElement>(null);
-  const bootstrapped = useRef(false);
 
-  // A grade already earned stays visible after a reload.
+  const refresh = async () => {
+    const res = await getResumeState();
+    setLoading(false);
+    if (!res.ok) return void toast.error(res.error);
+    setReview(res.review);
+    setSections(res.sections);
+    setSaved(JSON.stringify(res.sections));
+    setVersions(res.versions);
+  };
+
   useEffect(() => {
-    if (bootstrapped.current) return;
-    bootstrapped.current = true;
-    void getLatestResumeReview().then((res) => {
-      if (!res.ok || !res.review) return;
-      setFileName(res.review.fileName);
-      setReviewId(res.review.id);
-      setReview(res.review);
-      setStatus([`> scan://${res.review.fileName}`, `> grade ${res.review.grade} · ${res.review.score}/100 saved`]);
-    });
+    void refresh();
   }, []);
 
-  // Grading takes half a minute, so the wait counts up instead of looking stuck.
   useEffect(() => {
     if (!busy) return;
     setSeconds(0);
@@ -91,266 +108,222 @@ function Setup() {
     return () => clearInterval(t);
   }, [busy]);
 
-  const run = async (name: string, body: string) => {
-    const words = body.split(/\s+/).filter(Boolean).length;
-    setBusy(true);
-    setError(null);
-    setStatus([`> scan://${name}`, `> extracted ${words} words`, "> grading with the Resume Agent…"]);
-    // A rejected call must still clear the working state, or the screen hangs on "grading".
-    let res: Awaited<ReturnType<typeof reviewResumeFn>>;
+  const dirty = JSON.stringify(sections) !== saved;
+
+  const runScan = async (payload: Parameters<typeof scanResume>[0]["data"]) => {
+    setBusy("scan");
     try {
-      res = await reviewResumeFn({ data: { fileName: name, text: body } });
+      const res = await scanResume({ data: payload });
+      if (!res.ok) return void toast.error(res.error);
+      setXp(res.xp);
+      const extra = [
+        res.awarded.firstScan && `+${res.awarded.firstScan} XP first scan`,
+        res.awarded.levelUp && `+${res.awarded.levelUp} XP Level Up — score above ${XP_RULES.levelUpScore}!`,
+      ].filter(Boolean).join(" · ");
+      toast.success(`Resume graded ${res.review.grade} · ${res.review.score}/100`, { description: extra || `${res.review.suggestions.length} fixes ready below.` });
+      if (!quests.find((q) => q.id === "resume")?.done) completeQuest("resume");
+      setPaste(false);
+      setText("");
+      await refresh();
     } catch (err) {
       console.error(err);
-      setBusy(false);
-      setStatus([]);
-      setError("The resume review didn't finish. Try again, or paste the text instead.");
-      return;
+      toast.error("The resume scan didn't finish. Try again.");
+    } finally {
+      setBusy(null);
     }
-    setBusy(false);
-    if (!res.ok) {
-      setStatus([]);
-      setError(res.error);
-      return;
-    }
-    setReview(res.review);
-    setReviewId(res.id);
-    setStatus([
-      `> scan://${name}`,
-      `> extracted ${words} words`,
-      `> grade ${res.review.grade} · ${res.review.score}/100`,
-      `> ${res.review.suggestions.length} fix${res.review.suggestions.length === 1 ? "" : "es"} queued`,
-    ]);
-    void saveDetails({ resume: { fileName: name, text: "", uploadedAt: new Date().toISOString() } });
-    if (!quests.find((q) => q.id === "resume")?.done) completeQuest("resume");
-    toast.success(`Resume graded ${res.review.grade} · ${res.review.score}/100`, {
-      description: `${res.review.suggestions.length} fixes worth XP are ready below.`,
-    });
   };
 
   const pick = async (f?: File) => {
     if (!f) return;
-    setReview(null);
-    setReviewId(null);
-    setError(null);
-    setFileName(f.name);
-    if (f.type !== "application/pdf" && !/\.pdf$/i.test(f.name)) {
-      setBusy(false);
-      setPaste(true);
-      setStatus([]);
-      toast("That file isn't a PDF — paste its text instead.");
-      return;
-    }
-    setBusy(true);
-    setStatus([`> reading ${f.name}`]);
-    try {
-      const body = await extractPdfText(f);
-      if (body.length < MIN_CHARS) {
-        setBusy(false);
-        setPaste(true);
-        setStatus([`> reading ${f.name}`, "> no selectable text found (it may be a scan)"]);
-        toast("Couldn't read text from that PDF — paste your resume text below.");
-        return;
-      }
-      await run(f.name, body);
-    } catch (err) {
-      console.error(err);
-      setBusy(false);
-      setPaste(true);
-      setStatus([]);
-      toast.error("That PDF couldn't be read — paste your resume text instead.");
-    }
-  };
-
-  const apply = async (s: ResumeSuggestion) => {
-    if (!review || !reviewId) return;
-    setApplying(s.id);
-    const res = await applyResumeSuggestion({ data: { reviewId, suggestionId: s.id } });
-    setApplying(null);
-    if (!res.ok) {
-      toast.error(res.error);
-      return;
-    }
-    setReview({ ...review, suggestions: review.suggestions.map((x) => (x.id === s.id ? { ...x, applied: true } : x)) });
-    setXp(res.xp);
-    toast.success(res.awarded ? `Quest update: +${res.awarded} XP saved` : "Already claimed");
-  };
-
-  const reset = () => {
-    setFileName(null);
-    setReview(null);
-    setReviewId(null);
-    setStatus([]);
-    setError(null);
-    setPaste(false);
-    setText("");
+    if (!ACCEPT.split(",").includes(f.type)) return void toast("Upload a PDF or an image (PNG, JPG, WEBP), or paste the text.");
+    if (f.size > 8 * 1024 * 1024) return void toast.error("That file is over 8 MB.");
+    const [fileBase64, pdfText] = await Promise.all([toBase64(f), f.type === "application/pdf" ? extractPdfText(f) : Promise.resolve("")]);
+    await runScan({ fileName: f.name, contentType: f.type, fileBase64, text: pdfText });
     if (input.current) input.current.value = "";
   };
 
-  const claimed = review?.suggestions.filter((s) => s.applied).reduce((a, s) => a + s.xp, 0) ?? 0;
+  const saveVersion = async () => {
+    setBusy("save");
+    const res = await saveResumeVersion({ data: { sections } });
+    setBusy(null);
+    if (!res.ok) return void toast.error(res.error);
+    toast.success(`Saved as version ${res.version}`);
+    await refresh();
+  };
+
+  const apply = async (s: ResumeSuggestion) => {
+    if (!review) return;
+    let next = sections;
+    if (s.type === "rewrite" && s.after && s.lineId) next = replaceLine(sections, s.lineId, s.after);
+    if (s.type === "metric" && s.lineId) {
+      const line = findLine(sections, s.lineId);
+      if (line && s.before && line.text.trim() === s.before.trim()) {
+        setFocusLine(s.lineId);
+        return void toast("Add the number to that line first, then claim the fix.");
+      }
+    }
+    setApplying(s.id);
+    const changed = JSON.stringify(next) !== saved;
+    const res = await applyResumeSuggestion({ data: { reviewId: review.id, suggestionId: s.id, sections: changed ? next : undefined } });
+    setApplying(null);
+    if (!res.ok) return void toast.error(res.error);
+    setSections(next);
+    if (changed) setSaved(JSON.stringify(next));
+    setReview({ ...review, suggestions: review.suggestions.map((x) => (x.id === s.id ? { ...x, applied: true } : x)) });
+    setXp(res.xp);
+    toast.success(res.awarded ? `+${res.awarded} XP · fix integrated` : "Already claimed", {
+      description: res.version ? `Saved as version ${res.version}` : undefined,
+    });
+    if (res.version) void refresh();
+  };
+
+  const restore = async (v: ResumeVersion) => {
+    const res = await getResumeVersion({ data: { id: v.id } });
+    if (!res.ok) return void toast.error(res.error);
+    setSections(res.sections);
+    toast(`Loaded version ${v.version} into the editor — save or re-scan to keep it.`);
+  };
+
+  const hasResume = sections.length > 0 || !!review;
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="mx-auto max-w-4xl space-y-6">
+      {welcome && (
+        <div className="panel flex flex-wrap items-center justify-between gap-3 border-primary/40 bg-primary/5 p-4">
+          <div>
+            <p className="font-semibold">Welcome to JobMaxxing! Want to start with your resume?</p>
+            <p className="text-sm text-muted-foreground">Your first scan earns +{XP_RULES.firstScan} XP and fills in your profile. You can do this later.</p>
+          </div>
+          <Button variant="outline" onClick={() => void navigate({ to: "/", search: {} })}>Skip for now</Button>
+        </div>
+      )}
+
       <div>
         <h1 className="text-4xl font-bold md:text-5xl">Resume Lab</h1>
         <p className="text-muted-foreground">
-          Upload your resume to get a grade, the fixes worth XP that raise it, and your profile fields filled in for you.
+          Upload a PDF or a photo of your resume. An AI recruiter grades it, checks it for applicant tracking systems, and suggests fixes worth XP.
         </p>
       </div>
 
-      {!fileName && (
+      {loading ? (
+        <div className="panel grid h-40 place-items-center"><Loader2 className="animate-spin text-muted-foreground" /></div>
+      ) : (
         <>
           <div
-            onClick={() => input.current?.click()}
-            onDragOver={(e) => {
-              e.preventDefault();
-              setPaste(false);
-            }}
-            onDrop={(e) => {
-              e.preventDefault();
-              void pick(e.dataTransfer.files[0]);
-            }}
-            className="panel grid cursor-pointer place-items-center border-2 border-dashed p-16 text-center transition hover:border-primary"
+            onClick={() => !busy && input.current?.click()}
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => { e.preventDefault(); void pick(e.dataTransfer.files[0]); }}
+            className={cn("panel grid cursor-pointer place-items-center border-2 border-dashed text-center transition hover:border-primary", hasResume ? "p-6" : "p-16")}
           >
-            <FileUp className="mb-4 h-12 w-12 text-primary" />
-            <p className="font-display text-lg">Drag &amp; drop your PDF here</p>
-            <p className="text-sm text-muted-foreground">or click to browse</p>
-            <input
-              ref={input}
-              type="file"
-              accept="application/pdf"
-              hidden
-              onChange={(e) => void pick(e.target.files?.[0])}
-            />
+            {busy === "scan" ? (
+              <div className="flex items-center gap-3 text-muted-foreground">
+                <Loader2 className="animate-spin text-primary" /> Reading and grading your resume… {seconds}s
+              </div>
+            ) : (
+              <>
+                <FileUp className={cn("text-primary", hasResume ? "mb-2 h-7 w-7" : "mb-4 h-12 w-12")} />
+                <p className="font-display text-lg">{hasResume ? "Upload a new version" : "Drag & drop your resume here"}</p>
+                <p className="text-sm text-muted-foreground">PDF, PNG, JPG or WEBP · scans work too</p>
+              </>
+            )}
+            <input ref={input} type="file" accept={ACCEPT} hidden onChange={(e) => void pick(e.target.files?.[0])} />
           </div>
           <div className="text-center">
-            <Button variant="outline" size="sm" onClick={() => setPaste(true)}>
-              Paste resume text instead
+            <Button variant="ghost" size="sm" onClick={() => setPaste(!paste)} disabled={!!busy}>
+              {paste ? "Hide text box" : "Paste resume text instead"}
             </Button>
           </div>
-        </>
-      )}
-
-      {fileName && (
-        <div className="panel overflow-hidden">
-          <div className="flex items-center justify-between border-b px-4 py-2 font-mono text-xs text-muted-foreground">
-            <span className="truncate">scan://{fileName}</span>
-            {busy && (
-              <span className="flex shrink-0 items-center gap-2">
-                <Loader2 className="h-3 w-3 animate-spin" /> working {seconds}s
-              </span>
-            )}
-          </div>
-          <div className="min-h-20 space-y-1 p-4 font-mono text-sm text-success">
-            {status.map((l, i) => (
-              <motion.div key={i} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}>
-                {l}
-              </motion.div>
-            ))}
-            {busy && <span className="inline-block h-4 w-2 animate-pulse bg-success" />}
-          </div>
-        </div>
-      )}
-
-      {error && (
-        <div className="panel border-destructive/50 bg-destructive/5 p-4 text-sm text-destructive">
-          {error}
-          <div className="mt-3">
-            <Button size="sm" variant="outline" onClick={() => setPaste(true)}>
-              Paste resume text
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {paste && (
-        <div className="panel p-4">
-          <label className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Resume text</label>
-          <textarea
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            rows={10}
-            placeholder="Paste your resume text here — name, contact details, skills, experience, education."
-            className="mt-2 w-full rounded-md border border-input bg-background p-3 font-mono text-sm focus:outline-none focus:ring-1 focus:ring-ring"
-          />
-          <div className="mt-3 flex items-center justify-between gap-3">
-            <span className="text-xs text-muted-foreground">{text.trim().length} characters</span>
-            <Button
-              onClick={() => void run(fileName ?? "pasted-resume", text)}
-              disabled={busy || text.trim().length < MIN_CHARS}
-            >
-              {busy && <Loader2 className="animate-spin" />} Grade this resume
-            </Button>
-          </div>
-        </div>
-      )}
-
-      <AnimatePresence>
-        {review && (
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
-            <GradeHeader review={review} />
-            <SuggestionList review={review} applying={applying} onApply={apply} />
-            <DetectedFields review={review} />
-            <div className="panel glow p-6 text-center">
-              <Sparkle className="mx-auto mb-2 h-6 w-6 text-accent" />
-              <h2 className="text-xl font-bold">Profile unlocked</h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Level <span className="font-bold text-primary">{level}: {levelTitle(level)}</span> ·{" "}
-                <span className="font-bold text-success">{xp.toLocaleString()} XP</span>
-                {claimed > 0 && <> · <span className="text-accent">{claimed} XP from resume fixes</span></>}
-              </p>
-              <div className="mt-5 flex flex-wrap justify-center gap-3">
-                <Button asChild>
-                  <Link to="/">View Dashboard</Link>
-                </Button>
-                <Button variant="outline" onClick={reset}>
-                  Upload another
+          {paste && (
+            <div className="panel p-4">
+              <textarea
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                rows={10}
+                placeholder="Paste your resume text — contact details, experience, education, projects, skills."
+                className="w-full rounded-md border border-input bg-background p-3 font-mono text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+              />
+              <div className="mt-3 flex justify-end">
+                <Button onClick={() => void runScan({ fileName: "pasted-resume", text })} disabled={!!busy || text.trim().length < 80}>
+                  Grade this resume
                 </Button>
               </div>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          )}
+
+          <AnimatePresence>
+            {review && (
+              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
+                <GradeHeader review={review} />
+                <AtsPanel review={review} />
+                <SuggestionList review={review} sections={sections} applying={applying} onApply={apply} onFocus={setFocusLine} />
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {sections.length > 0 && (
+            <Editor
+              sections={sections}
+              setSections={setSections}
+              focusLine={focusLine}
+              review={review}
+              dirty={dirty}
+              busy={busy}
+              onSave={saveVersion}
+              onRescan={() => void runScan({ fileName: versions[0]?.fileName ?? "resume", sections, note: "Re-scanned from editor" })}
+            />
+          )}
+
+          {review && <DetectedFields review={review} />}
+
+          {versions.length > 0 && <Versions versions={versions} onRestore={restore} />}
+
+          <div className="panel flex items-center gap-3 p-4 opacity-70">
+            <Lock className="h-5 w-5 shrink-0 text-muted-foreground" />
+            <div>
+              <p className="font-semibold">Daily quest: Tailor 1 bullet for a Job Radar role</p>
+              <p className="text-sm text-muted-foreground">Unlocks when Job Radar goes live.</p>
+            </div>
+          </div>
+
+          {review && (
+            <div className="panel glow p-6 text-center">
+              <Sparkle className="mx-auto mb-2 h-6 w-6 text-accent" />
+              <p className="text-sm text-muted-foreground">
+                Level <span className="font-bold text-primary">{level}: {levelTitle(level)}</span> ·{" "}
+                <span className="font-bold text-success">{xp.toLocaleString()} XP</span>
+              </p>
+              <Button asChild className="mt-4"><Link to="/">View Dashboard</Link></Button>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }
 
-function GradeHeader({ review }: { review: ResumeReview }) {
+function GradeHeader({ review }: { review: StoredReview }) {
   const meta = GRADE_META[review.grade];
   return (
     <div className={cn("panel flex items-center gap-5 p-5", meta.border)}>
-      <div
-        className={cn(
-          "grid h-20 w-20 shrink-0 place-items-center rounded-lg border font-display text-5xl font-bold",
-          meta.border,
-          meta.bg,
-          meta.text,
-        )}
-      >
+      <div className={cn("grid h-20 w-20 shrink-0 place-items-center rounded-lg border font-display text-5xl font-bold", meta.border, meta.bg, meta.text)}>
         {review.grade}
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline justify-between gap-3">
           <div>
             <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-              Resume grade
-              {review.source !== "raia" && <span className="ml-2 normal-case tracking-normal">· built-in checker</span>}
+              Resume grade{review.version ? ` · version ${review.version}` : ""}
             </p>
             <p className={cn("font-display text-lg font-bold", meta.text)}>{meta.label}</p>
           </div>
-          <p className="font-display text-3xl font-bold">
-            {review.score}
-            <span className="text-sm text-muted-foreground">/100</span>
-          </p>
+          <p className="font-display text-3xl font-bold">{review.score}<span className="text-sm text-muted-foreground">/100</span></p>
         </div>
         <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-muted">
-          <motion.div
-            initial={{ width: 0 }}
-            animate={{ width: `${review.score}%` }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
-            className={cn("h-2 rounded-full", meta.fill)}
-          />
+          <motion.div initial={{ width: 0 }} animate={{ width: `${review.score}%` }} transition={{ duration: 0.6, ease: "easeOut" }} className={cn("h-2 rounded-full", meta.fill)} />
         </div>
+        {review.score <= XP_RULES.levelUpScore && (
+          <p className="mt-2 text-xs text-muted-foreground">Raise it above {XP_RULES.levelUpScore} for a +{XP_RULES.levelUp} XP Level Up.</p>
+        )}
         {review.summary && <p className="mt-3 text-sm text-muted-foreground">{review.summary}</p>}
         <p className="mt-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
           {review.source === "raia" ? "graded by: JobMaxxing Resume Agent" : "graded by: JobMaxxing offline checker"}
@@ -360,82 +333,185 @@ function GradeHeader({ review }: { review: ResumeReview }) {
   );
 }
 
-function SuggestionList({
-  review,
-  applying,
-  onApply,
-}: {
-  review: ResumeReview;
-  applying: string | null;
-  onApply: (s: ResumeSuggestion) => Promise<void>;
-}) {
-  const earned = review.suggestions.filter((s) => s.applied).reduce((a, s) => a + s.xp, 0);
-  const total = review.suggestions.reduce((a, s) => a + s.xp, 0);
-  if (!review.suggestions.length) return null;
+function AtsPanel({ review }: { review: StoredReview }) {
+  const a = review.ats;
+  if (!a) return null;
+  const heads: [string, boolean][] = [["Experience", a.headers.experience], ["Education", a.headers.education], ["Projects", a.headers.projects]];
   return (
-    <div className="space-y-3">
+    <div className="panel p-5">
       <div className="flex items-baseline justify-between gap-3">
-        <h2 className="font-display text-lg font-bold">Resume quests</h2>
-        <span className="font-mono text-xs text-muted-foreground">
-          {earned} / {total} XP claimed
-        </span>
+        <h2 className="font-display text-lg font-bold">ATS compatibility</h2>
+        <span className="font-display text-2xl font-bold">{a.score}<span className="text-sm text-muted-foreground">/100</span></span>
       </div>
-      {review.suggestions.map((s) => (
-        <div key={s.id} className={cn("panel p-4 transition", s.applied && "opacity-60")}>
-          <div className="flex items-start justify-between gap-4">
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="rounded border border-border px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                  {CATEGORY_LABEL[s.category] ?? s.category}
-                </span>
-                <span className="rounded border border-accent/40 bg-accent/10 px-1.5 py-0.5 font-mono text-[10px] text-accent">
-                  +{s.xp} XP
-                </span>
-              </div>
-              <h3 className={cn("mt-2 font-semibold", s.applied && "line-through")}>{s.title}</h3>
-              {s.detail && <p className="mt-1 text-sm text-muted-foreground">{s.detail}</p>}
-            </div>
-            <Button
-              size="sm"
-              variant={s.applied ? "outline" : "default"}
-              disabled={s.applied || applying === s.id}
-              onClick={() => void onApply(s)}
-              className="shrink-0"
-            >
-              {applying === s.id ? (
-                <Loader2 className="animate-spin" />
-              ) : s.applied ? (
-                <>
-                  <Check className="h-3.5 w-3.5" /> done
-                </>
-              ) : (
-                "Integrate"
-              )}
-            </Button>
-          </div>
-        </div>
-      ))}
+      <div className="mt-3 flex flex-wrap gap-2 text-sm">
+        <span className={cn("rounded-full border px-2.5 py-0.5", a.usesTablesOrColumns ? "border-destructive/50 text-destructive" : "border-success/50 text-success")}>
+          {a.usesTablesOrColumns ? "Tables or columns may break parsing" : "Single-column layout"}
+        </span>
+        {heads.map(([h, ok]) => (
+          <span key={h} className={cn("rounded-full border px-2.5 py-0.5", ok ? "border-success/50 text-success" : "border-accent/50 text-accent")}>
+            {ok ? "✓" : "✗"} {h} heading
+          </span>
+        ))}
+      </div>
+      {a.issues.length > 0 && (
+        <ul className="mt-3 space-y-1 text-sm text-muted-foreground">
+          {a.issues.map((i) => <li key={i} className="flex gap-2"><AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-accent" />{i}</li>)}
+        </ul>
+      )}
     </div>
   );
 }
 
-function DetectedFields({ review }: { review: ResumeReview }) {
+const TYPE_LABEL: Record<string, string> = { rewrite: "Action verb", metric: "Metric gap", ats: "ATS", general: "General" };
+
+function SuggestionList({ review, sections, applying, onApply, onFocus }: {
+  review: StoredReview; sections: ResumeSection[]; applying: string | null;
+  onApply: (s: ResumeSuggestion) => Promise<void>; onFocus: (id: string | null) => void;
+}) {
+  if (!review.suggestions.length) return null;
+  const earned = review.suggestions.filter((s) => s.applied).reduce((a, s) => a + s.xp, 0);
+  const total = review.suggestions.reduce((a, s) => a + s.xp, 0);
+  return (
+    <div className="space-y-3">
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 className="font-display text-lg font-bold">Resume quests</h2>
+        <span className="font-mono text-xs text-muted-foreground">{earned} / {total} XP claimed</span>
+      </div>
+      {review.suggestions.map((s) => {
+        const line = findLine(sections, s.lineId);
+        const label = s.type === "rewrite" ? "Accept fix" : s.type === "metric" ? "I added it" : "Mark done";
+        return (
+          <div key={s.id} className={cn("panel p-4 transition", s.applied && "opacity-60")}>
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="rounded border border-border px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                    {TYPE_LABEL[s.type ?? "general"] ?? CATEGORY_LABEL[s.category] ?? s.category}
+                  </span>
+                  <span className="rounded border border-accent/40 bg-accent/10 px-1.5 py-0.5 font-mono text-[10px] text-accent">+{s.xp} XP</span>
+                </div>
+                <h3 className={cn("mt-2 font-semibold", s.applied && "line-through")}>{s.title}</h3>
+                {s.detail && <p className="mt-1 text-sm text-muted-foreground">{s.detail}</p>}
+                {s.type === "rewrite" && s.before && s.after && (
+                  <div className="mt-3 space-y-1.5 text-sm">
+                    <p className="rounded-md bg-destructive/5 p-2 text-muted-foreground"><span className="font-semibold text-destructive">Weak: </span>{s.before}</p>
+                    <p className="rounded-md bg-success/10 p-2"><span className="font-semibold text-success">Suggested: </span>{s.after}</p>
+                  </div>
+                )}
+                {s.type === "metric" && (
+                  <div className="mt-3 space-y-1.5 text-sm">
+                    {s.before && <p className="rounded-md bg-accent/10 p-2 text-muted-foreground">{line?.text ?? s.before}</p>}
+                    {s.question && <p className="italic text-muted-foreground">{s.question}</p>}
+                    {s.lineId && !s.applied && (
+                      <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => onFocus(s.lineId ?? null)}>
+                        Edit this line <ArrowRight className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </div>
+              <Button size="sm" variant={s.applied ? "outline" : "default"} disabled={s.applied || applying === s.id} onClick={() => void onApply(s)} className="shrink-0">
+                {applying === s.id ? <Loader2 className="animate-spin" /> : s.applied ? <><Check className="h-3.5 w-3.5" /> done</> : label}
+              </Button>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function Editor({ sections, setSections, focusLine, review, dirty, busy, onSave, onRescan }: {
+  sections: ResumeSection[]; setSections: (s: ResumeSection[]) => void; focusLine: string | null; review: StoredReview | null;
+  dirty: boolean; busy: null | "scan" | "save"; onSave: () => void; onRescan: () => void;
+}) {
+  const refs = useRef<Record<string, HTMLTextAreaElement | null>>({});
+  useEffect(() => {
+    if (!focusLine) return;
+    const el = refs.current[focusLine];
+    el?.scrollIntoView({ behavior: "smooth", block: "center" });
+    el?.focus();
+  }, [focusLine]);
+  const flagged = new Set(review?.suggestions.filter((s) => !s.applied && s.lineId).map((s) => s.lineId));
+  return (
+    <div className="panel p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="font-display text-lg font-bold">Resume editor</h2>
+          <p className="text-sm text-muted-foreground">Edit any line. Highlighted lines have an open fix.</p>
+        </div>
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline" disabled={!dirty || !!busy} onClick={onSave}>
+            {busy === "save" ? <Loader2 className="animate-spin" /> : <Save className="h-4 w-4" />} Save version
+          </Button>
+          <Button size="sm" disabled={!!busy} onClick={onRescan}>
+            {busy === "scan" ? <Loader2 className="animate-spin" /> : <ScanLine className="h-4 w-4" />} Re-scan
+          </Button>
+        </div>
+      </div>
+      <div className="mt-4 space-y-5">
+        {sections.map((s) => (
+          <div key={s.id}>
+            <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">{s.heading}</p>
+            <div className="mt-2 space-y-1.5">
+              {s.lines.map((l) => (
+                <textarea
+                  key={l.id}
+                  ref={(el) => { refs.current[l.id] = el; }}
+                  value={l.text}
+                  rows={Math.max(1, Math.ceil(l.text.length / 95))}
+                  onChange={(e) => setSections(sections.map((x) => x.id !== s.id ? x : { ...x, lines: x.lines.map((y) => (y.id === l.id ? { ...y, text: e.target.value } : y)) }))}
+                  className={cn(
+                    "w-full resize-none rounded-md border bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-ring",
+                    flagged.has(l.id) ? "border-accent/60 bg-accent/5" : "border-input",
+                    focusLine === l.id && "ring-1 ring-primary",
+                  )}
+                />
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function Versions({ versions, onRestore }: { versions: ResumeVersion[]; onRestore: (v: ResumeVersion) => void }) {
+  return (
+    <div className="panel p-5">
+      <h2 className="flex items-center gap-2 font-display text-lg font-bold"><History className="h-4 w-4" /> Version history</h2>
+      <ul className="mt-3 divide-y divide-border/60">
+        {versions.map((v, i) => (
+          <li key={v.id} className="flex items-center justify-between gap-3 py-2 text-sm">
+            <div className="min-w-0">
+              <p className="font-medium">Version {v.version}{i === 0 && <span className="ml-2 text-xs text-primary">current</span>}</p>
+              <p className="truncate text-xs text-muted-foreground">
+                {v.note ?? v.fileName} · {v.createdAt ? new Date(v.createdAt).toLocaleString() : ""}
+              </p>
+            </div>
+            <div className="flex shrink-0 items-center gap-3">
+              {v.score != null && <span className="font-mono text-xs">{v.grade} · {v.score}/100</span>}
+              {i > 0 && (
+                <Button size="sm" variant="ghost" onClick={() => onRestore(v)}><RotateCcw className="h-3.5 w-3.5" /> Restore</Button>
+              )}
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function DetectedFields({ review }: { review: StoredReview }) {
   const f = review.fields;
-  const rows = (
-    [
-      ["Name", f.name],
-      ["Title", f.title],
-      ["Email", f.email],
-      ["Phone", f.phone],
-      ["Location", f.location],
-      ["LinkedIn", f.linkedin],
-      ["GitHub", f.github],
-      ["Experience", f.yearsExperience ? `${f.yearsExperience} yrs` : null],
-    ] as [string, string | null][]
-  ).filter((r): r is [string, string] => !!r[1]);
-
-  if (!rows.length && !f.skills.length && !f.experience.length && !f.education.length) return null;
-
+  const rows = ([
+    ["Name", f.name], ["Title", f.title], ["Email", f.email], ["Phone", f.phone], ["Location", f.location],
+    ["Major", f.major ?? null], ["Degree level", f.degreeLevel ?? null],
+    ["Graduation", f.graduationYear ? `${f.graduationYear}${f.graduated === false ? " (expected)" : ""}` : null],
+    ["LinkedIn", f.linkedin], ["GitHub", f.github], ["Experience", f.yearsExperience ? `${f.yearsExperience} yrs` : null],
+  ] as [string, string | null][]).filter((r): r is [string, string] => !!r[1]);
+  const chips = [...f.skills, ...(f.frameworks ?? [])];
+  if (!rows.length && !chips.length && !f.experience.length) return null;
   return (
     <div className="panel p-4">
       <h2 className="font-display text-lg font-bold">Fields we filled in</h2>
@@ -444,39 +520,29 @@ function DetectedFields({ review }: { review: ResumeReview }) {
         <dl className="mt-3 grid gap-x-6 gap-y-2 sm:grid-cols-2">
           {rows.map(([k, v]) => (
             <div key={k} className="flex min-w-0 justify-between gap-3 border-b border-border/50 pb-1 text-sm">
-              <dt className="shrink-0 text-muted-foreground">{k}</dt>
-              <dd className="truncate font-medium">{v}</dd>
+              <dt className="shrink-0 text-muted-foreground">{k}</dt><dd className="truncate font-medium">{v}</dd>
             </div>
           ))}
         </dl>
       )}
-      {f.skills.length > 0 && (
+      {chips.length > 0 && (
         <div className="mt-3 flex flex-wrap gap-1.5">
-          {f.skills.map((s) => (
-            <span key={s} className="rounded border border-primary/40 bg-primary/10 px-2 py-0.5 font-mono text-xs text-primary">
-              {s}
-            </span>
+          {[...new Set(chips)].map((s) => (
+            <span key={s} className="rounded border border-primary/40 bg-primary/10 px-2 py-0.5 font-mono text-xs text-primary">{s}</span>
           ))}
         </div>
+      )}
+      {(f.qualifications?.length ?? 0) > 0 && (
+        <ul className="mt-3 list-disc space-y-0.5 pl-5 text-sm text-muted-foreground">
+          {f.qualifications!.map((q) => <li key={q}>{q}</li>)}
+        </ul>
       )}
       {f.experience.length > 0 && (
         <ul className="mt-3 space-y-1 text-sm">
           {f.experience.map((e, i) => (
             <li key={i} className="text-muted-foreground">
-              <span className="text-foreground">{e.role ?? "Role"}</span>
-              {e.company ? ` · ${e.company}` : ""}
+              <span className="text-foreground">{e.role ?? "Role"}</span>{e.company ? ` · ${e.company}` : ""}
               {e.start ? ` (${e.start}${e.end ? `–${e.end}` : "–present"})` : ""}
-            </li>
-          ))}
-        </ul>
-      )}
-      {f.education.length > 0 && (
-        <ul className="mt-2 space-y-1 text-sm">
-          {f.education.map((e, i) => (
-            <li key={i} className="text-muted-foreground">
-              <span className="text-foreground">{e.degree ?? "Degree"}</span>
-              {e.school ? ` · ${e.school}` : ""}
-              {e.year ? ` (${e.year})` : ""}
             </li>
           ))}
         </ul>
