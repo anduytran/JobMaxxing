@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
-import { AlertTriangle, ArrowRight, Check, FileUp, History, Loader2, Lock, RotateCcw, Save, ScanLine, Sparkle } from "lucide-react";
+import { AlertTriangle, ArrowRight, Check, FileUp, History, Loader2, RotateCcw, Save, ScanLine, Sparkle } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -71,7 +71,7 @@ const findLine = (sections: ResumeSection[], lineId?: string | null) =>
   lineId ? sections.flatMap((s) => s.lines).find((l) => l.id === lineId) : undefined;
 
 function Setup() {
-  const { completeQuest, quests, xp, level, setXp } = useGame();
+  const { completeQuest, quests, xp, level, setXp, addQuest } = useGame();
   const { welcome } = Route.useSearch();
   const navigate = useNavigate();
   const [review, setReview] = useState<StoredReview | null>(null);
