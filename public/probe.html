@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="/src/styles.css?direct" />
+    <style>
+      @media (prefers-reduced-motion: reduce) { .mascot-float { animation: none !important; } }
+    </style>
+  </head>
+  <body class="bg-background">
+    <div style="height: 4rem"></div>
+    <div class="relative">
+      <section id="card" class="featured-screen relative flex min-h-[calc(100svh_-_4rem)] items-stretch overflow-hidden border-b bg-hero px-6 pb-24 pt-8 md:px-20 md:pb-28 md:pt-14" aria-label="Featured quest">
+        <picture class="absolute inset-0 block" data-quest-background>
+          <source id="bg-source" media="(max-width: 767px)" srcset="" />
+          <img id="bg-img" src="" alt="" aria-hidden class="h-full w-full object-cover object-center" draggable="false" />
+        </picture>
+        <div class="featured-scrim pointer-events-none absolute inset-0" />
+        <div class="relative z-10 flex w-full max-w-2xl flex-col justify-start md:justify-between md:max-w-[44%]">
+          <p class="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-foreground/70"><span class="h-1.5 w-1.5 rounded-full bg-foreground/60" />Your main event · Mock interview</p>
+          <div class="pb-8 pt-8 md:py-10">
+            <h2 class="min-h-[2.2em] break-words text-foreground text-3xl font-bold leading-[1.1] sm:text-4xl lg:text-5xl"><span class="block">Practice your</span><span class="block">mock interview</span></h2>
+            <p class="mt-5 max-w-lg text-lg text-muted-foreground">Say it out loud once and it stops being scary. Practice the answer before the real one asks.</p>
+            <div class="mt-8 flex flex-wrap items-center gap-3">
+              <a id="cta" class="tactile-control inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-primary px-8 py-4 text-base font-medium text-primary-foreground" href="#">Lock In <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></a>
+            </div>
+            <p class="mt-6 flex items-center gap-2 text-sm text-muted-foreground"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>15 minutes to a more confident you</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <button type="button" aria-current="true" class="h-2 w-7 rounded-full bg-primary" />
+            <button type="button" class="h-2 w-2 rounded-full bg-muted-foreground/30" />
+            <button type="button" class="h-2 w-2 rounded-full bg-muted-foreground/30" />
+            <button type="button" class="h-2 w-2 rounded-full bg-muted-foreground/30" />
+          </div>
+        </div>
+        <div id="max-wrap" class="pointer-events-none absolute inset-0 flex items-center justify-center">
+          <div class="relative h-[clamp(160px,28svh,400px)] w-[clamp(160px,28svh,400px)]">
+            <div class="mascot-float relative h-full w-full"><img id="max" src="" alt="Max with a microphone, ready to interview you" width="816" height="816" decoding="sync" draggable="false" class="h-full w-full object-contain" /></div>
+          </div>
+        </div>
+        <aside aria-label="Quick overview" class="absolute right-0 top-1/2 z-10 hidden w-1/2 -translate-y-1/2 justify-center lg:flex">
+          <div class="w-80 max-w-[85%] overflow-hidden rounded-md border border-white/10 bg-black/45 text-white shadow-xl backdrop-blur-md">
+            <p class="border-b border-white/10 px-5 py-3 text-center text-xs font-bold uppercase tracking-[0.25em]">Missions</p>
+            <ul class="divide-y divide-white/10">
+              <li><a class="group flex items-center gap-3 px-5 py-3 hover:bg-white/5" href="#"><span class="grid h-7 w-7 shrink-0 place-items-center border border-white/25 bg-white/5 text-white/80">Z</span><span class="min-w-0 flex-1"><span class="block truncate text-sm font-medium">Solve one LeetCode problem</span><span class="mt-1.5 block h-1 bg-white/15"><span class="block h-full w-0 bg-success" /></span></span><span class="shrink-0 text-xs font-semibold tabular-nums text-white/70">+15 XP</span></a></li>
+              <li><a class="group flex items-center gap-3 px-5 py-3 hover:bg-white/5" href="#"><span class="grid h-7 w-7 shrink-0 place-items-center border border-white/25 bg-white/5 text-white/80">Z</span><span class="min-w-0 flex-1"><span class="block truncate text-sm font-medium">Tailor one resume bullet</span><span class="mt-1.5 block h-1 bg-white/15"><span class="block h-full w-0 bg-success" /></span></span><span class="shrink-0 text-xs font-semibold tabular-nums text-white/70">+15 XP</span></a></li>
+              <li><a class="group flex items-center gap-3 px-5 py-3 hover:bg-white/5" href="#"><span class="grid h-7 w-7 shrink-0 place-items-center border border-white/25 bg-white/5 text-white/80">Z</span><span class="min-w-0 flex-1"><span class="block truncate text-sm font-medium">Review five matched roles</span><span class="mt-1.5 block h-1 bg-white/15"><span class="block h-full w-0 bg-success" /></span></span><span class="shrink-0 text-xs font-semibold tabular-nums text-white/70">+10 XP</span></a></li>
+            </ul>
+            <div class="flex items-center justify-center gap-2 border-t border-white/10 px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-white/70">Daily expiration in 3h 12m 04s</div>
+            <p class="border-t border-white/10 bg-white/5 px-5 py-3 text-center text-xs font-bold uppercase tracking-[0.25em]">Featured modes</p>
+            <div class="divide-y divide-white/10">
+              <a class="group flex items-center gap-4 px-5 py-4 hover:bg-white/5" href="#"><span class="grid h-10 w-10 place-items-center rounded-full border border-white/25 bg-white/10">M</span><span class="flex-1 text-sm font-bold uppercase tracking-wider">AI Interview</span><span class="text-xs text-white/60">~15 mins</span></a>
+              <a class="group flex items-center gap-4 px-5 py-4 hover:bg-white/5" href="#"><span class="grid h-10 w-10 place-items-center rounded-full border border-white/25 bg-white/10">F</span><span class="flex-1 text-sm font-bold uppercase tracking-wider">Resume Lab</span><span class="text-xs text-white/60">Grade &amp; polish</span></a>
+            </div>
+          </div>
+        </aside>
+        <span class="absolute bottom-5 left-1/2 z-20 -translate-x-1/2 rounded-full border bg-card/90 px-3 py-1 text-xs font-medium tabular-nums text-card-foreground shadow-sm">1 / 5</span>
+      </section>
+    </div>
+    <script type="module">
+      const kinds = {
+        interview: { bg: "STAGE_DESKTOP", mobile: "STAGE_MOBILE", max: "MAX_INTERVIEW" },
+        skills: { bg: "GYM_DESKTOP", mobile: "GYM_MOBILE", max: "MAX_SKILLS" },
+        hunt: { bg: "MEADOW_DESKTOP", mobile: "MEADOW_MOBILE", max: "MAX_HUNT" },
+        branding: { bg: "BILLBOARD_DESKTOP", mobile: "BILLBOARD_MOBILE", max: "MAX_DAP", ring: "RING_URL" },
+      };
+      const kind = new URLSearchParams(location.search).get("kind") || "interview";
+      const s = kinds[kind] || kinds.interview;
+      document.getElementById("bg-img").src = s.bg;
+      document.getElementById("bg-source").srcset = s.mobile;
+      document.getElementById("max").src = s.max;
+      if (s.ring) {
+        const host = document.querySelector("#max-wrap > div");
+        const img = document.createElement("img");
+        img.src = s.ring;
+        img.alt = "";
+        img.setAttribute("aria-hidden", "true");
+        img.draggable = false;
+        img.className = "absolute left-1/2 top-1/2 z-10 h-[185%] w-[185%] -translate-x-1/2 -translate-y-1/2 object-contain";
+        img.style.maskImage = "radial-gradient(closest-side, black 82%, transparent 97%)";
+        img.style.webkitMaskImage = "radial-gradient(closest-side, black 82%, transparent 97%)";
+        host.appendChild(img);
+      }
+    </script>
+  </body>
+</html>
