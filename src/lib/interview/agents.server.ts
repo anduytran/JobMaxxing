@@ -385,7 +385,10 @@ export async function reviewResume(text: string): Promise<ResumeReview> {
   const ai = await askRaia<Record<string, unknown>>(ENV.resume, text,
     "You are the DevUp Resume Agent. Grade the resume below the way a recruiter would, then list the specific edits that would raise it. " +
       "Every suggestion must be something the candidate can act on now, and worth XP when they do it. " +
-      `${RESUME_GUARDRAILS} ${RESUME_SCHEMA}\n\nRESUME:`);
+      `${RESUME_GUARDRAILS} ${RESUME_SCHEMA}\n\nRESUME:`,
+    // A full read of a real resume is the slowest of these calls; measured 18-28 s
+    // on a warm endpoint and well over a minute when the org key is busy.
+    75_000);
   return (ai && normalizeReview(ai, "raia")) ?? fallbackReview(text);
 }
 
