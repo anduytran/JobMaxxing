@@ -29,7 +29,7 @@ const TREE = [
 
 function Page() {
   const { details, level } = useGame();
-  const skills = details.skills ?? [];
+  const skills = (details.skills ?? []).filter(Boolean);
   return (
     <div className="mx-auto max-w-6xl">
       <PageHeader eyebrow="Build your next chapter" title="Skill Tree" sub="Turn your potential into progress, one step at a time." />
