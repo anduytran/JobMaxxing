@@ -211,8 +211,8 @@ function Dashboard() {
           {(() => {
             const inBillboard = featKey === "branding" || featKey === "social";
             return (
-              <div className={cn("absolute inset-0 flex", inBillboard ? "items-start justify-center pt-[13%]" : "items-center justify-center")}>
-                <div className="mascot-float">{featured ? <img key={featArt} src={featArt} alt={`Max ready for: ${featured.title}`} width={816} height={816} className={cn("object-contain", inBillboard ? "h-28 w-28" : "h-56 w-56")} /> : <Mascot className="h-44 w-44" />}</div>
+              <div className={cn("absolute inset-0 flex", inBillboard ? "items-center justify-center" : "items-center justify-center")}>
+                <div className={cn("mascot-float", inBillboard && "-translate-y-[9%]")}>{featured ? <img key={featArt} src={featArt} alt={`Max ready for: ${featured.title}`} width={816} height={816} className={cn("object-contain", inBillboard ? "h-24 w-24" : "h-56 w-56")} /> : <Mascot className="h-44 w-44" />}</div>
               </div>
             );
           })()}
