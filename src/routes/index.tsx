@@ -84,7 +84,7 @@ function SceneBackdrop({ kind }: { kind: string }) {
   if (kind === "skills") {
     return (
       <div className="absolute inset-0 overflow-hidden">
-        <img src={gymScene} alt="" aria-hidden className="absolute inset-x-0 bottom-6 w-full opacity-90" draggable={false} />
+        <img src={gymScene} alt="" aria-hidden className="absolute inset-x-0 bottom-20 w-full opacity-90" draggable={false} />
       </div>
     );
   }
