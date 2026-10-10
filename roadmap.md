@@ -3,7 +3,7 @@
 ## Quest menu
 - [x] Remove the next-power-move section.
 - [x] Add a hoverable and clickable top-bar mission menu showing at most two daily and three weekly quests from existing progress.
-- [ ] Verify menu behavior in a signed-in preview.
+- [ ] Verify menu behavior in a signed-in preview — blocked by unavailable signed-in session; preview compiles and public page has no runtime errors.
 
 ## Original Max images
 - [x] Replace the five redrawn poses with the supplied original images, including sign-in.
