@@ -157,7 +157,14 @@ function Dashboard() {
           <p className="mt-4 flex items-center gap-2 text-sm text-muted-foreground"><Clock className="h-4 w-4" />{featured ? `+${featured.xp} XP waiting for you` : "15 minutes to a more confident you"}</p>
         </div>
         <motion.div key={featured?.id ?? "none"} initial={reducedMotion ? false : { opacity: 0, x: 28 * dir }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.45 }} className="pointer-events-none absolute inset-0 hidden md:block">
-...
+          <div className={`absolute -right-10 top-6 h-[420px] w-[420px] rounded-full border ${scene.ring}`} />
+          <div className={`absolute right-24 top-16 h-72 w-72 rounded-full ${scene.bg}`} />
+          <div className="mascot-float absolute right-16 top-0">{featured ? <img key={featArt} src={featArt} alt={`Max ready for: ${featured.title}`} width={816} height={816} className="h-48 w-48 object-contain" /> : <Mascot className="h-40 w-40" />}</div>
+          <div className={`absolute right-56 top-24 rotate-6 rounded-2xl bg-card p-3 shadow-md ${scene.chip}`}><scene.icon className="h-6 w-6" /></div>
+          {scene.props.map(([label, pos]) => (
+            <div key={label} className={`absolute ${pos} rounded-xl bg-card/90 px-3 py-1.5 text-xs font-medium shadow-sm`}>{label}</div>
+          ))}
+          <div className="absolute right-64 top-16 flex -rotate-6 items-center gap-2 rounded-xl bg-card px-4 py-3 text-sm shadow-md"><Zap className="h-4 w-4" />+{featured?.xp ?? 150} XP</div>
           <div className="absolute bottom-12 right-10 flex items-center gap-2 rounded-xl bg-card px-4 py-3 text-sm shadow-md"><Check className="h-4 w-4 text-success" />{scene.phrase}</div>
         </motion.div>
       </section>
