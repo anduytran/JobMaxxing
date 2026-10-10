@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { motion, useReducedMotion } from "framer-motion";
 import { ArrowRight, Check, ChevronLeft, ChevronRight, Clock, Code2, FileText, Flame, Mic, Radar, Sparkles, Users, Zap } from "lucide-react";
-import { levelTitle, useGame, XP_PER_LEVEL } from "@/lib/game";
+import { useGame } from "@/lib/game";
 import { Mascot } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -14,6 +14,7 @@ import gymScene from "@/assets/max/gym-scene.svg";
 import billboardScene from "@/assets/max/billboard.svg";
 import { featuredQuestTitle } from "@/lib/quest-titles";
 import { ResumeScoreCard } from "@/components/ResumeScoreCard";
+import { CareerProgressCard, QuestsProgressCard, XpProgressCard } from "@/components/DashboardProgressCards";
 
 const MAX_ART: Record<string, string> = { setup: MAX_POSES.resume, resume: MAX_POSES.resume, interview: MAX_POSES.interview, skills: MAX_POSES.skills, hunt: MAX_POSES.hunt, branding: MAX_POSES.dap, social: MAX_POSES.dap };
 const QUEST_LINK: Record<string, "/setup" | "/interview" | "/quests" | "/skills" | "/market"> = { setup: "/setup", resume: "/setup", interview: "/interview", skills: "/skills", hunt: "/market" };
@@ -22,7 +23,7 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Dashboard — JobMaxxing" },
-      { name: "description", content: "Your career hub: level, XP, daily quests and your next power move." },
+      { name: "description", content: "Build career momentum with resume improvements, daily and weekly quests, XP milestones, and your next career rank." },
       { property: "og:title", content: "JobMaxxing — Your career, levelled up" },
       { property: "og:description", content: "Level up your job hunt with quests, XP and AI mock interviews." },
       { property: "og:type", content: "website" },
@@ -126,11 +127,10 @@ function SceneBackdrop({ kind }: { kind: string }) {
 }
 
 function Dashboard() {
-  const { name, level, levelXp, xp, quests, completeQuest, details } = useGame();
+  const { name, title, level, levelXp, xp, quests, completeQuest, details, lastGain } = useGame();
   const first = name.split(" ")[0] || "there";
   const open = quests.filter((q) => !q.done);
   const done = quests.filter((q) => q.done).length;
-  const pct = (levelXp / XP_PER_LEVEL) * 100;
   const [review, setReview] = useState<StoredReview | null>(null);
   const [reviewLoading, setReviewLoading] = useState(true);
   useEffect(() => { getLatestResumeReview().then((r) => { if (r.ok) setReview(r.review); }).catch(() => {}).finally(() => setReviewLoading(false)); }, []);
@@ -256,37 +256,13 @@ function Dashboard() {
           <Button variant="outline" size="icon" className="absolute right-0 top-1/2 z-20 h-10 w-10 -translate-y-1/2 rounded-full bg-card md:-right-5 xl:-right-12" onClick={() => shift(1)} aria-label="Next quest" title="Next quest"><ChevronRight className="h-5 w-5" /></Button>
         </>)}
       </div>
-      <div className="grid gap-6 lg:grid-cols-[1fr_1fr_1fr_1.4fr]">
+      <div className="grid grid-cols-1 items-stretch gap-5 sm:grid-cols-2 xl:grid-cols-4">
         <ResumeScoreCard review={review} score={resumeScore} loading={reviewLoading} />
-        <Stat icon={Mic} label="Quests open">
-          <div className="text-4xl font-bold">{String(open.length).padStart(2, "0")}</div>
-          <p className="mt-6 text-sm text-muted-foreground">Practice makes progress</p>
-        </Stat>
-        <Stat icon={Zap} label="Total XP earned">
-          <div className="flex items-center justify-between"><span className="text-2xl text-muted-foreground">{xp.toLocaleString()}</span><span className="rounded-md bg-accent/20 px-2 py-0.5 text-xs font-medium text-accent-foreground">LEVEL {level}</span></div>
-          <Bar pct={pct} cls="bg-primary" />
-          <p className="mt-3 text-sm text-muted-foreground">{XP_PER_LEVEL - levelXp} XP to your next level</p>
-        </Stat>
-        <div className="panel row-span-2 p-7 text-center">
-          <h3 className="text-left text-2xl font-semibold">Your career, in motion</h3>
-          <div className="relative mx-auto my-6 h-48 w-48">
-            <svg viewBox="0 0 100 100" className="h-full w-full -rotate-90">
-              <circle cx="50" cy="50" r="44" fill="none" stroke="var(--muted)" strokeWidth="5" />
-              <motion.circle cx="50" cy="50" r="44" fill="none" stroke="var(--success)" strokeWidth="5" strokeLinecap="round"
-                strokeDasharray={276.5} initial={reducedMotion ? false : { strokeDashoffset: 276.5 }} animate={{ strokeDashoffset: 276.5 * (1 - pct / 100) }} transition={{ duration: 1 }} />
-            </svg>
-            <div className="absolute inset-0 grid place-content-center">
-              <div className="text-xs tracking-[0.3em] text-muted-foreground">LEVEL</div>
-              <div className="font-display text-6xl font-bold">{level}</div>
-              <div className="text-sm text-muted-foreground">{levelTitle(level)}</div>
-            </div>
-          </div>
-          <p className="text-muted-foreground">{levelXp} / {XP_PER_LEVEL.toLocaleString()} XP</p>
-          <p className="mt-2 text-sm text-muted-foreground">You're building something great.</p>
-          <div className="mt-5 flex justify-between border-t pt-4 text-xs text-muted-foreground"><span>Next up: <b className="text-foreground">{levelTitle(level + 1)}</b></span><span>LVL {level + 1}</span></div>
-        </div>
+        <QuestsProgressCard quests={quests} />
+        <XpProgressCard xp={xp} level={level} levelXp={levelXp} lastGain={lastGain} />
+        <CareerProgressCard level={level} levelXp={levelXp} title={title} />
 
-        <section className="lg:col-span-3">
+        <section className="sm:col-span-2 xl:col-span-4">
           <div className="mb-1 flex items-center justify-between">
             <h2 className="flex items-center gap-3 text-2xl font-semibold">Your quests <span className="rounded-md bg-muted px-2 text-sm font-normal">{open.length + resumeQuests.length}</span></h2>
             <Link to="/quests" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary">View all quests <ArrowRight className="h-4 w-4" /></Link>
@@ -331,9 +307,3 @@ function Dashboard() {
   );
 }
 
-function Stat({ icon: Icon, label, children }: { icon: typeof Zap; label: string; children: React.ReactNode }) {
-  return <div className="panel hover-lift p-6"><div className="mb-5 flex items-center gap-2 text-muted-foreground"><Icon className="h-5 w-5" />{label}</div>{children}</div>;
-}
-function Bar({ pct, cls }: { pct: number; cls: string }) {
-  return <div className="mt-5 h-1.5 overflow-hidden rounded-full bg-muted"><motion.div className={`h-full rounded-full ${cls}`} initial={{ width: 0 }} animate={{ width: `${pct}%` }} /></div>;
-}
