@@ -119,11 +119,12 @@ function Dashboard() {
   const resumeScore = review?.score ?? (details.resume as { score?: number } | undefined)?.score;
   const [pick, setPick] = useState<number | null>(null);
   const [dir, setDir] = useState(1);
-  const openCount = open.length;
+  // One slide per quest type — the carousel never shows two of the same kind.
+  const featuredOpen = open.filter((q, i) => open.findIndex((o) => o.category === q.category) === i);
   // Slide 0 is always the mock interview — the core product; quest slides follow.
-  const total = openCount + 1;
+  const total = featuredOpen.length + 1;
   const featIdx = pick === null ? 0 : Math.min(pick, total - 1);
-  const featured = featIdx === 0 ? null : open[featIdx - 1];
+  const featured = featIdx === 0 ? null : featuredOpen[featIdx - 1];
   const shift = (d: number) => {
     setDir(d);
     setPick(((((pick ?? featIdx) + d) % total) + total) % total);
@@ -209,7 +210,7 @@ function Dashboard() {
             {total > 1 && (
               <div className="flex flex-wrap items-center gap-2">
                 {Array.from({ length: Math.min(total, 10) }, (_, i) => (
-                  <button key={i} type="button" onClick={() => jump(i)} aria-label={i === 0 ? "Show mock interview" : `Show quest: ${open[i - 1]?.title}`} aria-current={i === featIdx} className={cn("h-2 rounded-full transition-all", i === featIdx ? "w-7 bg-primary" : "w-2 bg-muted-foreground/30 hover:bg-muted-foreground/60")} />
+                  <button key={i} type="button" onClick={() => jump(i)} aria-label={i === 0 ? "Show mock interview" : `Show quest: ${featuredOpen[i - 1]?.title}`} aria-current={i === featIdx} className={cn("h-2 rounded-full transition-all", i === featIdx ? "w-7 bg-primary" : "w-2 bg-muted-foreground/30 hover:bg-muted-foreground/60")} />
                 ))}
                 {total > 10 && <span className="text-xs text-muted-foreground">+{total - 10} more</span>}
               </div>
