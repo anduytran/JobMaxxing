@@ -85,7 +85,17 @@ function Setup() {
     setBusy(true);
     setError(null);
     setStatus([`> scan://${name}`, `> extracted ${words} words`, "> grading with the Resume Agent…"]);
-    const res = await reviewResumeFn({ data: { fileName: name, text: body } });
+    // A rejected call must still clear the working state, or the screen hangs on "grading".
+    let res: Awaited<ReturnType<typeof reviewResumeFn>>;
+    try {
+      res = await reviewResumeFn({ data: { fileName: name, text: body } });
+    } catch (err) {
+      console.error(err);
+      setBusy(false);
+      setStatus([]);
+      setError("The resume review didn't finish. Try again, or paste the text instead.");
+      return;
+    }
     setBusy(false);
     if (!res.ok) {
       setStatus([]);
