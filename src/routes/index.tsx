@@ -4,7 +4,7 @@ import { ArrowRight, Check, ChevronLeft, ChevronRight, Clock, Code2, FileText, F
 import { useGame } from "@/lib/game";
 import { Mascot } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getLatestResumeReview } from "@/lib/resume.functions";
 import meadowScene from "@/assets/max/meadow.svg";
 import type { StoredReview } from "@/lib/resume";
@@ -135,18 +135,16 @@ function Dashboard() {
   const [reviewLoading, setReviewLoading] = useState(true);
   useEffect(() => { getLatestResumeReview().then((r) => { if (r.ok) setReview(r.review); }).catch(() => {}).finally(() => setReviewLoading(false)); }, []);
   const resumeScore = review?.score ?? (details.resume as { score?: number } | undefined)?.score;
-  const [seed, setSeed] = useState(0);
   const [pick, setPick] = useState<number | null>(null);
   const [dir, setDir] = useState(1);
-  useEffect(() => { setSeed(Math.random()); }, []);
   const openCount = open.length;
-  const startIdx = useMemo(() => (openCount ? Math.floor(seed * openCount) % openCount : 0), [seed, openCount]);
-  const featIdx = pick === null ? Math.min(startIdx, Math.max(openCount - 1, 0)) : Math.min(pick, Math.max(openCount - 1, 0));
-  const featured = openCount ? open[featIdx] : null;
+  // Slide 0 is always the mock interview — the core product; quest slides follow.
+  const total = openCount + 1;
+  const featIdx = pick === null ? 0 : Math.min(pick, total - 1);
+  const featured = featIdx === 0 ? null : open[featIdx - 1];
   const shift = (d: number) => {
-    if (!openCount) return;
     setDir(d);
-    setPick(((((pick ?? featIdx) + d) % openCount) + openCount) % openCount);
+    setPick(((((pick ?? featIdx) + d) % total) + total) % total);
   };
   const jump = (i: number) => { setDir(i >= featIdx ? 1 : -1); setPick(i); };
   const featKey = featured?.category?.toLowerCase() ?? "interview";
@@ -207,31 +205,31 @@ function Dashboard() {
       <div className="relative">
         <section className="relative overflow-hidden rounded-3xl border bg-hero px-14 py-8 md:px-16 md:py-12" aria-label="Featured quest">
         <div className="relative z-10 max-w-xl md:max-w-[46%]">
-          <p className="flex items-center gap-2 whitespace-nowrap text-xs font-semibold uppercase tracking-[0.2em] text-foreground/70"><span className="h-1.5 w-1.5 rounded-full bg-foreground/60" />{featured ? `Today's featured quest · ${featured.category}` : "Today's featured quest"}</p>
+          <p className="flex items-center gap-2 whitespace-nowrap text-xs font-semibold uppercase tracking-[0.2em] text-foreground/70"><span className="h-1.5 w-1.5 rounded-full bg-foreground/60" />{featured ? `Today's featured quest · ${featured.category}` : "Your main event · Mock interview"}</p>
           {featured ? (
             <h2 ref={headRef} title={featured.title} className="mt-5 min-h-[2.2em] break-words text-2xl font-bold leading-[1.1] sm:text-3xl"><span className="block">{featLines[0]}</span><span className="block">{featLines[1]}</span></h2>
           ) : (
-            <h2 className="mt-5 text-4xl font-bold leading-tight md:text-5xl">You've got potential.<br />Let's put it to work.</h2>
+            <h2 className="mt-5 min-h-[2.2em] break-words text-2xl font-bold leading-[1.1] sm:text-3xl"><span className="block">Practice your</span><span className="block">mock interview</span></h2>
           )}
           <p ref={subRef} className="mt-4 text-muted-foreground">{scene.blurb}</p>
-          {featured ? (<>
+          {featured ? (
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <Button asChild className="h-auto rounded-xl px-7 py-4 text-base"><Link to={featLink}>
                 Start this quest <ArrowRight className="h-5 w-5" />
               </Link></Button>
             </div>
-            {openCount > 1 && (
-              <div className="mt-5 flex flex-wrap items-center gap-2">
-                {open.slice(0, 9).map((q, i) => (
-                  <button key={q.id} type="button" onClick={() => jump(i)} aria-label={`Show quest: ${q.title}`} aria-current={i === featIdx} className={cn("h-2 rounded-full transition-all", i === featIdx ? "w-7 bg-primary" : "w-2 bg-muted-foreground/30 hover:bg-muted-foreground/60")} />
-                ))}
-                {openCount > 9 && <span className="text-xs text-muted-foreground">+{openCount - 9} more</span>}
-              </div>
-            )}
-          </>) : (
+          ) : (
             <Button asChild className="mt-8 h-auto rounded-xl px-7 py-4 text-base"><Link to="/interview" search={{ radar: undefined }}>
               Start a mock interview <ArrowRight className="h-5 w-5" />
             </Link></Button>
+          )}
+          {total > 1 && (
+            <div className="mt-5 flex flex-wrap items-center gap-2">
+              {Array.from({ length: Math.min(total, 10) }, (_, i) => (
+                <button key={i} type="button" onClick={() => jump(i)} aria-label={i === 0 ? "Show mock interview" : `Show quest: ${open[i - 1]?.title}`} aria-current={i === featIdx} className={cn("h-2 rounded-full transition-all", i === featIdx ? "w-7 bg-primary" : "w-2 bg-muted-foreground/30 hover:bg-muted-foreground/60")} />
+              ))}
+              {total > 10 && <span className="text-xs text-muted-foreground">+{total - 10} more</span>}
+            </div>
           )}
           <p className="mt-4 flex items-center gap-2 text-sm text-muted-foreground"><Clock className="h-4 w-4" />{featured ? `+${featured.xp} XP waiting for you` : "15 minutes to a more confident you"}</p>
         </div>
@@ -240,7 +238,7 @@ function Dashboard() {
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
             <div className="relative h-[240px] w-[240px]">
               <div aria-hidden className="absolute -bottom-1 left-1/2 h-5 w-40 -translate-x-1/2 rounded-[50%] bg-foreground/25 blur-md" />
-              <div className="mascot-float relative h-full w-full">{featured ? <img key={featArt} src={featArt} alt={`Max ready for: ${featured.title}`} width={816} height={816} decoding="sync" draggable={false} className="h-full w-full object-contain" /> : <Mascot className="h-full w-full" />}</div>
+              <div className="mascot-float relative h-full w-full"><img key={featArt} src={featArt} alt={featured ? `Max ready for: ${featured.title}` : "Max with a microphone, ready to interview you"} width={816} height={816} decoding="sync" draggable={false} className="h-full w-full object-contain" /></div>
             </div>
           </div>
           <div className="absolute left-10 top-6 flex -rotate-6 items-center gap-2 rounded-xl bg-card px-4 py-3 text-sm shadow-md"><Zap className="h-4 w-4" />+{featured?.xp ?? 150} XP</div>
@@ -250,11 +248,11 @@ function Dashboard() {
           ))}
           <div className="absolute bottom-6 right-8 flex items-center gap-2 rounded-xl bg-card px-4 py-3 text-sm shadow-md"><Check className="h-4 w-4 text-success" />{scene.phrase}</div>
         </motion.div>
-          {featured && openCount > 1 && (
-            <span className="absolute bottom-4 left-1/2 z-20 -translate-x-1/2 rounded-full border bg-card/90 px-3 py-1 text-xs font-medium tabular-nums text-muted-foreground shadow-sm">{featIdx + 1} / {openCount}</span>
+          {total > 1 && (
+            <span className="absolute bottom-4 left-1/2 z-20 -translate-x-1/2 rounded-full border bg-card/90 px-3 py-1 text-xs font-medium tabular-nums text-muted-foreground shadow-sm">{featIdx + 1} / {total}</span>
           )}
         </section>
-        {featured && openCount > 1 && (<>
+        {total > 1 && (<>
           <Button variant="outline" size="icon" className="absolute left-0 top-1/2 z-20 h-10 w-10 -translate-y-1/2 rounded-full bg-card md:-left-5 xl:-left-12" onClick={() => shift(-1)} aria-label="Previous quest" title="Previous quest"><ChevronLeft className="h-5 w-5" /></Button>
           <Button variant="outline" size="icon" className="absolute right-0 top-1/2 z-20 h-10 w-10 -translate-y-1/2 rounded-full bg-card md:-right-5 xl:-right-12" onClick={() => shift(1)} aria-label="Next quest" title="Next quest"><ChevronRight className="h-5 w-5" /></Button>
         </>)}

@@ -2,7 +2,7 @@ import { Link, useLocation, useRouter, useRouterState } from "@tanstack/react-ro
 import { signOut } from "@/lib/auth.functions";
 import { AnimatePresence, motion, MotionConfig, useReducedMotion } from "framer-motion";
 import {
-  LayoutGrid, FileText, Mic, Users, Radar, LineChart, Network, UsersRound, Swords, Settings, Menu, LogOut, Zap, ArrowRight, Flame, CircleHelp,
+  LayoutGrid, FileText, Mic, Radar, LineChart, Network, UsersRound, Swords, Settings, Menu, LogOut, Zap, ArrowRight, Flame, CircleHelp,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { useGame, levelTitle } from "@/lib/game";
@@ -12,24 +12,18 @@ import { Button } from "@/components/ui/button";
 import { QuestMenu } from "@/components/QuestMenu";
 
 type Item = { to: string; label: string; icon: typeof LayoutGrid; badge?: string };
-const GROUPS: { label: string; items: Item[] }[] = [
-  { label: "Your career, levelled up", items: [
-    { to: "/", label: "Dashboard", icon: LayoutGrid },
-    { to: "/setup", label: "Resume Lab", icon: FileText },
-    { to: "/interview", label: "AI Mock Interview", icon: Mic },
-    { to: "/peers", label: "Peer Interviews", icon: Users },
-  ] },
-  { label: "Opportunities", items: [
-    { to: "/market", label: "Job Radar", icon: Radar, badge: "New" },
-    { to: "/progress", label: "Career Progress", icon: LineChart },
-  ] },
-  { label: "Growth", items: [
-    { to: "/quests", label: "Quests", icon: Swords },
-    { to: "/skills", label: "Skill Tree", icon: Network },
-  ] },
-  { label: "Your crew", items: [{ to: "/crew", label: "Job Maxxers", icon: UsersRound, badge: "3" }] },
+// Flat nav, no sections — Interview leads because it's the core product.
+const ITEMS: Item[] = [
+  { to: "/", label: "Dashboard", icon: LayoutGrid },
+  { to: "/interview", label: "Interview", icon: Mic },
+  { to: "/setup", label: "Resume Lab", icon: FileText },
+  { to: "/market", label: "Job Radar", icon: Radar, badge: "New" },
+  { to: "/quests", label: "Quests", icon: Swords },
+  { to: "/skills", label: "Skill Tree", icon: Network },
+  { to: "/progress", label: "Career Progress", icon: LineChart },
+  { to: "/crew", label: "Job Maxxers", icon: UsersRound, badge: "3" },
 ];
-const ALL = GROUPS.flatMap((g) => g.items).concat({ to: "/settings", label: "Settings", icon: Settings });
+const ALL = ITEMS.concat({ to: "/settings", label: "Settings", icon: Settings });
 
 export function Mascot({ className }: { className?: string }) {
   return <Max className={className} />;
@@ -57,25 +51,20 @@ export function AppShell({ children }: { children: ReactNode }) {
           <Mascot className="h-10 w-10" />
           <span className="font-display text-2xl font-bold">JobMaxxing<span className="text-primary">.</span></span>
         </Link>
-        <nav className="flex-1 space-y-6">
-          {GROUPS.map((g, gi) => (
-            <div key={g.label} className={cn(gi > 0 && "border-t pt-5")}>
-              <div className="mb-2 px-3 text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">{g.label}</div>
-              {g.items.map(({ to, label, icon: Icon, badge }) => {
-                const active = loc.pathname === to;
-                return (
-                  <Link key={to} to={to} onClick={() => setOpen(false)}
-                    className={cn("group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-[15px] transition-all hover-slide",
-                      active ? "font-medium text-primary" : "text-foreground/80 hover:bg-muted")}>
-                    {active && <motion.span layoutId="nav" className="absolute inset-0 rounded-xl border border-primary/20 bg-sidebar-accent" />}
-                    <Icon className="icon-wiggle relative h-[18px] w-[18px]" />
-                    <span className="relative flex-1">{label}</span>
-                    {badge && <span className="relative rounded-md bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">{badge}</span>}
-                  </Link>
-                );
-              })}
-            </div>
-          ))}
+        <nav className="flex-1 space-y-1">
+          {ITEMS.map(({ to, label, icon: Icon, badge }) => {
+            const active = loc.pathname === to;
+            return (
+              <Link key={to} to={to} onClick={() => setOpen(false)}
+                className={cn("group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-[15px] transition-all hover-slide",
+                  active ? "font-medium text-primary" : "text-foreground/80 hover:bg-muted")}>
+                {active && <motion.span layoutId="nav" className="absolute inset-0 rounded-xl border border-primary/20 bg-sidebar-accent" />}
+                <Icon className="icon-wiggle relative h-[18px] w-[18px]" />
+                <span className="relative flex-1">{label}</span>
+                {badge && <span className="relative rounded-md bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">{badge}</span>}
+              </Link>
+            );
+          })}
         </nav>
         <div className="mt-6 rounded-2xl bg-muted/60 p-4 transition-shadow hover:shadow-md">
           <Zap className="h-5 w-5 text-primary" />
