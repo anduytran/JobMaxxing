@@ -81,3 +81,8 @@
 
 
 - Max is centred on both axes of the featured card on wide screens (verified signed-in at 1830x1075: mascot centre = card centre, 0px horizontal, 0.5px vertical, no overlap with the headline, Lock In, dots, counter or Missions panel); on phones he keeps the horizontal centre but sits low so the stacked text stays readable.
+
+## Missions panel placement and layering
+- [x] Missions panel now hangs off the card's right edge (8px in) and is wider (up to 512px, shrinking with the window so Max and the arrow keep their space); styled with the app's own tokens (cream card, dark text, sage/orange accents) instead of black glass.
+- [x] #OPENTOWORK ring now renders behind Max, in front of the billboard scene, by preceding his image in the DOM.
+- [x] Verified signed-in at 1830x1075 and 1100x800: panel 512/366px wide, 8px from the right edge, next arrow cream with a dark chevron and ~12px clear of the panel, no panel/arrow/Max overlaps, ring behind Max; no console errors, build clean.
