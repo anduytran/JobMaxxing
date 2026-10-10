@@ -51,7 +51,6 @@ export function InterviewDisclosure({ job, className }: { job: ParsedJob | null;
   );
 }
 
-
 /** Required acknowledgment before a practice interview can start. */
 export function AcknowledgeDisclosure({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
   return (
