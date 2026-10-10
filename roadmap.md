@@ -72,3 +72,8 @@
 ## Quest expiration clocks
 - [x] Daily and weekly countdowns ("Daily expiration in 1h 3m 51s", "Weekly expiration in 1d 1h 3m") on the Quest Log and in the mission briefing group headers, from the same UTC midnight / Monday boundaries the server resets on.
 - [x] Verified in the browser: both clocks render, tick down each second, and the fresh board is pulled in when one runs out; no console errors, build clean.
+
+## Uploaded full-screen quest scenes
+- [x] Replace partitioned scenes with uploaded stage, gym and meadow backgrounds spanning the entire featured screen.
+- [x] Use portrait stage and meadow images on mobile; keep Max and quest controls above the art.
+- [ ] Verify full-screen backgrounds and mobile image selection in the browser.

@@ -6,12 +6,15 @@ import { Mascot } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { useEffect, useRef, useState } from "react";
 import { getLatestResumeReview } from "@/lib/resume.functions";
-import meadowScene from "@/assets/max/meadow.svg";
+import meadowDesktop from "@/assets/quest-scenes/meadow-desktop.png.asset.json";
+import meadowMobile from "@/assets/quest-scenes/meadow-mobile.png.asset.json";
+import stageDesktop from "@/assets/quest-scenes/stage-desktop.png.asset.json";
+import stageMobile from "@/assets/quest-scenes/stage-mobile.png.asset.json";
 import type { StoredReview } from "@/lib/resume";
 import { MAX_POSES } from "@/components/Max";
 import { cn } from "@/lib/utils";
-import gymScene from "@/assets/max/gym-scene.svg";
-import billboardScene from "@/assets/max/billboard.svg";
+import gymDesktop from "@/assets/quest-scenes/gym-desktop.png.asset.json";
+
 import { questTitleLines } from "@/lib/quest-titles";
 import { ResumeScoreCard } from "@/components/ResumeScoreCard";
 import { XpCareerCard } from "@/components/DashboardProgressCards";
@@ -82,47 +85,21 @@ const DEFAULT_SCENE: Scene = {
   blurb: "Your dream role is closer than you think. Build your skills, sharpen your story, and make your next move.",
 };
 
-// Illustrated backdrop behind Max for the featured quest; one scene per quest type.
-// The featured card now fills the viewport, so every scene scales with its height.
+// Original uploaded scenes fill the entire featured screen; portrait art swaps on mobile.
+function sceneSources(kind: string) {
+  if (kind === "interview" || kind === "branding" || kind === "social") {
+    return { desktop: stageDesktop.url, mobile: stageMobile.url };
+  }
+  if (kind === "skills") return { desktop: gymDesktop.url, mobile: gymDesktop.url };
+  return { desktop: meadowDesktop.url, mobile: meadowMobile.url };
+}
 function SceneBackdrop({ kind }: { kind: string }) {
-  if (kind === "branding" || kind === "social") {
-    return (
-      <div className="absolute inset-0 overflow-hidden">
-        <img src={billboardScene} alt="" aria-hidden className="absolute inset-0 h-full w-full object-contain object-center" draggable={false} />
-      </div>
-    );
-  }
-  if (kind === "skills") {
-    return (
-      <div className="absolute inset-0 overflow-hidden bg-gym-wall [container-type:inline-size]">
-        <div className="absolute inset-x-0 bottom-0 h-[min(25cqw,25%)] bg-gym-floor" />
-        <img src={gymScene} alt="" aria-hidden className="absolute inset-0 h-full w-full object-contain object-bottom" draggable={false} />
-      </div>
-    );
-  }
-  if (kind === "hunt") {
-    return (
-      <div className="absolute inset-0 overflow-hidden">
-        <img src={meadowScene} alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover object-bottom" draggable={false} />
-      </div>
-    );
-  }
-  if (kind === "interview") {
-    return (
-      <div className="absolute inset-0 flex justify-center">
-        <div className="h-full w-[70%] bg-gradient-to-b from-primary/25 to-transparent [clip-path:polygon(40%_0,60%_0,100%_100%,0_100%)]" />
-        <div className="absolute bottom-10 h-6 w-[55%] rounded-[50%] bg-primary/15" />
-      </div>
-    );
-  }
+  const sources = sceneSources(kind);
   return (
-    <div className="absolute inset-0 flex items-center justify-center">
-      {[-8, 4, -2].map((r, i) => (
-        <div key={i} className="absolute h-[clamp(260px,32svh,460px)] w-[clamp(210px,26svh,370px)] rounded-xl border border-foreground/10 bg-card/70" style={{ transform: `rotate(${r}deg) translate(${i * 12}px, ${i * 8}px)` }}>
-          <div className="mt-7 space-y-2.5 px-6">{[80, 60, 70, 50].map((w) => <div key={w} className="h-1.5 rounded bg-foreground/10" style={{ width: `${w}%` }} />)}</div>
-        </div>
-      ))}
-    </div>
+    <picture className="absolute inset-0 block" data-quest-background>
+      <source media="(max-width: 767px)" srcSet={sources.mobile} />
+      <img src={sources.desktop} alt="" aria-hidden className="h-full w-full object-cover object-center" draggable={false} />
+    </picture>
   );
 }
 
@@ -150,7 +127,8 @@ function Dashboard() {
   const featKey = featured?.category?.toLowerCase() ?? "interview";
   const featArt = MAX_ART[featKey] ?? MAX_POSES.interview;
   // Decode Max and the scene backdrop together so they appear at the same moment.
-  const sceneSrcs = [featArt, featKey === "skills" ? gymScene : featKey === "hunt" ? meadowScene : featKey === "branding" || featKey === "social" ? billboardScene : null].filter(Boolean) as string[];
+  const sources = sceneSources(featKey);
+  const sceneSrcs = [featArt, sources.desktop, sources.mobile];
   const sceneKey = sceneSrcs.join("|");
   const [readyKey, setReadyKey] = useState("");
   useEffect(() => {
@@ -159,7 +137,7 @@ function Dashboard() {
     return () => { live = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sceneKey]);
-  useEffect(() => { [gymScene, billboardScene, meadowScene, ...Object.values(MAX_POSES)].forEach((s) => { const i = new Image(); i.src = s; }); }, []);
+  useEffect(() => { [gymDesktop.url, stageDesktop.url, stageMobile.url, meadowDesktop.url, meadowMobile.url, ...Object.values(MAX_POSES)].forEach((s) => { const i = new Image(); i.src = s; }); }, []);
   const sceneReady = readyKey === sceneKey;
   const featLink = QUEST_LINK[featKey] ?? "/quests";
   const scene = SCENES[featKey] ?? (featKey === "setup" ? SCENES["resume"] : undefined) ?? DEFAULT_SCENE;
@@ -194,14 +172,16 @@ function Dashboard() {
       {/* Phase 1 — the featured quest fills the whole screen, edge to edge, under the top bar. */}
       <div className="relative">
         <section
-          className="relative flex min-h-[calc(100svh_-_4rem)] items-stretch overflow-hidden border-b bg-hero px-6 pb-24 pt-10 md:px-20 md:pb-28 md:pt-14"
+          className={cn("featured-screen relative flex min-h-[calc(100svh_-_4rem)] items-stretch overflow-hidden border-b bg-hero px-6 pb-24 pt-8 md:px-20 md:pb-28 md:pt-14", (featKey === "interview" || featKey === "branding" || featKey === "social") && "featured-stage")}
           aria-label="Featured quest"
         >
+          <SceneBackdrop kind={featKey} />
+          <div className="featured-scrim pointer-events-none absolute inset-0" />
           {/* The column stretches to the card so the eyebrow, the pitch and the dots
               anchor the top, middle and bottom of the screen. */}
-          <div className="relative z-10 flex w-full max-w-2xl flex-col justify-between md:max-w-[44%]">
-            <p className="flex items-center gap-2 whitespace-nowrap text-xs font-semibold uppercase tracking-[0.2em] text-foreground/70"><span className="h-1.5 w-1.5 rounded-full bg-foreground/60" />{featured ? `Today's featured quest · ${featured.category}` : "Your main event · Mock interview"}</p>
-            <div className="py-10">
+          <div className="relative z-10 flex w-full max-w-2xl flex-col justify-start md:justify-between md:max-w-[44%]">
+            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-foreground/70"><span className="h-1.5 w-1.5 rounded-full bg-foreground/60" />{featured ? `Today's featured quest · ${featured.category}` : "Your main event · Mock interview"}</p>
+            <div className="pb-8 pt-8 md:py-10">
               {featured ? (
                 <h2 ref={headRef} title={featured.title} className="min-h-[2.2em] break-words text-3xl font-bold leading-[1.1] sm:text-4xl lg:text-5xl"><span className="block">{featLines[0]}</span><span className="block">{featLines[1]}</span></h2>
               ) : (
@@ -230,28 +210,18 @@ function Dashboard() {
               </div>
             )}
           </div>
-          <motion.div key={featured?.id ?? "none"} initial={reducedMotion ? false : { opacity: 0, x: 28 * dir }} animate={sceneReady ? { opacity: 1, x: 0 } : { opacity: 0, x: reducedMotion ? 0 : 28 * dir }} transition={{ duration: 0.45 }} className="pointer-events-none absolute inset-y-0 right-0 hidden w-[52%] md:block">
-            <div className="absolute inset-0"><SceneBackdrop kind={featKey} /></div>
-            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-              <div className="relative h-[clamp(220px,28svh,400px)] w-[clamp(220px,28svh,400px)]">
-                <div className="mascot-float relative h-full w-full"><img key={featArt} src={featArt} alt={featured ? `Max ready for: ${featured.title}` : "Max with a microphone, ready to interview you"} width={816} height={816} decoding="sync" draggable={false} className="h-full w-full object-contain" /></div>
-              </div>
+          <motion.div key={featured?.id ?? "none"} initial={reducedMotion ? false : { opacity: 0, x: 28 * dir }} animate={sceneReady ? { opacity: 1, x: 0 } : { opacity: 0, x: reducedMotion ? 0 : 28 * dir }} transition={{ duration: 0.45 }} className="pointer-events-none absolute inset-x-0 bottom-14 flex h-[28svh] items-end justify-center md:inset-x-auto md:right-[12%] md:bottom-[12%] md:h-[32svh]">
+            <div className="relative h-[clamp(160px,28svh,400px)] w-[clamp(160px,28svh,400px)]">
+              <div className="mascot-float relative h-full w-full"><img key={featArt} src={featArt} alt={featured ? `Max ready for: ${featured.title}` : "Max with a microphone, ready to interview you"} width={816} height={816} decoding="sync" draggable={false} className="h-full w-full object-contain" /></div>
             </div>
-            {/* Floating chips live in the empty band above and below Max, never on him. */}
-            <div className="absolute left-4 top-12 flex -rotate-6 items-center gap-2 rounded-xl bg-card px-4 py-3 text-sm shadow-md"><Zap className="h-4 w-4" />+{featured?.xp ?? 150} XP</div>
-            <div className={`absolute right-4 top-12 rotate-6 rounded-2xl bg-card p-3 shadow-md ${scene.chip}`}><scene.icon className="h-6 w-6" /></div>
-            {scene.props.slice(0, 2).map(([label], i) => (
-              <div key={label} className={cn("absolute rounded-xl bg-card/90 px-3 py-1.5 text-xs font-medium shadow-sm", i === 0 ? "right-4 top-40 -rotate-3" : "left-4 bottom-44 rotate-3")}>{label}</div>
-            ))}
-            <div className="absolute bottom-12 left-4 flex items-center gap-2 rounded-xl bg-card px-4 py-3 text-sm shadow-md"><Check className="h-4 w-4 text-success" />{scene.phrase}</div>
           </motion.div>
           {total > 1 && (
             <span className="absolute bottom-5 left-1/2 z-20 -translate-x-1/2 rounded-full border bg-card/90 px-3 py-1 text-xs font-medium tabular-nums text-muted-foreground shadow-sm">{featIdx + 1} / {total}</span>
           )}
         </section>
         {total > 1 && (<>
-          <Button variant="outline" size="icon" className="absolute left-3 top-1/2 z-20 h-11 w-11 -translate-y-1/2 rounded-full bg-card md:left-6" onClick={() => shift(-1)} aria-label="Previous quest" title="Previous quest"><ChevronLeft className="h-5 w-5" /></Button>
-          <Button variant="outline" size="icon" className="absolute right-3 top-1/2 z-20 h-11 w-11 -translate-y-1/2 rounded-full bg-card md:right-6" onClick={() => shift(1)} aria-label="Next quest" title="Next quest"><ChevronRight className="h-5 w-5" /></Button>
+          <Button variant="outline" size="icon" className="absolute left-3 top-[70%] md:top-1/2 z-20 h-11 w-11 -translate-y-1/2 rounded-full bg-card md:left-6" onClick={() => shift(-1)} aria-label="Previous quest" title="Previous quest"><ChevronLeft className="h-5 w-5" /></Button>
+          <Button variant="outline" size="icon" className="absolute right-3 top-[70%] md:top-1/2 z-20 h-11 w-11 -translate-y-1/2 rounded-full bg-card md:right-6" onClick={() => shift(1)} aria-label="Next quest" title="Next quest"><ChevronRight className="h-5 w-5" /></Button>
         </>)}
       </div>
 

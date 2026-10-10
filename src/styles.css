@@ -244,3 +244,19 @@ html.reduce-motion .animate-bob, html.reduce-motion .animate-flame, html.reduce-
   .power-move:hover, .tactile-control:hover:not(:disabled), .tactile-control:active:not(:disabled) { transform: none; }
   .reward-particle { display: none; }
 }
+
+/* Full-screen artwork stays intact; semantic scrims keep quest text readable. */
+.featured-screen { --featured-shade: var(--background); }
+.featured-stage {
+  --foreground: oklch(0.99 0.005 85);
+  --muted-foreground: oklch(0.92 0.01 85);
+  --featured-shade: oklch(0.2 0.02 40);
+}
+.featured-scrim {
+  background: linear-gradient(90deg, color-mix(in oklab, var(--featured-shade) 90%, transparent), color-mix(in oklab, var(--featured-shade) 65%, transparent) 38%, transparent 70%);
+}
+@media (max-width: 767px) {
+  .featured-scrim {
+    background: linear-gradient(180deg, color-mix(in oklab, var(--featured-shade) 88%, transparent), color-mix(in oklab, var(--featured-shade) 70%, transparent) 40%, transparent 70%);
+  }
+}
