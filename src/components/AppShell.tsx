@@ -2,7 +2,7 @@ import { Link, useLocation, useRouter, useRouterState } from "@tanstack/react-ro
 import { signOut } from "@/lib/auth.functions";
 import { AnimatePresence, motion, MotionConfig, useReducedMotion } from "framer-motion";
 import {
-  LayoutGrid, FileText, Mic, Radar, LineChart, Network, UsersRound, Swords, Settings, Menu, LogOut, Zap, Flame, CircleHelp, X,
+  LayoutGrid, FileText, Mic, Radar, LineChart, Network, UsersRound, Swords, Settings, Menu, LogOut, Zap, Flame, CircleHelp, X, Store, Crosshair,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { useGame, levelTitle } from "@/lib/game";
@@ -13,16 +13,16 @@ import { QuestMenu } from "@/components/QuestMenu";
 
 type Item = { to: string; label: string; icon: typeof LayoutGrid; badge?: string };
 // Flat nav, no sections — Interview leads because it's the core product.
-const ITEMS: Item[] = [
-  { to: "/", label: "Dashboard", icon: LayoutGrid },
-  { to: "/interview", label: "Interview", icon: Mic },
-  { to: "/setup", label: "Resume Lab", icon: FileText },
-  { to: "/market", label: "Job Radar", icon: Radar, badge: "New" },
-  { to: "/quests", label: "Quests", icon: Swords },
-  { to: "/skills", label: "Skill Tree", icon: Network },
-  { to: "/progress", label: "Career Progress", icon: LineChart },
-  { to: "/crew", label: "Job Maxxers", icon: UsersRound, badge: "3" },
+const LEFT: Item[] = [
+  { to: "/", label: "Home", icon: LayoutGrid },
+  { to: "/quests", label: "Collection", icon: Swords },
 ];
+const RIGHT: Item[] = [
+  { to: "/progress", label: "Career", icon: LineChart },
+  { to: "/store", label: "Store", icon: Store },
+];
+const LOCK_IN: Item = { to: "/lock-in", label: "Lock In", icon: Crosshair };
+const ITEMS: Item[] = [...LEFT, LOCK_IN, ...RIGHT];
 
 export function Mascot({ className }: { className?: string }) {
   return <Max className={className} />;
@@ -56,20 +56,13 @@ export function AppShell({ children }: { children: ReactNode }) {
           </Link>
 
           <nav className="hidden flex-1 items-stretch justify-center gap-1 self-stretch lg:flex" aria-label="Main">
-            {ITEMS.map(({ to, label, badge }) => {
-              const active = loc.pathname === to;
-              return (
-                <Link key={to} to={to}
-                  className={cn("relative flex items-center gap-1.5 px-4 text-[13px] font-semibold uppercase tracking-[0.14em] transition-colors",
-                    active ? "text-primary" : "text-foreground/70 hover:text-foreground")}>
-                  {label}
-                  {badge && <span className="rounded-sm bg-muted px-1 py-0.5 text-[10px] font-bold tracking-normal text-muted-foreground">{badge}</span>}
-                  {active && (
-                    <motion.span layoutId="topnav" className="absolute inset-x-3 -bottom-px h-[3px] rounded-t-sm bg-primary" />
-                  )}
-                </Link>
-              );
-            })}
+            {LEFT.map((it) => <TopTab key={it.to} item={it} active={loc.pathname === it.to} />)}
+            <Link to={LOCK_IN.to}
+              className={cn("relative mx-3 -mb-px flex items-center px-12 font-display text-base font-bold uppercase tracking-[0.25em] transition-colors [clip-path:polygon(0_0,100%_0,88%_100%,12%_100%)]",
+                loc.pathname === LOCK_IN.to ? "bg-primary text-primary-foreground" : "bg-foreground/90 text-background hover:bg-primary hover:text-primary-foreground")}>
+              {LOCK_IN.label}
+            </Link>
+            {RIGHT.map((it) => <TopTab key={it.to} item={it} active={loc.pathname === it.to} />)}
           </nav>
 
           <div className="ml-auto flex items-center gap-3 lg:ml-0">
@@ -151,6 +144,17 @@ export function AppShell({ children }: { children: ReactNode }) {
         </motion.div>}
       </AnimatePresence>
     </div></MotionConfig>
+  );
+}
+
+function TopTab({ item: { to, label }, active }: { item: Item; active: boolean }) {
+  return (
+    <Link to={to}
+      className={cn("relative flex items-center px-5 text-[13px] font-semibold uppercase tracking-[0.14em] transition-colors",
+        active ? "text-primary" : "text-foreground/70 hover:text-foreground")}>
+      {label}
+      {active && <motion.span layoutId="topnav" className="absolute inset-x-3 -bottom-px h-[3px] rounded-t-sm bg-primary" />}
+    </Link>
   );
 }
 

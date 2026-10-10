@@ -256,6 +256,18 @@ function Dashboard() {
           <Button variant="outline" size="icon" className="absolute right-0 top-1/2 z-20 h-10 w-10 -translate-y-1/2 rounded-full bg-card md:-right-5 xl:-right-12" onClick={() => shift(1)} aria-label="Next quest" title="Next quest"><ChevronRight className="h-5 w-5" /></Button>
         </>)}
       </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Link to="/interview" search={{ radar: undefined }} className="hover-lift flex items-center gap-4 rounded-2xl border bg-card p-5">
+          <span className="grid h-12 w-12 place-items-center rounded-xl bg-primary/15 text-primary"><Mic className="h-6 w-6" /></span>
+          <span className="flex-1"><span className="block font-semibold">Interviews</span><span className="text-sm text-muted-foreground">Jump into a mock interview</span></span>
+          <ArrowRight className="h-5 w-5 text-muted-foreground" />
+        </Link>
+        <Link to="/setup" className="hover-lift flex items-center gap-4 rounded-2xl border bg-card p-5">
+          <span className="grid h-12 w-12 place-items-center rounded-xl bg-accent/20 text-accent-foreground"><FileText className="h-6 w-6" /></span>
+          <span className="flex-1"><span className="block font-semibold">Resume Lab</span><span className="text-sm text-muted-foreground">Grade and polish your resume</span></span>
+          <ArrowRight className="h-5 w-5 text-muted-foreground" />
+        </Link>
+      </div>
       <div className="grid grid-cols-1 items-stretch gap-5 sm:grid-cols-2">
         <ResumeScoreCard review={review} score={resumeScore} loading={reviewLoading} />
         <XpCareerCard xp={xp} level={level} levelXp={levelXp} lastGain={lastGain} title={title} />

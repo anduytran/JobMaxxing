@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as CrewRouteImport } from './routes/crew'
 import { Route as InterviewRouteImport } from './routes/interview'
+import { Route as LockInRouteImport } from './routes/lock-in'
 import { Route as MarketRouteImport } from './routes/market'
 import { Route as PeersRouteImport } from './routes/peers'
 import { Route as ProgressRouteImport } from './routes/progress'
@@ -19,6 +20,7 @@ import { Route as QuestsRouteImport } from './routes/quests'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SetupRouteImport } from './routes/setup'
 import { Route as SkillsRouteImport } from './routes/skills'
+import { Route as StoreRouteImport } from './routes/store'
 import { Route as QuestsAddRouteImport } from './routes/quests.add'
 
 const IndexRoute = IndexRouteImport.update({
@@ -34,6 +36,11 @@ const CrewRoute = CrewRouteImport.update({
 const InterviewRoute = InterviewRouteImport.update({
   id: '/interview',
   path: '/interview',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LockInRoute = LockInRouteImport.update({
+  id: '/lock-in',
+  path: '/lock-in',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MarketRoute = MarketRouteImport.update({
@@ -71,6 +78,11 @@ const SkillsRoute = SkillsRouteImport.update({
   path: '/skills',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StoreRoute = StoreRouteImport.update({
+  id: '/store',
+  path: '/store',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const QuestsAddRoute = QuestsAddRouteImport.update({
   id: '/add',
   path: '/add',
@@ -81,6 +93,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/crew': typeof CrewRoute
   '/interview': typeof InterviewRoute
+  '/lock-in': typeof LockInRoute
   '/market': typeof MarketRoute
   '/peers': typeof PeersRoute
   '/progress': typeof ProgressRoute
@@ -88,12 +101,14 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRoute
   '/setup': typeof SetupRoute
   '/skills': typeof SkillsRoute
+  '/store': typeof StoreRoute
   '/quests/add': typeof QuestsAddRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/crew': typeof CrewRoute
   '/interview': typeof InterviewRoute
+  '/lock-in': typeof LockInRoute
   '/market': typeof MarketRoute
   '/peers': typeof PeersRoute
   '/progress': typeof ProgressRoute
@@ -101,6 +116,7 @@ export interface FileRoutesByTo {
   '/settings': typeof SettingsRoute
   '/setup': typeof SetupRoute
   '/skills': typeof SkillsRoute
+  '/store': typeof StoreRoute
   '/quests/add': typeof QuestsAddRoute
 }
 export interface FileRoutesById {
@@ -108,6 +124,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/crew': typeof CrewRoute
   '/interview': typeof InterviewRoute
+  '/lock-in': typeof LockInRoute
   '/market': typeof MarketRoute
   '/peers': typeof PeersRoute
   '/progress': typeof ProgressRoute
@@ -115,6 +132,7 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRoute
   '/setup': typeof SetupRoute
   '/skills': typeof SkillsRoute
+  '/store': typeof StoreRoute
   '/quests/add': typeof QuestsAddRoute
 }
 export interface FileRouteTypes {
@@ -123,6 +141,7 @@ export interface FileRouteTypes {
     | '/'
     | '/crew'
     | '/interview'
+    | '/lock-in'
     | '/market'
     | '/peers'
     | '/progress'
@@ -130,12 +149,14 @@ export interface FileRouteTypes {
     | '/settings'
     | '/setup'
     | '/skills'
+    | '/store'
     | '/quests/add'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/crew'
     | '/interview'
+    | '/lock-in'
     | '/market'
     | '/peers'
     | '/progress'
@@ -143,12 +164,14 @@ export interface FileRouteTypes {
     | '/settings'
     | '/setup'
     | '/skills'
+    | '/store'
     | '/quests/add'
   id:
     | '__root__'
     | '/'
     | '/crew'
     | '/interview'
+    | '/lock-in'
     | '/market'
     | '/peers'
     | '/progress'
@@ -156,6 +179,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/setup'
     | '/skills'
+    | '/store'
     | '/quests/add'
   fileRoutesById: FileRoutesById
 }
@@ -163,6 +187,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CrewRoute: typeof CrewRoute
   InterviewRoute: typeof InterviewRoute
+  LockInRoute: typeof LockInRoute
   MarketRoute: typeof MarketRoute
   PeersRoute: typeof PeersRoute
   ProgressRoute: typeof ProgressRoute
@@ -170,6 +195,7 @@ export interface RootRouteChildren {
   SettingsRoute: typeof SettingsRoute
   SetupRoute: typeof SetupRoute
   SkillsRoute: typeof SkillsRoute
+  StoreRoute: typeof StoreRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -193,6 +219,13 @@ declare module '@tanstack/react-router' {
       path: '/interview'
       fullPath: '/interview'
       preLoaderRoute: typeof InterviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lock-in': {
+      id: '/lock-in'
+      path: '/lock-in'
+      fullPath: '/lock-in'
+      preLoaderRoute: typeof LockInRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/market': {
@@ -244,6 +277,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SkillsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/store': {
+      id: '/store'
+      path: '/store'
+      fullPath: '/store'
+      preLoaderRoute: typeof StoreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/quests/add': {
       id: '/quests/add'
       path: '/add'
@@ -269,6 +309,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CrewRoute: CrewRoute,
   InterviewRoute: InterviewRoute,
+  LockInRoute: LockInRoute,
   MarketRoute: MarketRoute,
   PeersRoute: PeersRoute,
   ProgressRoute: ProgressRoute,
@@ -276,6 +317,7 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRoute: SettingsRoute,
   SetupRoute: SetupRoute,
   SkillsRoute: SkillsRoute,
+  StoreRoute: StoreRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
