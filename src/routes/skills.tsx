@@ -32,7 +32,7 @@ function Page() {
   const skills = (details.skills ?? []).filter(Boolean);
   return (
     <div className="mx-auto max-w-6xl">
-      <PageHeader eyebrow="Build your next chapter" title="Skill Tree" sub="Turn your potential into progress, one step at a time." />
+      <PageHeader eyebrow="Build your next chapter" title="Skill Tree" sub="Turn your potential into progress, one step at a time." pose="skills" />
       <div className="panel">
         <PanelHead title="Grow in your own direction" level={level} />
         <p className="px-8 pt-3 text-muted-foreground md:px-12">Unlock new skills by completing quests and interview practice.</p>

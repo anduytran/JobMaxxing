@@ -28,7 +28,7 @@ function Market() {
   const nav = useNavigate();
   return (
     <div className="mx-auto max-w-6xl">
-      <PageHeader eyebrow="Build your next chapter" title="Job Radar" sub="Turn your potential into progress, one step at a time." />
+      <PageHeader eyebrow="Build your next chapter" title="Job Radar" sub="Turn your potential into progress, one step at a time." pose="hunt" />
       <div className="panel">
         <PanelHead title="Make the most of job radar" level={level} />
         <div className="px-8 pb-10 pt-6 md:px-12">

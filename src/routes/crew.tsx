@@ -28,7 +28,7 @@ function Page() {
   const { level } = useGame();
   return (
     <div className="mx-auto max-w-6xl">
-      <PageHeader eyebrow="Build your next chapter" title="Job Maxxers" sub="Turn your potential into progress, one step at a time." />
+      <PageHeader eyebrow="Build your next chapter" title="Job Maxxers" sub="Turn your potential into progress, one step at a time." pose="branding" />
       <div className="panel">
         <PanelHead title="Your crew of Job Maxxers" level={level} />
         <div className="px-8 pb-10 pt-6 md:px-12">
