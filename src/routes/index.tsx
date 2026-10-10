@@ -15,6 +15,9 @@ import { MAX_POSES } from "@/components/Max";
 import { cn } from "@/lib/utils";
 import gymDesktop from "@/assets/quest-scenes/gym-desktop.png.asset.json";
 import gymMobile from "@/assets/quest-scenes/gym-mobile.png.asset.json";
+import billboardDesktop from "@/assets/quest-scenes/billboard-desktop.png.asset.json";
+import billboardMobile from "@/assets/quest-scenes/billboard-mobile.png.asset.json";
+import openToWork from "@/assets/open-to-work.png.asset.json";
 
 import { questTitleLines } from "@/lib/quest-titles";
 import { ResumeScoreCard } from "@/components/ResumeScoreCard";
@@ -88,7 +91,8 @@ const DEFAULT_SCENE: Scene = {
 
 // Original uploaded scenes fill the entire featured screen; portrait art swaps on mobile.
 function sceneSources(kind: string) {
-  if (kind === "interview" || kind === "branding" || kind === "social") {
+  if (kind === "branding") return { desktop: billboardDesktop.url, mobile: billboardMobile.url };
+  if (kind === "interview" || kind === "social") {
     return { desktop: stageDesktop.url, mobile: stageMobile.url };
   }
   if (kind === "skills") return { desktop: gymDesktop.url, mobile: gymMobile.url };
@@ -115,11 +119,12 @@ function Dashboard() {
   const resumeScore = review?.score ?? (details.resume as { score?: number } | undefined)?.score;
   const [pick, setPick] = useState<number | null>(null);
   const [dir, setDir] = useState(1);
-  const openCount = open.length;
+  // One slide per quest type — the carousel never shows two of the same kind.
+  const featuredOpen = open.filter((q, i) => open.findIndex((o) => o.category === q.category) === i);
   // Slide 0 is always the mock interview — the core product; quest slides follow.
-  const total = openCount + 1;
+  const total = featuredOpen.length + 1;
   const featIdx = pick === null ? 0 : Math.min(pick, total - 1);
-  const featured = featIdx === 0 ? null : open[featIdx - 1];
+  const featured = featIdx === 0 ? null : featuredOpen[featIdx - 1];
   const shift = (d: number) => {
     setDir(d);
     setPick(((((pick ?? featIdx) + d) % total) + total) % total);
@@ -138,7 +143,7 @@ function Dashboard() {
     return () => { live = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sceneKey]);
-  useEffect(() => { [gymDesktop.url, gymMobile.url, stageDesktop.url, stageMobile.url, meadowDesktop.url, meadowMobile.url, ...Object.values(MAX_POSES)].forEach((s) => { const i = new Image(); i.src = s; }); }, []);
+  useEffect(() => { [gymDesktop.url, gymMobile.url, stageDesktop.url, stageMobile.url, meadowDesktop.url, meadowMobile.url, billboardDesktop.url, billboardMobile.url, openToWork.url, ...Object.values(MAX_POSES)].forEach((s) => { const i = new Image(); i.src = s; }); }, []);
   const sceneReady = readyKey === sceneKey;
   const featLink = QUEST_LINK[featKey] ?? "/quests";
   const scene = SCENES[featKey] ?? (featKey === "setup" ? SCENES["resume"] : undefined) ?? DEFAULT_SCENE;
@@ -173,7 +178,7 @@ function Dashboard() {
       {/* Phase 1 — the featured quest fills the whole screen, edge to edge, under the top bar. */}
       <div className="relative">
         <section
-          className={cn("featured-screen relative flex min-h-[calc(100svh_-_4rem)] items-stretch overflow-hidden border-b bg-hero px-6 pb-24 pt-8 md:px-20 md:pb-28 md:pt-14", (featKey === "interview" || featKey === "branding" || featKey === "social") && "featured-stage")}
+          className={cn("featured-screen relative flex min-h-[calc(100svh_-_4rem)] items-stretch overflow-hidden border-b bg-hero px-6 pb-24 pt-8 md:px-20 md:pb-28 md:pt-14", (featKey === "interview" || featKey === "social") && "featured-stage")}
           aria-label="Featured quest"
         >
           <SceneBackdrop kind={featKey} />
@@ -205,7 +210,7 @@ function Dashboard() {
             {total > 1 && (
               <div className="flex flex-wrap items-center gap-2">
                 {Array.from({ length: Math.min(total, 10) }, (_, i) => (
-                  <button key={i} type="button" onClick={() => jump(i)} aria-label={i === 0 ? "Show mock interview" : `Show quest: ${open[i - 1]?.title}`} aria-current={i === featIdx} className={cn("h-2 rounded-full transition-all", i === featIdx ? "w-7 bg-primary" : "w-2 bg-muted-foreground/30 hover:bg-muted-foreground/60")} />
+                  <button key={i} type="button" onClick={() => jump(i)} aria-label={i === 0 ? "Show mock interview" : `Show quest: ${featuredOpen[i - 1]?.title}`} aria-current={i === featIdx} className={cn("h-2 rounded-full transition-all", i === featIdx ? "w-7 bg-primary" : "w-2 bg-muted-foreground/30 hover:bg-muted-foreground/60")} />
                 ))}
                 {total > 10 && <span className="text-xs text-muted-foreground">+{total - 10} more</span>}
               </div>
@@ -214,6 +219,16 @@ function Dashboard() {
           <motion.div key={featured?.id ?? "none"} initial={reducedMotion ? false : { opacity: 0, x: 28 * dir }} animate={sceneReady ? { opacity: 1, x: 0 } : { opacity: 0, x: reducedMotion ? 0 : 28 * dir }} transition={{ duration: 0.45 }} className="pointer-events-none absolute inset-x-0 bottom-14 flex h-[28svh] items-end justify-center md:bottom-[12%] md:h-[32svh]">
             <div className="relative h-[clamp(160px,28svh,400px)] w-[clamp(160px,28svh,400px)]">
               <div className="mascot-float relative h-full w-full"><img key={featArt} src={featArt} alt={featured ? `Max ready for: ${featured.title}` : "Max with a microphone, ready to interview you"} width={816} height={816} decoding="sync" draggable={false} className="h-full w-full object-contain" /></div>
+              {featKey === "branding" && (
+                <img
+                  src={openToWork.url}
+                  alt=""
+                  aria-hidden
+                  draggable={false}
+                  className="absolute left-1/2 top-1/2 z-10 h-[185%] w-[185%] -translate-x-1/2 -translate-y-1/2 object-contain"
+                  style={{ maskImage: "radial-gradient(closest-side, black 82%, transparent 97%)", WebkitMaskImage: "radial-gradient(closest-side, black 82%, transparent 97%)" }}
+                />
+              )}
             </div>
           </motion.div>
           <aside aria-label="Quick overview" className="absolute right-20 top-1/2 z-10 hidden w-72 -translate-y-1/2 space-y-3 lg:block xl:right-24">
