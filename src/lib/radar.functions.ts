@@ -203,7 +203,7 @@ export const getRadar = createServerFn({ method: "POST" })
       );
       const jobs: RadarJob[] = [];
       for (const r of rows) {
-        const d = (r.data ?? {}) as Record<string, any>;
+        const d = (r["data"] ?? {}) as Record<string, any>;
         const title = String(d.title ?? "Untitled role");
         const description = String(d.description ?? "");
         const jdSkills = await extractSkills(`${title} ${description}`);
@@ -211,9 +211,9 @@ export const getRadar = createServerFn({ method: "POST" })
           { title, description, location: String(d.location ?? ""), salaryMin: d.salaryMin ?? null, salaryMax: d.salaryMax ?? null, skills: jdSkills },
           { skills: userSkills, prefs },
         );
-        const status = RADAR_STATUSES.includes(r.status as RadarStatus) ? (r.status as RadarStatus) : "new";
+        const status = RADAR_STATUSES.includes(r["status"] as RadarStatus) ? (r["status"] as RadarStatus) : "new";
         jobs.push({
-          id: String(r.job_id),
+          id: String(r["job_id"]),
           title,
           company: String(d.company ?? "Unknown company"),
           location: String(d.location ?? ""),
@@ -226,11 +226,11 @@ export const getRadar = createServerFn({ method: "POST" })
           match: s.match,
           matchWhy: s.why,
           status,
-          viewed: Boolean(r.viewed),
+          viewed: Boolean(r["viewed"]),
         });
       }
-      jobs.sort((a, b) => (a.status === "dismissed") - (b.status === "dismissed") || b.match - a.match);
-      return { ok: true, jobs, error: fetchError };
+      jobs.sort((a, b) => (a.status === "dismissed" ? 1 : 0) - (b.status === "dismissed" ? 1 : 0) || b.match - a.match);
+      return { ok: true, jobs, ...(fetchError ? { error: fetchError } : {}) };
     } catch (err) {
       console.error("getRadar failed", err);
       const { neonUserError } = await import("./neon.server");

@@ -226,7 +226,7 @@ function Dashboard() {
               </div>
             )}
           </>) : (
-            <Button asChild className="mt-8 h-auto rounded-xl px-7 py-4 text-base"><Link to="/interview" search={{}}>
+            <Button asChild className="mt-8 h-auto rounded-xl px-7 py-4 text-base"><Link to="/interview" search={{ radar: undefined }}>
               Start a mock interview <ArrowRight className="h-5 w-5" />
             </Link></Button>
           )}
