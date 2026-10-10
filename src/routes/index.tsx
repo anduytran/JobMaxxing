@@ -217,7 +217,7 @@ function Dashboard() {
         <motion.div key={featured?.id ?? "none"} initial={reducedMotion ? false : { opacity: 0, x: 28 * dir }} animate={sceneReady ? { opacity: 1, x: 0 } : { opacity: 0, x: reducedMotion ? 0 : 28 * dir }} transition={{ duration: 0.45 }} className="pointer-events-none absolute inset-y-0 right-0 hidden w-1/2 md:block">
           <div className="absolute inset-0"><SceneBackdrop kind={featKey} /></div>
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-            <div className="mascot-float h-[360px] w-[360px]">{featured ? <img key={featArt} src={featArt} alt={`Max ready for: ${featured.title}`} width={816} height={816} decoding="sync" draggable={false} className="h-full w-full object-contain" /> : <Mascot className="h-full w-full" />}</div>
+            <div className={cn("mascot-float", featKey === "branding" || featKey === "social" ? "h-[240px] w-[240px]" : "h-[360px] w-[360px]")}>{featured ? <img key={featArt} src={featArt} alt={`Max ready for: ${featured.title}`} width={816} height={816} decoding="sync" draggable={false} className="h-full w-full object-contain" /> : <Mascot className="h-full w-full" />}</div>
           </div>
           <div className="absolute left-10 top-6 flex -rotate-6 items-center gap-2 rounded-xl bg-card px-4 py-3 text-sm shadow-md"><Zap className="h-4 w-4" />+{featured?.xp ?? 150} XP</div>
           <div className={`absolute right-8 top-8 rotate-6 rounded-2xl bg-card p-3 shadow-md ${scene.chip}`}><scene.icon className="h-6 w-6" /></div>
