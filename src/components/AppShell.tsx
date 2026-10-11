@@ -4,7 +4,8 @@ import { AnimatePresence, motion, MotionConfig, useReducedMotion } from "framer-
 import {
   LayoutGrid, FileText, Mic, Radar, LineChart, Network, UsersRound, Swords, Settings, Menu, LogOut, Zap, Flame, CircleHelp, X, Store, ArrowRight,
 } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { getStreak } from "@/lib/career.functions";
 import { useGame, levelTitle } from "@/lib/game";
 import { type MaxPose } from "@/components/Max";
 import { WornMax } from "@/components/Wearables";
@@ -38,6 +39,12 @@ export function AppShell({ children }: { children: ReactNode }) {
   const navigating = useRouterState({ select: (s) => s.status === "pending" });
   const [signingOut, setSigningOut] = useState(false);
   const [open, setOpen] = useState(false);
+  const [streak, setStreak] = useState(0);
+  useEffect(() => {
+    let live = true;
+    getStreak().then((s) => { if (live) setStreak(s.current); }).catch(() => {});
+    return () => { live = false; };
+  }, []);
   const reducedMotion = useReducedMotion();
   const initials = name.split(/\s+/).map((p) => p[0]).join("").slice(0, 2).toUpperCase() || "ME";
 

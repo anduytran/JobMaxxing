@@ -214,10 +214,11 @@ export const getCareerDashboard = createServerFn({ method: "GET" }).handler(asyn
     }
 
     const s = streak.rows[0];
+    const streakInfo: StreakInfo = s
+      ? { current: Number(s["current_streak"]), longest: Number(s["longest_streak"]), lastActivity: (s["last"] as string | null) ?? null, freezes: Number(s["streak_freeze_count"]) }
+      : EMPTY_STREAK;
     return {
-      streak: s
-        ? { current: Number(s["current_streak"]), longest: Number(s["longest_streak"]), lastActivity: (s["last"] as string | null) ?? null, freezes: Number(s["streak_freeze_count"]) }
-        : EMPTY_STREAK,
+      streak: { ...streakInfo, current: effectiveStreak(streakInfo) },
       goal: goalRow
         ? { targetRole: (goalRow["target_role"] as string | null) ?? null, targetLevel: level, targetElo: Number(goalRow["target_elo"]) }
         : null,
