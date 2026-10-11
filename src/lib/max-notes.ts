@@ -7,6 +7,11 @@ export const MAX_NOTES = [
   "Some days, one small step is plenty. Progress still counts.",
 ];
 
+/** Safe read — the index is -1 until a note has actually been picked. */
+export function maxNote(index: number) {
+  return MAX_NOTES[index] ?? MAX_NOTES[0] ?? "";
+}
+
 /** Pick a note at random, never the one that is already on screen. */
 export function nextMaxNote(current: number) {
   if (MAX_NOTES.length < 2) return 0;

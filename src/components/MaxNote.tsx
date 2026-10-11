@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { Mascot } from "@/components/AppShell";
-import { MAX_NOTES, nextMaxNote } from "@/lib/max-notes";
+import { MAX_NOTES, maxNote, nextMaxNote } from "@/lib/max-notes";
 
 /**
  * Max's note card: him on the left, the note on the right. Used on the Career
@@ -40,5 +40,5 @@ export function MaxNote({ note, onCycle, className = "" }: { note: string; onCyc
 export function useRandomMaxNote() {
   const [index, setIndex] = useState(-1);
   useEffect(() => { setIndex(Math.floor(Math.random() * MAX_NOTES.length)); }, []);
-  return { note: index < 0 ? "" : MAX_NOTES[index], next: () => setIndex((c) => nextMaxNote(c)) };
+  return { note: maxNote(index), next: () => setIndex((c) => nextMaxNote(c)) };
 }

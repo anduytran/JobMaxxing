@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, Check, FileText, Flame, LineChart, Mic } from "lucide-react";
 import { PanelHead } from "@/components/AppShell";
 import { MaxNote } from "@/components/MaxNote";
-import { MAX_NOTES, nextMaxNote } from "@/lib/max-notes";
+import { maxNote, nextMaxNote } from "@/lib/max-notes";
 
 import { useGame } from "@/lib/game";
 import { useEffect, useState } from "react";
@@ -48,7 +48,7 @@ function Page() {
           <div>
             <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">Let's make your next move count</p>
             <h1 className="mt-2 text-4xl font-bold md:text-5xl">Looking good, {first} <span className="text-accent">✦</span></h1>
-            <MaxNote note={MAX_NOTES[tip]} onCycle={() => setTip((t) => nextMaxNote(t))} className="mt-4" />
+            <MaxNote note={maxNote(tip)} onCycle={() => setTip((t) => nextMaxNote(t))} className="mt-4" />
 
           </div>
           <div className="flex flex-wrap items-center gap-3">
