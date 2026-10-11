@@ -278,7 +278,7 @@ function Dashboard() {
             <div className="w-[min(32rem,calc(50vw_-_15svh_-_8rem))] max-w-full overflow-hidden rounded-md border border-border bg-card/95 text-card-foreground shadow-2xl ring-1 ring-foreground/10 backdrop-blur-xl">
               <p className="border-b border-border bg-muted/40 px-5 py-3 text-center text-xs font-bold uppercase tracking-[0.25em]">Goals</p>
               <ul className="divide-y divide-border">
-                {[...quests.filter((q) => q.period === "daily"), ...quests.filter((q) => q.period === "weekly")].sort((a, b) => Number(a.done) - Number(b.done)).slice(0, 5).map((q) => (
+                {panelQuests.map((q) => (
                   <li key={q.id}>
                     <Link to="/quests/add" title={q.title} className="group flex items-center gap-3 px-5 py-3 hover:bg-muted/50">
                       <span className={cn("grid h-7 w-7 shrink-0 place-items-center border", q.done ? "border-success/50 bg-success/15 text-success" : "border-border bg-muted text-muted-foreground")}>{q.done ? <Check className="h-3.5 w-3.5" /> : <Zap className="h-3.5 w-3.5" />}</span>
