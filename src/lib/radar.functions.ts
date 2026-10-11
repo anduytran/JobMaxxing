@@ -235,9 +235,19 @@ export const getRadar = createServerFn({ method: "POST" })
         "select job_id, data, status, viewed from public.devup_job_radar where user_id = $1",
         [uid],
       );
+      // Hide listings outside the user's areas (unless they want remote and the job is
+      // remote). Runs at read time, so stale rows from older searches drop out too.
+      const locTokens = tokens(prefs.locations).filter((t) => !/^remote/.test(t));
+      const wantRemote = /remote/i.test(prefs.workMode ?? "") || /remote/i.test(prefs.locations ?? "");
+      const inArea = (location: string, description: string) => {
+        if (!locTokens.length) return true;
+        if (locTokens.some((t) => location.toLowerCase().includes(t))) return true;
+        return wantRemote && /remote|work from home|anywhere/i.test(`${location} ${description}`);
+      };
       const jobs: RadarJob[] = [];
       for (const r of rows) {
         const d = (r["data"] ?? {}) as any; // Adzuna snapshot: free-form keys, validated field by field below
+        if (!inArea(String(d.location ?? ""), String(d.description ?? ""))) continue;
         const title = String(d.title ?? "Untitled role");
         const description = String(d.description ?? "");
         const jdSkills = await extractSkills(`${title} ${description}`);
