@@ -128,16 +128,16 @@ export function AppShell({ children }: { children: ReactNode }) {
       </header>
 
       {/* Home lands on a full-screen featured card, so its page carries its own padding. */}
-      <motion.main key={loc.pathname} initial={reducedMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className={cn("page-arrival flex-1", loc.pathname === "/" ? "" : "p-4 md:px-10 md:py-10")}>
+      <motion.main key={loc.pathname} initial={reducedMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className={cn("page-arrival flex-1", (loc.pathname === "/" || loc.pathname === "/interview") ? "" : "p-4 md:px-10 md:py-10")}>
         {children}
-        <footer className={cn("mx-auto mt-16 flex max-w-6xl justify-between border-t pt-6 text-xs text-muted-foreground", loc.pathname === "/" && "px-4 md:px-10")}>
+        {loc.pathname !== "/interview" && <footer className={cn("mx-auto mt-16 flex max-w-6xl justify-between border-t pt-6 text-xs text-muted-foreground", loc.pathname === "/" && "px-4 md:px-10")}>
           <span>Made for your next chapter.</span><span>Privacy · Terms · AI-powered. Human-centered.</span>
-        </footer>
+        </footer>}
       </motion.main>
 
-      <Button variant="outline" size="icon" aria-label="Help" title="Help" className="hover-pop fixed bottom-6 right-6 z-40 grid h-11 w-11 place-items-center rounded-full border bg-card shadow-md hover:bg-muted">
+      {loc.pathname !== "/interview" && <Button variant="outline" size="icon" aria-label="Help" title="Help" className="hover-pop fixed bottom-6 right-6 z-40 grid h-11 w-11 place-items-center rounded-full border bg-card shadow-md hover:bg-muted">
         <CircleHelp className="h-5 w-5" />
-      </Button>
+      </Button>}
       <AnimatePresence>
         {lastGain && <motion.div key={lastGain.key} initial={{ opacity: 0, y: 20, scale: 0.95 }} animate={{ opacity: [0, 1, 1, 0], y: reducedMotion ? 0 : [20, 0, 0, -8] }} transition={{ duration: 3.5, times: [0, 0.1, 0.8, 1] }} className="pointer-events-none fixed bottom-6 left-4 right-20 z-50 mx-auto flex max-w-sm items-center gap-3 rounded-xl border bg-card p-4 shadow-md">
           <div className="relative grid h-10 w-10 shrink-0 place-items-center rounded-full bg-success/20 text-foreground">

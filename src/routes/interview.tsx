@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Captions, Flame, Keyboard, Loader2, Mic, RotateCcw, Send, Square, Volume2, VolumeX } from "lucide-react";
+import { Captions, Keyboard, Loader2, Mic, RotateCcw, Send, Square, Volume2, VolumeX } from "lucide-react";
 import { InterviewVoicePresence, type InterviewVoiceState } from "@/components/InterviewVoicePresence";
 import { InterviewMicrophoneCheck } from "@/components/InterviewMicrophoneCheck";
 import { Max } from "@/components/Max";
@@ -9,7 +9,6 @@ import { AcknowledgeDisclosure, InterviewDisclosure } from "@/components/Intervi
 import { SkillText } from "@/components/skill-text";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useGame } from "@/lib/game";
 import {
@@ -48,7 +47,7 @@ type Stage = "intro" | "setup" | "review" | "options" | "live" | "your_questions
 function Interview() {
   const agents = Route.useLoaderData() as AgentStatus;
   const search = Route.useSearch();
-  const { roast, setRoast, completeQuest, gainXp, details } = useGame();
+  const { completeQuest, gainXp, details } = useGame();
   const [stage, setStage] = useState<Stage>("intro");
   const [jd, setJd] = useState("");
   const radarJobId = useRef<string | null>(null);
@@ -70,6 +69,8 @@ function Interview() {
   const [left, setLeft] = useState(LENGTHS.standard.seconds);
   const [ack, setAck] = useState(false);
   const voice = useRef<VoiceAgent | null>(null);
+  const [spokenWord, setSpokenWord] = useState(-1);
+  const immersive = stage === "live" || stage === "your_questions" || stage === "grading";
   const [playback, setPlayback] = useState<VoicePlaybackState>("ready");
   const [typing, setTyping] = useState(false);
   const [liveCaption, setLiveCaption] = useState("");
@@ -80,8 +81,8 @@ function Interview() {
   const [thinking, setThinking] = useState(false);
   useEffect(() => {
     voice.current = agents.voice === "elevenlabs"
-      ? createElevenLabsVoice(async (t) => (await speakInterviewLine({ data: { text: t } })).audio, setPlayback)
-      : createBrowserVoice(setPlayback);
+      ? createElevenLabsVoice(async (t) => (await speakInterviewLine({ data: { text: t } })).audio, setPlayback, setSpokenWord)
+      : createBrowserVoice(setPlayback, setSpokenWord);
     return () => { captureGeneration.current++; voice.current?.stop(); };
   }, [agents.voice]);
   const stopVoice = () => {
@@ -108,18 +109,17 @@ function Interview() {
   useEffect(() => { if (stage === "live" && left <= 0) toTail("Looks like we're at time."); }, [left, stage]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Job Radar hand-off: one-click practice for a radar role pre-fills the job
-  // description and runs the analysis immediately.
+  // description for review; parsing starts only after Analyze job.
   useEffect(() => {
     if (!search.radar || radarBootstrapped.current) return;
     radarBootstrapped.current = true;
     radarJobId.current = search.radar;
-    const stored = sessionStorage.getItem("jobmaxxing:radar-jd") ?? "";
-    sessionStorage.removeItem("jobmaxxing:radar-jd");
-    if (stored.trim().length >= 40) {
+    setStage("setup");
+    try {
+      const stored = sessionStorage.getItem("jobmaxxing:radar-jd") ?? "";
+      sessionStorage.removeItem("jobmaxxing:radar-jd");
       setJd(stored);
-      setStage("setup");
-      void analyze(stored);
-    }
+    } catch { /* The user can paste the full description if storage is unavailable. */ }
   }, [search.radar]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const analyze = async (jdText: string = jd) => {
@@ -135,8 +135,8 @@ function Interview() {
     if (!job) return;
     setBusy(true);
     try {
-      const qs = await generateInterviewQuestions({ data: { job, type, length, roast } });
-      const live = await startLiveInterview({ data: { job, type, length, roast, plan: qs } }).catch(() => null);
+      const qs = await generateInterviewQuestions({ data: { job, type, length, roast: false } });
+      const live = await startLiveInterview({ data: { job, type, length, roast: false, plan: qs } }).catch(() => null);
       const first = qs[0];
       if (!first) throw new Error("No interview questions were returned. Please try again.");
       setConvId(live?.conversationId ?? null);
@@ -184,7 +184,7 @@ function Interview() {
         setThinking(false);
         if (reply) return say(reply, "candidate_questions");
       }
-      say(roast ? "Fair question. I'll note it. Anything else, or are we done?" : "Great question — the team would love to dig into that. Anything else?", "candidate_questions");
+      say("Great question — the team would love to dig into that. Anything else?", "candidate_questions");
     }
   };
 
@@ -250,22 +250,17 @@ function Interview() {
   const reset = () => { stopVoice(); setTyping(false); setConvId(null); setStage("intro"); setGrade(null); setTurns([]); setJob(null); setAck(false); radarJobId.current = null; };
 
   return (
-    <div className="mx-auto max-w-6xl space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-4">
+    <div className={cn(immersive ? "w-full" : "mx-auto max-w-6xl space-y-4 px-4 py-6 md:px-10 md:py-10")}>
+      {!immersive && <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">Build your next chapter</p>
           <h1 className="mt-2 text-4xl font-bold md:text-5xl">AI Mock Interview</h1>
           <p className="mt-2 text-lg text-muted-foreground">Turn your potential into progress, one step at a time.</p>
           {stage !== "intro" && <Stepper stage={stage} />}
         </div>
-        <label className={cn("flex cursor-pointer items-center gap-3 rounded-lg border-2 px-4 py-2 transition", roast ? "border-roast bg-roast/15 glow" : "border-accent/50 bg-accent/10")}>
-          <Flame className={cn("h-5 w-5", roast ? "text-roast" : "text-accent")} />
-          <span className="text-sm font-semibold">Roast Mode</span>
-          <Switch checked={roast} onCheckedChange={setRoast} disabled={stage !== "setup" && stage !== "review" && stage !== "options"} />
-        </label>
-      </div>
+      </div>}
 
-      {stage !== "intro" && <AgentBadges agents={agents} />}
+      {!immersive && stage !== "intro" && <AgentBadges agents={agents} />}
 
       {stage === "intro" && (
         <section className="panel">
@@ -348,11 +343,11 @@ function Interview() {
       )}
 
       {(stage === "live" || stage === "your_questions" || stage === "grading") && (
-        <section className="relative flex min-h-[calc(100svh-12rem)] flex-col overflow-hidden rounded-lg border bg-card">
+        <section aria-label="Live interview" className="flex min-h-[calc(100svh-4rem)] w-full flex-col bg-background">
           {/* Header */}
           <div className="flex items-center justify-between gap-4 p-5">
             <div>
-              <div className="text-sm font-semibold">{roast ? "Gordon, Senior Hiring Manager" : "Ava, Friendly Recruiter"}</div>
+              <div className="text-sm font-semibold">Ava, Friendly Recruiter</div>
               <div className="text-xs text-muted-foreground">
                 {job?.title ? `${job.title}. ` : ""}{LENGTHS[length].label} {type} interview.
               </div>
@@ -363,16 +358,17 @@ function Interview() {
             </div>
           </div>
 
-          {/* Giant faint question behind the orb */}
-          {currentCaption && (
-            <p aria-hidden="true" className="pointer-events-none absolute inset-x-8 top-16 select-none text-center text-5xl font-bold leading-tight text-foreground/10 md:text-7xl">
-              {currentCaption}
-            </p>
+          {currentCaption && stage !== "grading" && (
+            <div className="mx-auto w-full max-w-4xl px-6 py-6 md:py-8">
+              <p className="max-h-48 overflow-y-auto break-words text-center text-2xl font-medium leading-relaxed text-foreground md:text-3xl" aria-label="Current question">
+                <SpokenQuestion text={currentCaption} activeWord={spokenWord} />
+              </p>
+            </div>
           )}
 
           {/* Orb stage */}
-          <div className="relative flex flex-1 items-center justify-center px-6">
-            <div className="pointer-events-none absolute left-6 top-1/2 hidden -translate-y-1/2 md:block">
+          <div className="relative grid min-h-72 flex-1 grid-cols-1 items-center justify-items-center gap-8 px-6 py-8 md:grid-cols-[1fr_240px_1fr]">
+            <div className="hidden w-full max-w-64 justify-self-start md:block">
               <div className="mb-2 h-px w-6 bg-foreground/40" />
               <div className="text-sm font-semibold">
                 {stage === "live" ? `Question ${qi + 1} of ${questions.length}` : stage === "grading" ? "Interview complete" : "Your questions"}
@@ -384,7 +380,7 @@ function Interview() {
               </div>
             </div>
             <InterviewVoicePresence state={voiceState} />
-            <div className="absolute right-6 top-1/2 hidden w-52 -translate-y-1/2 flex-col items-center gap-3 text-center md:flex">
+            <div className="hidden w-full max-w-64 flex-col items-center gap-3 text-center md:flex">
               <button
                 type="button"
                 aria-label="Hold to answer"
@@ -404,10 +400,10 @@ function Interview() {
           </div>
 
           {/* Caption bubble */}
-          {captionsOn && (listening ? liveCaption : currentCaption) && stage !== "grading" && (
+          {captionsOn && listening && liveCaption && stage !== "grading" && (
             <div className="mx-auto mb-6 w-full max-w-xl px-6">
               <p className="rounded-lg border bg-background px-5 py-3 text-center text-sm shadow-sm" aria-live="off">
-                {listening ? (liveCaption || "…") : `“${currentCaption}”`}
+                {listening ? (liveCaption || "…") : <SpokenQuestion text={currentCaption ?? ""} activeWord={spokenWord} />}
               </p>
             </div>
           )}
@@ -443,7 +439,7 @@ function Interview() {
                 </Button>
               </span>
             </div>
-            <p className="hidden sm:block">Orb pulses while the interviewer speaks and slowly draws inward while you answer.</p>
+            <span>{stage === "live" ? `Question ${qi + 1} of ${questions.length}` : stage === "grading" ? "Reviewing interview" : "Your questions"}</span>
           </div>
         </section>
       )}
@@ -582,4 +578,8 @@ function AgentBadges({ agents }: { agents: AgentStatus }) {
       ))}
     </div>
   );
+}
+
+function SpokenQuestion({ text, activeWord }: { text: string; activeWord: number }) {
+  return <>{(text.match(/\S+/g) ?? []).map((word, index) => <span key={index} className={index === activeWord ? "rounded-sm bg-primary/15 text-primary" : undefined}>{word}{" "}</span>)}</>;
 }

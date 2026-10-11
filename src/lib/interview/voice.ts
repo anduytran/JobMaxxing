@@ -10,8 +10,19 @@ export interface VoiceAgent {
 type SR = { new (): any };
 export type VoicePlaybackState = "ready" | "preparing" | "speaking";
 type PlaybackObserver = (state: VoicePlaybackState) => void;
+export type WordObserver = (index: number) => void;
 
-export function createBrowserVoice(onPlayback?: PlaybackObserver): VoiceAgent {
+/** Audio-duration alignment when the voice provider supplies no word timestamps. */
+export function spokenWordAt(text: string, progress: number): number {
+  const words = text.match(/\S+/g) ?? [];
+  if (!words.length) return -1;
+  const weights = words.map((word) => word.length + (/[,.!?;:]$/.test(word) ? 3 : 1));
+  const target = Math.max(0, Math.min(1, progress)) * weights.reduce((a, b) => a + b, 0);
+  let sum = 0;
+  return weights.findIndex((weight, index) => { sum += weight; return sum > target || index === words.length - 1; });
+}
+
+export function createBrowserVoice(onPlayback?: PlaybackObserver, onWord?: WordObserver): VoiceAgent {
   let rec: any = null;
   let settlePlayback: (() => void) | undefined;
   let finishCapture: (() => void) | undefined;
@@ -22,11 +33,15 @@ export function createBrowserVoice(onPlayback?: PlaybackObserver): VoiceAgent {
         if (typeof window === "undefined" || !window.speechSynthesis) return resolve();
         settlePlayback?.();
         onPlayback?.("preparing");
+        onWord?.(-1);
         const u = new SpeechSynthesisUtterance(text);
         u.rate = 1.05;
-        const finish = () => { onPlayback?.("ready"); resolve(); };
+        const finish = () => { onWord?.(-1); onPlayback?.("ready"); resolve(); };
         settlePlayback = finish;
-        u.onstart = () => onPlayback?.("speaking");
+        u.onstart = () => { onPlayback?.("speaking"); onWord?.(0); };
+        u.onboundary = (event) => {
+          if (event.name === "word") onWord?.((text.slice(0, event.charIndex).match(/\S+/g) ?? []).length);
+        };
         u.onend = finish;
         u.onerror = finish;
         window.speechSynthesis.cancel();
@@ -92,6 +107,7 @@ export function createBrowserVoice(onPlayback?: PlaybackObserver): VoiceAgent {
       cancelCapture?.();
       if (typeof window !== "undefined") window.speechSynthesis?.cancel();
       settlePlayback?.();
+      onWord?.(-1);
       onPlayback?.("ready");
     },
   };
@@ -99,15 +115,19 @@ export function createBrowserVoice(onPlayback?: PlaybackObserver): VoiceAgent {
 
 /** ElevenLabs voice: the server synthesizes each line; listening still uses browser speech recognition.
  *  Falls back to the browser voice for any line ElevenLabs can't produce. */
-export function createElevenLabsVoice(synth: (text: string) => Promise<string | null>, onPlayback?: PlaybackObserver): VoiceAgent {
-  const browser = createBrowserVoice(onPlayback);
+export function createElevenLabsVoice(synth: (text: string) => Promise<string | null>, onPlayback?: PlaybackObserver, onWord?: WordObserver): VoiceAgent {
+  const browser = createBrowserVoice(onPlayback, onWord);
   let audio: HTMLAudioElement | null = null;
   let generation = 0;
+  let frame = 0;
+  const clearWord = () => { cancelAnimationFrame(frame); onWord?.(-1); };
   let settlePlayback: (() => void) | undefined;
   return {
     speak: async (text) => {
       const current = ++generation;
       audio?.pause();
+      browser.stop();
+      clearWord();
       settlePlayback?.();
       onPlayback?.("preparing");
       const b64 = await synth(text).catch(() => null);
@@ -115,16 +135,22 @@ export function createElevenLabsVoice(synth: (text: string) => Promise<string | 
       if (!b64) return browser.speak(text);
       await new Promise<void>((resolve) => {
         audio = new Audio(`data:audio/mpeg;base64,${b64}`);
-        const finish = () => { onPlayback?.("ready"); resolve(); };
+        const lineAudio = audio;
+        const finish = () => { clearWord(); onPlayback?.("ready"); resolve(); };
         settlePlayback = finish;
-        audio.onplaying = () => onPlayback?.("speaking");
+        const tick = () => {
+          if (current !== generation || lineAudio.paused || lineAudio.ended) return;
+          if (Number.isFinite(lineAudio.duration) && lineAudio.duration > 0) onWord?.(spokenWordAt(text, lineAudio.currentTime / lineAudio.duration));
+          frame = requestAnimationFrame(tick);
+        };
+        audio.onplaying = () => { onPlayback?.("speaking"); cancelAnimationFrame(frame); tick(); };
         audio.onended = finish;
         audio.onerror = finish;
         audio.play().catch(finish);
       });
     },
-    listen: (onTranscript) => { audio?.pause(); return browser.listen(onTranscript); },
+    listen: (onTranscript) => { generation++; audio?.pause(); settlePlayback?.(); clearWord(); return browser.listen(onTranscript); },
     finishListening: () => browser.finishListening(),
-    stop: () => { generation++; audio?.pause(); settlePlayback?.(); browser.stop(); onPlayback?.("ready"); },
+    stop: () => { generation++; audio?.pause(); settlePlayback?.(); clearWord(); browser.stop(); onPlayback?.("ready"); },
   };
 }

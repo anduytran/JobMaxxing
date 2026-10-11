@@ -70,10 +70,6 @@ function SettingsPage() {
         <Button disabled={!!saving} onClick={saveDetails}>{saving === "details" && <Loader2 className="animate-spin" />}{saving === "details" ? "Saving…" : "Save details"}</Button>
       </div>
       <div className="panel flex items-center justify-between p-6">
-        <div><div className="font-semibold">Roast Mode</div><div className="text-sm text-muted-foreground">Aggressive interviewer, red-hot theme.</div></div>
-        <Switch checked={g.roast} onCheckedChange={g.setRoast} />
-      </div>
-      <div className="panel flex items-center justify-between p-6">
         <div>
           <div className="font-semibold">Reduce motion</div>
           <div className="text-sm text-muted-foreground">Tones down hover effects and ambient animations. Also follows your system setting.</div>
