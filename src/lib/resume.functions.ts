@@ -128,7 +128,7 @@ export const scanResume = createServerFn({ method: "POST" })
     return { fileName, contentType, fileBase64, text, sections, note: clean(i.note, 120), openQuests };
   })
   .handler(async ({ data }): Promise<Result<{
-    review: StoredReview; awarded: { firstScan: number; levelUp: number; fixes: number; integrated: number }; xp: number; questsDone: string[];
+    review: StoredReview; awarded: { firstScan: number; levelUp: number; fixes: number; integrated: number }; xp: number; questsDone: string[]; questsAdded: string[];
   }>> => {
     try {
       const user = await requireUser();
