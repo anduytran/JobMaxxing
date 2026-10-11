@@ -152,19 +152,30 @@
 .interview-voice-core {
   display: grid;
   place-items: center;
-  width: 72%;
+  width: 58%;
   aspect-ratio: 1;
   border-radius: 50%;
-  border: 2px solid var(--voice-color);
-  background: color-mix(in oklab, var(--voice-color) 14%, var(--card));
+  background: radial-gradient(circle at 36% 30%,
+    color-mix(in oklab, var(--accent) 30%, white),
+    var(--accent) 55%,
+    color-mix(in oklab, var(--accent) 72%, black));
+  box-shadow: 0 18px 45px -12px color-mix(in oklab, var(--accent) 55%, transparent);
 }
 .interview-voice-ring {
   position: absolute;
-  inset: 8px;
+  inset: 0;
   border-radius: 50%;
-  border: 1px solid color-mix(in oklab, var(--voice-color) 40%, transparent);
+  border: 1px solid color-mix(in oklab, var(--voice-color) 35%, transparent);
 }
-.interview-voice-listening .interview-voice-core { animation: voice-breathe 1.4s ease-in-out infinite; }
+.interview-voice-ring::before, .interview-voice-ring::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid color-mix(in oklab, var(--voice-color) 22%, transparent);
+}
+.interview-voice-ring::before { inset: 12%; }
+.interview-voice-ring::after { inset: 24%; border-color: color-mix(in oklab, var(--voice-color) 12%, transparent); }
+.interview-voice-listening .interview-voice-core { animation: voice-draw 1.6s ease-in-out infinite; }
 .interview-voice-speaking .interview-voice-core { animation: voice-breathe .65s ease-in-out infinite; }
 .interview-voice-thinking .interview-voice-ring, .interview-voice-preparing .interview-voice-ring,
 .interview-voice-grading .interview-voice-ring {
@@ -173,6 +184,7 @@
 }
 .interview-voice-listening .interview-voice-ring, .interview-voice-speaking .interview-voice-ring { animation: voice-ripple 1.8s ease-out infinite; }
 @keyframes voice-breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.07); } }
+@keyframes voice-draw { 0%, 100% { transform: scale(1); } 50% { transform: scale(.92); } }
 @keyframes voice-ripple { from { transform: scale(.85); opacity: .8; } to { transform: scale(1.12); opacity: .15; } }
 @keyframes voice-turn { to { transform: rotate(360deg); } }
 @utility animate-scan { animation: scan 2.6s linear infinite alternate; }
