@@ -87,6 +87,9 @@ export function InterviewFlow({ agents, api, radar, profileSkills = [], captions
   const [savedId, setSavedId] = useState<string | null>(null);
   const [thinking, setThinking] = useState(false);
   const [recId, setRecId] = useState<string | null>(null);
+  // The interview (first question + countdown) waits for the recording consent choice.
+  const [consented, setConsented] = useState(false);
+  const pendingFirst = useRef<{ text: string; questionId?: string } | null>(null);
   const recordings = useRecordings();
   const myRecording = recordings.find((r) => r.id === recId);
   const savedRef = useRef<string | null>(null);
@@ -119,12 +122,12 @@ export function InterviewFlow({ agents, api, radar, profileSkills = [], captions
     if (voiceOn) void voice.current?.speak(t);
   };
 
-  // Guardrail: physical time limit.
+  // Guardrail: physical time limit. The clock starts only after the consent choice.
   useEffect(() => {
-    if (stage !== "live") return;
+    if (stage !== "live" || !consented) return;
     const t = setInterval(() => setLeft((s) => s - 1), 1000);
     return () => clearInterval(t);
-  }, [stage]);
+  }, [stage, consented]);
   useEffect(() => { if (stage === "live" && left <= 0) toTail("Looks like we're at time."); }, [left, stage]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Job Radar hand-off: one-click practice for a radar role pre-fills the job
@@ -183,8 +186,10 @@ export function InterviewFlow({ agents, api, radar, profileSkills = [], captions
       const first = qs[0];
       if (!first) throw new Error("No interview questions were returned. Please try again.");
       setConvId(live?.conversationId ?? null);
-      setQuestions(qs); setQi(0); setTurns([]); setLeft(LENGTHS[length].seconds); setStage("live");
-      say(live?.reply ?? first.text, "interview", first.id);
+      setQuestions(qs); setQi(0); setTurns([]); setLeft(LENGTHS[length].seconds);
+      pendingFirst.current = { text: live?.reply ?? first.text, questionId: first.id };
+      setConsented(false);
+      setStage("live");
     } catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
   };
 
