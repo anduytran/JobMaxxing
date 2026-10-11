@@ -31,10 +31,10 @@ const MAX_ART: Record<string, MaxPose> = { setup: "resume", resume: "resume", in
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Featured Quests — JobMaxxing" },
-      { name: "description", content: "Start a featured career quest or AI mock interview and see the XP you can earn." },
-      { property: "og:title", content: "Featured Quests — JobMaxxing" },
-      { property: "og:description", content: "Level up your job hunt with quests, XP and AI mock interviews." },
+      { title: "JobMaxxing | AI Mock Interviews" },
+      { name: "description", content: "Practice AI mock interviews and level up your job hunt." },
+      { property: "og:title", content: "JobMaxxing | AI Mock Interviews" },
+      { property: "og:description", content: "Practice AI mock interviews and level up your job hunt." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { property: "og:image", content: stageDesktop.url },
