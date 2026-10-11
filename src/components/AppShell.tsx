@@ -122,14 +122,43 @@ export function AppShell({ children }: { children: ReactNode }) {
                 )}
               </AnimatePresence>
             </div>
-            <Link to="/settings" className="hidden items-center gap-2 rounded-full border bg-card px-3 py-1.5 text-sm transition-shadow hover:shadow-md md:flex" title="Settings">
-              <span className="grid h-7 w-7 place-items-center rounded-full bg-sidebar-accent text-xs font-semibold text-primary">{initials}</span>
-              <span className="font-semibold">Lv {level}</span>
-              <span className="hidden text-xs text-muted-foreground xl:inline">{levelTitle(level)}</span>
-            </Link>
-            <Button variant="ghost" size="icon" className="hidden md:inline-flex" onClick={doSignOut} disabled={signingOut} aria-label="Sign out" title="Sign out">
-              <LogOut className="h-4 w-4" />
-            </Button>
+            {/* Profile menu: avatar button holding level, settings, photo, sign out. */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button type="button" className="hidden items-center gap-2 rounded-full border bg-card px-3 py-1.5 text-sm transition-shadow hover:shadow-md md:flex" aria-label="Profile menu">
+                  <AvatarFace url={avatarUrl} initials={initials} className="h-7 w-7 text-xs" />
+                  <span className="font-semibold">Lv {level}</span>
+                  <span className="hidden text-xs text-muted-foreground xl:inline">{levelTitle(level)}</span>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel className="flex items-center gap-3">
+                  <AvatarFace url={avatarUrl} initials={initials} className="h-9 w-9 text-sm" />
+                  <span className="min-w-0">
+                    <span className="block truncate font-semibold">{name}</span>
+                    <span className="block text-xs font-normal text-muted-foreground">Level {level} · {levelTitle(level)}</span>
+                  </span>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={() => fileRef.current?.click()} disabled={savingAvatar}>
+                  <ImagePlus className="h-4 w-4" />{savingAvatar ? "Saving photo…" : avatarUrl ? "Change photo" : "Add profile photo"}
+                </DropdownMenuItem>
+                {avatarUrl && (
+                  <DropdownMenuItem onSelect={() => void setAvatar(null)}>
+                    <ImageOff className="h-4 w-4" />Remove photo
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem onSelect={() => void router.navigate({ to: "/settings" })}>
+                  <Settings className="h-4 w-4" />Settings
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={() => void doSignOut()} disabled={signingOut} className="text-primary focus:text-primary">
+                  <LogOut className="h-4 w-4" />{signingOut ? "Signing out…" : "Sign out"}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" className="hidden" aria-hidden="true"
+              onChange={(e) => void pickAvatar(e.target.files?.[0])} />
             <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setOpen(!open)} aria-label="Menu" aria-expanded={open}>
               {open ? <X /> : <Menu />}
             </Button>
