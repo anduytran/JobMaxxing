@@ -120,7 +120,11 @@ const bankFor = (kind: "technical" | "behavioral", stacks: string[]) => {
   const tagged = stacks.length
     ? QUESTION_BANK.filter((q) => q.kind === kind && q.stack.some((s) => stacks.includes(s)))
     : [];
-  return tagged.length ? tagged : QUESTION_BANK.filter((q) => q.kind === kind && q.stack.length === 0);
+  if (tagged.length) return tagged;
+  // Untagged behavioral pool excludes openers and closers — those are handled separately.
+  return QUESTION_BANK.filter(
+    (q) => q.kind === kind && q.stack.length === 0 && q.category !== "Opener" && q.category !== "Closer",
+  );
 };
 
 function fallbackQuestions(job: ParsedJob, type: InterviewType, count: number, roast: boolean): InterviewQuestion[] {
