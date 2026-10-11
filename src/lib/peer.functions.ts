@@ -335,8 +335,8 @@ export const peerGrade = createServerFn({ method: "POST" })
     const ticked = Object.values(s.checks).reduce((n, a) => n + a.length, 0);
     try {
       const [candidate, interviewer] = await Promise.all([
-        gradeInterview(s.transcript, s.job),
-        gradeInterviewer(s.transcript, s.job, { asked, ticked, total }),
+        gradeInterview(s.transcript, s.job, user.id),
+        gradeInterviewer(s.transcript, s.job, { asked, ticked, total }, user.id),
       ]);
       await neonExecute(
         "update public.devup_peer_session set grade = $2::jsonb, interviewer_grade = $3::jsonb where id = $1::uuid",

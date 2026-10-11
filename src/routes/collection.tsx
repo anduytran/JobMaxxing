@@ -4,7 +4,8 @@ import { motion, useReducedMotion } from "framer-motion";
 import { Backpack, Check, Snowflake, Zap, Package, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MaxFigure, WearableArt } from "@/components/Wearables";
-import { Max } from "@/components/Max";
+import { Max, MAX_POSES } from "@/components/Max";
+import loadingVideo from "../assets/max/max-loading.mp4.asset.json";
 import {
   equipItem,
   equipWearables,
@@ -51,8 +52,17 @@ function Collection() {
     );
   if (!state)
     return (
-      <div className="mx-auto max-w-3xl panel p-8 text-center text-muted-foreground">
-        Opening your collection…
+      <div className="panel mx-auto grid max-w-3xl place-items-center p-10">
+        <video
+          src={loadingVideo.url}
+          poster={MAX_POSES.wave}
+          autoPlay
+          loop
+          muted
+          playsInline
+          aria-label="Opening your collection"
+          className="h-44 w-44 rounded-3xl object-cover mix-blend-multiply"
+        />
       </div>
     );
 

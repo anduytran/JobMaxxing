@@ -16,8 +16,10 @@ export const parseJobDescription = createServerFn({ method: "POST" })
     return { jd };
   })
   .handler(async ({ data }) => {
+    const { currentUser } = await import("./auth.server");
+    const user = await currentUser();
     const { parseJob } = await import("./interview/agents.server");
-    return parseJob(data.jd);
+    return parseJob(data.jd, user?.id);
   });
 
 // Fetches a public job posting URL server-side and extracts readable text so
@@ -63,8 +65,10 @@ export const parseJobUrl = createServerFn({ method: "POST" })
     return { url: parsed.toString(), hint };
   })
   .handler(async ({ data }) => {
+    const { currentUser } = await import("./auth.server");
+    const user = await currentUser();
     const { parseJobFromUrl } = await import("./interview/agents.server");
-    const job = await parseJobFromUrl(data.url, data.hint || undefined);
+    const job = await parseJobFromUrl(data.url, data.hint || undefined, user?.id);
     if (!job) throw new Error("Couldn't read that posting, even with a web search. Paste the description instead.");
     return job;
   });
@@ -77,12 +81,12 @@ export const generateInterviewQuestions = createServerFn({ method: "POST" })
     roast: i.roast === true,
   }))
   .handler(async ({ data }) => {
+    const { currentUser } = await import("./auth.server");
+    const user = await currentUser();
     const { generateQuestions } = await import("./interview/agents.server");
     let resumeText: string | undefined;
     if (data.type === "resume") {
       try {
-        const { currentUser } = await import("./auth.server");
-        const user = await currentUser();
         if (user) {
           const { neonExecute } = await import("./neon.server");
           const r = await neonExecute(
@@ -97,7 +101,7 @@ export const generateInterviewQuestions = createServerFn({ method: "POST" })
         }
       } catch (e) { console.error("resume fetch for interview failed", e); }
     }
-    return generateQuestions(data.job, data.type, data.length, data.roast, resumeText);
+    return generateQuestions(data.job, data.type, data.length, data.roast, resumeText, user?.id);
   });
 
 // Saves the interview the moment it starts (score 0, empty transcript) so it
@@ -135,12 +139,12 @@ export const gradeInterviewTranscript = createServerFn({ method: "POST" })
     };
   })
   .handler(async ({ data }) => {
+    const { currentUser } = await import("./auth.server");
+    const user = await currentUser();
     const { gradeInterview } = await import("./interview/agents.server");
-    const grade = await gradeInterview(data.transcript, data.job);
+    const grade = await gradeInterview(data.transcript, data.job, user?.id);
     let ratings: import("./mmr.server").RatingChange[] = [];
     try {
-      const { currentUser } = await import("./auth.server");
-      const user = await currentUser();
       const answered = data.transcript.filter((t) => t.speaker === "candidate" && t.phase === "interview").length;
       if (user && answered > 0) {
         const { applySessionRatings, scoredItems } = await import("./mmr.server");
@@ -226,9 +230,9 @@ export const checkCustomSkill = createServerFn({ method: "POST" })
   .inputValidator((i: { phrase: unknown }) => ({ phrase: String(i.phrase ?? "").slice(0, 80) }))
   .handler(async ({ data }) => {
     const { requireUser } = await import("./auth.server");
-    await requireUser();
+    const user = await requireUser();
     const { vetSkill } = await import("./skills.server");
-    return vetSkill(data.phrase);
+    return vetSkill(data.phrase, user.id);
   });
 
 export const saveTrackedSkills = createServerFn({ method: "POST" })
@@ -274,9 +278,9 @@ export const sendInterviewTurn = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }) => {
     const { requireUser } = await import("./auth.server");
-    await requireUser();
+    const user = await requireUser();
     const { continueInterviewConversation } = await import("./interview/agents.server");
-    return continueInterviewConversation(data);
+    return continueInterviewConversation({ ...data, userId: user.id });
   });
 
 export const speakInterviewLine = createServerFn({ method: "POST" })
@@ -287,9 +291,9 @@ export const speakInterviewLine = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }) => {
     const { requireUser } = await import("./auth.server");
-    await requireUser();
+    const user = await requireUser();
     const { synthesize } = await import("./interview/agents.server");
-    return { audio: await synthesize(data.text) };
+    return { audio: await synthesize(data.text, user.id) };
   });
 
 /** Single-use ElevenLabs realtime transcription token (15 min). The API key stays on the server. */
