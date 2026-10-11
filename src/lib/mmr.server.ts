@@ -97,3 +97,22 @@ export async function listRatings(userId: string) {
   );
   return rows.map((r) => ({ skill: String(r["skill_name"]), rating: Number(r["rating"]), answered: Number(r["questions_answered"]), evidence: r["evidence"] ? String(r["evidence"]) : null }));
 }
+
+/** Recent rating rises only (ratings never go down): each logged point compared with the previous one. */
+export async function listRatingChanges(userId: string, limit = 5) {
+  const { rows } = await neonQuery(
+    `select skill_name, prev, rating, at from (
+       select skill_name, lag(rating) over (partition by skill_name order by created_at) as prev,
+              rating, to_json(created_at) as at
+       from public.devup_skill_rating_log where user_id = $1::uuid
+     ) t
+     where prev is not null and rating > prev
+     order by at desc limit ${Math.max(1, Math.min(20, Math.round(limit)))}`,
+    [userId],
+  );
+  return rows.map((r) => {
+    const to = Number(r["rating"]);
+    const from = Number(r["prev"]);
+    return { skill: String(r["skill_name"]), from, to, delta: to - from, at: r["at"] };
+  });
+}
