@@ -230,9 +230,9 @@ export const checkCustomSkill = createServerFn({ method: "POST" })
   .inputValidator((i: { phrase: unknown }) => ({ phrase: String(i.phrase ?? "").slice(0, 80) }))
   .handler(async ({ data }) => {
     const { requireUser } = await import("./auth.server");
-    await requireUser();
+    const user = await requireUser();
     const { vetSkill } = await import("./skills.server");
-    return vetSkill(data.phrase);
+    return vetSkill(data.phrase, user.id);
   });
 
 export const saveTrackedSkills = createServerFn({ method: "POST" })
@@ -278,9 +278,9 @@ export const sendInterviewTurn = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }) => {
     const { requireUser } = await import("./auth.server");
-    await requireUser();
+    const user = await requireUser();
     const { continueInterviewConversation } = await import("./interview/agents.server");
-    return continueInterviewConversation(data);
+    return continueInterviewConversation({ ...data, userId: user.id });
   });
 
 export const speakInterviewLine = createServerFn({ method: "POST" })
