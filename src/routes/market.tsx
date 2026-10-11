@@ -96,6 +96,16 @@ function Market() {
     }).catch(() => { busyId.current = null; });
   };
 
+  const removeMatch = (jobId: string) => {
+    setJobs((js) => js?.filter((j) => j.id !== jobId) ?? null);
+    busyId.current = jobId;
+    removeRadarMatch({ data: { jobId } }).then((res) => {
+      busyId.current = null;
+      if (res && !res.ok) { toast.error(res.error); void load(false); return; }
+      toast.success("Removed from your radar");
+    }).catch(() => { busyId.current = null; });
+  };
+
   const viewRole = (job: RadarJob) => {
     markRadarViewed({ data: { jobId: job.id } }).then((res) => {
       if (res?.ok && res.awarded) {
