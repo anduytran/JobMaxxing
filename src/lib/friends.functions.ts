@@ -11,10 +11,11 @@ export type FriendRow = {
   id: string;
   name: string;
   email: string;
+  avatarUrl: string | null;
   status: "online" | "in_interview" | "offline";
 };
 
-export type FriendRequest = { id: string; name: string; email: string; createdAt: string };
+export type FriendRequest = { id: string; name: string; email: string; avatarUrl: string | null; createdAt: string };
 
 export type IncomingInvite = {
   id: string;
@@ -32,16 +33,16 @@ export const searchUsers = createServerFn({ method: "POST" })
   .inputValidator((i: { query: unknown }) => ({ query: String(i.query ?? "").trim().toLowerCase() }))
   .handler(async ({ data }) => {
     const me = await requireUser();
-    if (data.query.length < 3) return { results: [] as { id: string; name: string; email: string }[] };
+    if (data.query.length < 3) return { results: [] as { id: string; name: string; email: string; avatarUrl: string | null }[] };
     const { rows } = await neonQuery(
-      `select u.id::text as id, u.email, p.name from public.devup_user u
+      `select u.id::text as id, u.email, p.name, p.avatar_url from public.devup_user u
        left join public.devup_profile p on p.id = u.id::text
        where u.id::text <> $1 and (lower(u.email) like $2 or lower(coalesce(p.name, '')) like $2)
-       limit 8`,
+        limit 8`,
       [me.id, `%${data.query}%`],
     );
     return {
-      results: rows.map((r) => ({ id: String(r["id"]), email: String(r["email"]), name: displayName(String(r["email"]), r["name"] as string | null) })),
+      results: rows.map((r) => ({ id: String(r["id"]), email: String(r["email"]), name: displayName(String(r["email"]), r["name"] as string | null), avatarUrl: (r["avatar_url"] as string | null) ?? null })),
     };
   });
 
@@ -102,18 +103,18 @@ export const listFriends = createServerFn({ method: "GET" }).handler(async () =>
        union
        select user_id as other_id from public.devup_friendship where friend_id = $1 and status = 'accepted'
      )
-     select u.id::text as id, u.email, p.name,
+     select u.id::text as id, u.email, p.name, p.avatar_url,
        exists(select 1 from public.devup_peer_session s
               where s.status = 'live' and (s.host_id::text = u.id::text or s.guest_id::text = u.id::text)) as in_interview,
        exists(select 1 from public.devup_session sess
               where sess.user_id = u.id and sess.expires_at > now()) as online
-     from pairs join public.devup_user u on u.id::text = pairs.other_id
+      from pairs join public.devup_user u on u.id::text = pairs.other_id
      left join public.devup_profile p on p.id = u.id::text
      order by u.email`,
     [me.id],
   );
   const { rows: requests } = await neonQuery(
-    `select f.id::text as id, u.email, p.name, f.created_at from public.devup_friendship f
+    `select f.id::text as id, u.email, p.name, p.avatar_url, f.created_at from public.devup_friendship f
      join public.devup_user u on u.id::text = f.user_id
      left join public.devup_profile p on p.id = u.id::text
      where f.friend_id = $1 and f.status = 'pending' order by f.created_at desc`,
@@ -124,12 +125,14 @@ export const listFriends = createServerFn({ method: "GET" }).handler(async () =>
       id: String(r["id"]),
       email: String(r["email"]),
       name: displayName(String(r["email"]), r["name"] as string | null),
+      avatarUrl: (r["avatar_url"] as string | null) ?? null,
       status: r["in_interview"] ? "in_interview" : r["online"] ? "online" : "offline",
     })),
     requests: requests.map((r): FriendRequest => ({
       id: String(r["id"]),
       email: String(r["email"]),
       name: displayName(String(r["email"]), r["name"] as string | null),
+      avatarUrl: (r["avatar_url"] as string | null) ?? null,
       createdAt: String(r["created_at"]),
     })),
   };

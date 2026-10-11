@@ -2,6 +2,7 @@ import { CalendarClock, Check, Loader2, Search, Send, UserPlus, Users, X } from 
 import { Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { AvatarFace } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -9,6 +10,9 @@ import {
   type FriendRow,
 } from "@/lib/friends.functions";
 import { cn } from "@/lib/utils";
+
+const initialsOf = (name: string) =>
+  name.split(/\s+/).map((p) => p[0]).join("").slice(0, 2).toUpperCase() || "?";
 
 const STATUS_DOT: Record<FriendRow["status"], string> = {
   online: "bg-success",
@@ -27,9 +31,9 @@ export function FriendsPanel({ inviteCode, roleTitle, social, onChange }: { invi
   const [scheduling, setScheduling] = useState<string | null>(null);
   const [when, setWhen] = useState("");
   const [friends, setFriends] = useState<FriendRow[]>([]);
-  const [requests, setRequests] = useState<{ id: string; name: string; email: string }[]>([]);
+  const [requests, setRequests] = useState<{ id: string; name: string; email: string; avatarUrl: string | null }[]>([]);
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<{ id: string; name: string; email: string }[]>([]);
+  const [results, setResults] = useState<{ id: string; name: string; email: string; avatarUrl: string | null }[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
   const [invited, setInvited] = useState<Set<string>>(new Set());
 
@@ -84,6 +88,7 @@ export function FriendsPanel({ inviteCode, roleTitle, social, onChange }: { invi
         <ul className="divide-y rounded-lg border">
           {results.map((r) => (
             <li key={r.id} className="flex items-center gap-3 px-3 py-2">
+              <AvatarFace url={r.avatarUrl} initials={initialsOf(r.name)} className="h-8 w-8 text-[10px]" />
               <div className="min-w-0 flex-1">
                 <div className="truncate text-sm font-semibold">{r.name}</div>
                 <div className="truncate text-xs text-muted-foreground">{r.email}</div>
@@ -110,6 +115,7 @@ export function FriendsPanel({ inviteCode, roleTitle, social, onChange }: { invi
           <ul className="space-y-2">
             {requests.map((r) => (
               <li key={r.id} className="flex items-center gap-2 rounded-lg border bg-accent/5 px-3 py-2">
+                <AvatarFace url={r.avatarUrl} initials={initialsOf(r.name)} className="h-8 w-8 text-[10px]" />
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-sm font-semibold">{r.name}</div>
                   <div className="truncate text-xs text-muted-foreground">{r.email}</div>
@@ -134,7 +140,10 @@ export function FriendsPanel({ inviteCode, roleTitle, social, onChange }: { invi
         <ul className="space-y-1.5">
           {friends.map((f) => (
             <li key={f.id} className="flex items-center gap-3 rounded-lg px-2 py-1.5 hover:bg-muted/50">
-              <span className={cn("h-2.5 w-2.5 shrink-0 rounded-full", STATUS_DOT[f.status])} title={STATUS_LABEL[f.status]} />
+              <span className="relative shrink-0">
+                <AvatarFace url={f.avatarUrl} initials={initialsOf(f.name)} className="h-9 w-9 text-[11px]" />
+                <span className={cn("absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full ring-2 ring-background", STATUS_DOT[f.status])} title={STATUS_LABEL[f.status]} />
+              </span>
               <div className="min-w-0 flex-1">
                 <div className="truncate text-sm font-semibold">{f.name}</div>
                 <div className="text-xs text-muted-foreground">{STATUS_LABEL[f.status]}</div>
