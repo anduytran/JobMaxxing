@@ -56,6 +56,7 @@ function Market() {
   const { details, saveDetails, setXp } = useGame();
   const [jobs, setJobs] = useState<RadarJob[] | null>(null);
   const [loading, setLoading] = useState(false);
+  const [appliedPrompt, setAppliedPrompt] = useState<RadarJob | null>(null);
   const [savingPrefs, setSavingPrefs] = useState(false);
   const [prefs, setPrefs] = useState({
     roles: details.jobPrefs.roles ?? "",
@@ -103,6 +104,7 @@ function Market() {
       }
     }).catch(() => {});
     setJobs((js) => js?.map((j) => (j.id === job.id ? { ...j, viewed: true } : j)) ?? null);
+    if (job.status === "new" || job.status === "saved") setAppliedPrompt(job);
   };
 
   const practice = (job: RadarJob) => {
