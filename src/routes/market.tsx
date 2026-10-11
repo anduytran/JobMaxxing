@@ -221,7 +221,7 @@ function Market() {
                   <Button size="sm" onClick={() => practice(j)}>
                     <Mic className="h-4 w-4" /> Practice interview
                   </Button>
-                  <StatusMenu status={j.status} busy={busyId.current === j.id} onPick={(s) => applyStatus(j.id, s)} />
+                    <StatusMenu status={j.status} busy={busyId.current === j.id} onPick={(s) => applyStatus(j.id, s)} onRemove={() => removeMatch(j.id)} />
                 </div>
               </div>
             ))}
