@@ -114,8 +114,8 @@ function AddQuests() {
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <div>
-        <Link to="/quests" className="mb-2 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="h-4 w-4" /> Back to Quest Log
+        <Link to="/" className="mb-2 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+          <ArrowLeft className="h-4 w-4" /> Back to Home
         </Link>
         <h1 className="text-4xl font-bold md:text-5xl">Build your quest pool</h1>
         <p className="text-muted-foreground">Pick the kinds of quests you want. Tap a quest to add or remove it.</p>

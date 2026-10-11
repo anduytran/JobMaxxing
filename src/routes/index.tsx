@@ -260,7 +260,7 @@ function Dashboard() {
               <ul className="divide-y divide-border">
                 {[...quests.filter((q) => q.period === "daily"), ...quests.filter((q) => q.period === "weekly")].sort((a, b) => Number(a.done) - Number(b.done)).slice(0, 5).map((q) => (
                   <li key={q.id}>
-                    <Link to="/quests" title={q.title} className="group flex items-center gap-3 px-5 py-3 hover:bg-muted/50">
+                    <Link to="/quests/add" title={q.title} className="group flex items-center gap-3 px-5 py-3 hover:bg-muted/50">
                       <span className={cn("grid h-7 w-7 shrink-0 place-items-center border", q.done ? "border-success/50 bg-success/15 text-success" : "border-border bg-muted text-muted-foreground")}>{q.done ? <Check className="h-3.5 w-3.5" /> : <Zap className="h-3.5 w-3.5" />}</span>
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-medium">{q.title}</p>
