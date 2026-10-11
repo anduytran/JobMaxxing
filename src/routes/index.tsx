@@ -242,7 +242,12 @@ function Dashboard() {
                    className="absolute left-1/2 top-1/2 h-[150%] w-[150%] max-w-none -translate-x-1/2 -translate-y-1/2 object-contain"
                 />
               )}
-              <div className="relative h-full w-full"><img key={featArt} src={featArt} alt={featured ? `Max ready for: ${featured.title}` : "Max with a microphone, ready to interview you"} width={816} height={816} decoding="sync" draggable={false} className="h-full w-full object-contain" /></div>
+              <div className="relative h-full w-full">
+                <img key={featArt} src={featArt} alt={featured ? `Max ready for: ${featured.title}` : "Max with a microphone, ready to interview you"} width={816} height={816} decoding="sync" draggable={false} className="h-full w-full object-contain" />
+                {WEARABLES.filter((w) => wornWearables.includes(w.id)).map((w) => (
+                  <img key={w.id} src={WEARABLE_ART[w.id]} alt="" draggable={false} className="pointer-events-none absolute" style={{ left: `${w.left}%`, top: `${w.top}%`, width: `${w.width}%` }} />
+                ))}
+              </div>
             </div>
           </motion.div>
           <aside aria-label="Quick overview" className="absolute right-20 top-1/2 z-10 hidden w-1/2 -translate-y-1/2 justify-end">

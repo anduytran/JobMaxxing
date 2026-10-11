@@ -6,7 +6,8 @@ import {
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { useGame, levelTitle } from "@/lib/game";
-import { Max, type MaxPose } from "@/components/Max";
+import { type MaxPose } from "@/components/Max";
+import { WornMax } from "@/components/Wearables";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { QuestMenu } from "@/components/QuestMenu";
@@ -27,7 +28,7 @@ const RIGHT: Item[] = [
 const ITEMS: Item[] = [LOCKIN, ...LEFT, ...RIGHT];
 
 export function Mascot({ className }: { className?: string }) {
-  return <Max className={className} />;
+  return <WornMax className={className} />;
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -186,7 +187,7 @@ export function PageHeader({ eyebrow, title, sub, pose }: { eyebrow: string; tit
       <h1 className="mt-2 text-4xl font-bold md:text-5xl">{title}</h1>
       <p className="mt-2 text-lg text-muted-foreground">{sub}</p>
       </div>
-      {pose && <Max pose={pose} className="hidden h-24 w-24 shrink-0 sm:block" />}
+      {pose && <WornMax pose={pose} className="hidden h-24 w-24 shrink-0 sm:block" />}
     </div>
   );
 }
