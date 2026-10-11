@@ -124,7 +124,7 @@ function CapsuleMachine({
   return (
     <div className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-5 shadow-sm">
       <div>
-        <h3 className="font-display text-lg font-semibold">Capsule machine</h3>
+        <h3 className="font-display text-lg font-semibold">Mimic chest</h3>
         <p className="mt-1 text-sm text-muted-foreground">
           Every roll wins Max a wearable you don't own yet — no duplicates. Rolls can't be undone.
         </p>
@@ -209,7 +209,7 @@ function CapsuleMachine({
         </Button>
       )}
       <p className="text-center text-xs text-muted-foreground">
-        {soldOut ? "Every wearable collected. Nice fit, Max." : `${remaining.length} of ${WEARABLES.length} wearables still in the machine`}
+        {soldOut ? "Every wearable collected. Nice fit, Max." : `${remaining.length} of ${WEARABLES.length} wearables still in the chest`}
       </p>
     </div>
   );
@@ -255,7 +255,7 @@ function Wardrobe({ state, onChanged }: { state: StoreState; onChanged: () => vo
         </div>
         {owned.length === 0 ? (
           <p className="self-center text-sm text-muted-foreground">
-            Nothing here yet — roll the capsule machine to win Max's first wearable.
+            Nothing here yet — roll the mimic chest to win Max's first wearable.
           </p>
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -409,7 +409,7 @@ function StorePage() {
       <PageHeader
         eyebrow="Spend your points"
         title="Store"
-        sub="Every XP you earn is also a point. Roll the capsule machine for Max, or trade points for boosters, titles, themes and question packs."
+        sub="Every XP you earn is also a point. Roll the mimic chest for Max, or trade points for boosters, titles, themes and question packs."
         pose="dap"
       />
 
