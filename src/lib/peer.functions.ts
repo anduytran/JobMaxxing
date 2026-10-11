@@ -283,6 +283,27 @@ export const peerVideoConsent = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// Ready handshake: each side opts in once the call is connected. The interview
+// clock (started_at) only starts when both flags are true.
+export const peerReady = createServerFn({ method: "POST" })
+  .inputValidator((i: { id: unknown; on: unknown }) => ({ id: String(i.id ?? ""), on: !!i.on }))
+  .handler(async ({ data }) => {
+    const user = await me();
+    const s = await loadForUser(data.id, user.id);
+    if (s.status !== "live") throw new Error("The session is not live.");
+    const { neonExecute } = await import("./neon.server");
+    const ready = { ...(s.signal.ready ?? {}), [s.meIsHost ? "host" : "guest"]: data.on };
+    const both = !!(ready.host && ready.guest);
+    await neonExecute(
+      `update public.devup_peer_session
+       set signal = jsonb_set(signal, '{ready}', $2::jsonb),
+           started_at = case when $3 and started_at is null then now() else started_at end
+       where id = $1::uuid`,
+      [s.id, JSON.stringify(ready), both],
+    );
+    return { ok: true, both };
+  });
+
 export const peerEndSession = createServerFn({ method: "POST" })
   .inputValidator((i: { id: unknown }) => ({ id: String(i.id ?? "") }))
   .handler(async ({ data }) => {
