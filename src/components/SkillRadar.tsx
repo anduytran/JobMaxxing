@@ -1,12 +1,18 @@
 import { useEffect, useState } from "react";
 import { PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart, ResponsiveContainer } from "recharts";
 import { Check, Pencil, Plus, RefreshCw } from "lucide-react";
-import { getSkillRatings, getTrackedSkills, refreshSkillRatings, saveTrackedSkills } from "@/lib/interview.functions";
+import { getSkillChanges, getSkillRatings, getTrackedSkills, refreshSkillRatings, saveTrackedSkills } from "@/lib/interview.functions";
 import { Button } from "@/components/ui/button";
 import { RATING_MIN, RATING_MAX, DEFAULT_RATING, SKILL_CATALOG, MAX_TRACKED } from "@/lib/mmr.shared";
 import { cn } from "@/lib/utils";
 
 type Rating = { skill: string; rating: number; answered: number; evidence?: string | null };
+type Change = { skill: string; from: number; to: number; delta: number; at: string };
+
+const formatDate = (iso: string) => {
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+};
 
 /** Spider-web chart of the skills the user chose to track (up to MAX_TRACKED).
  *  Tracked skills are what the Skill Expert grades; ratings never go down. */
@@ -16,23 +22,32 @@ export function SkillRadar() {
   const [draft, setDraft] = useState<string[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [changes, setChanges] = useState<Change[]>([]);
 
   useEffect(() => {
-    Promise.all([getSkillRatings(), getTrackedSkills()])
-      .then(([r, t]) => { setRatings(r as Rating[]); setTracked(t); })
+    Promise.all([getSkillRatings(), getTrackedSkills(), getSkillChanges()])
+      .then(([r, t, c]) => { setRatings(r as Rating[]); setTracked(t); setChanges(c as Change[]); })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
   const update = () => {
     setBusy(true);
-    refreshSkillRatings().then((r) => setRatings(r as Rating[])).catch(() => {}).finally(() => setBusy(false));
+    Promise.all([refreshSkillRatings().then((r) => r as Rating[]), getSkillChanges().then((c) => c as Change[])])
+      .then(([r, c]) => { setRatings(r); setChanges(c); })
+      .catch(() => {})
+      .finally(() => setBusy(false));
   };
   const save = () => {
     if (!draft) return;
     setBusy(true);
-    saveTrackedSkills({ data: { skills: draft } })
-      .then((r) => { setTracked(r.skills); setRatings(r.ratings as Rating[]); setDraft(null); })
+    Promise.all([saveTrackedSkills({ data: { skills: draft } }), getSkillChanges()])
+      .then(([r, c]) => {
+        setTracked(r.skills);
+        setRatings(r.ratings as Rating[]);
+        setChanges(c as Change[]);
+        setDraft(null);
+      })
       .catch(() => {})
       .finally(() => setBusy(false));
   };
@@ -132,14 +147,21 @@ export function SkillRadar() {
       ) : (
         <p className="my-6 text-sm text-muted-foreground">Track at least 3 skills to draw the web.</p>
       )}
-      <div className="flex flex-wrap gap-2">
-        {rows.map((r) => (
-          <span key={r.skill} className="rounded-full border bg-card px-3 py-1 text-xs text-muted-foreground">
-            {r.skill} <b className="text-foreground">{"unrated" in r ? "—" : r.rating}</b>
-            {r.evidence ? <span className="ml-1 opacity-80">· {r.evidence}</span> : "unrated" in r ? <> · not rated yet</> : null}
-          </span>
-        ))}
-      </div>
+      {changes.length > 0 && (
+        <div className="mt-4 border-t pt-3">
+          <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Recent changes</div>
+          <ul className="mt-2 space-y-1">
+            {changes.map((c, i) => (
+              <li key={`${c.skill}-${i}`} className="flex items-baseline gap-2 text-sm">
+                <span className="font-medium text-foreground">{c.skill}</span>
+                <span className="font-semibold text-primary">+{c.delta}</span>
+                <span className="text-muted-foreground">→ {c.to}</span>
+                <span className="ml-auto text-xs text-muted-foreground">{formatDate(c.at)}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }

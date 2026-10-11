@@ -152,6 +152,15 @@ export const getSkillRatings = createServerFn({ method: "GET" }).handler(async (
   return listRatings(user.id);
 });
 
+/** Recent skill-rating rises for the skill web (ratings never go down, so only rises exist). */
+export const getSkillChanges = createServerFn({ method: "GET" }).handler(async () => {
+  const { currentUser } = await import("./auth.server");
+  const user = await currentUser();
+  if (!user) return [];
+  const { listRatingChanges } = await import("./mmr.server");
+  return listRatingChanges(user.id);
+});
+
 /** Ask the Skill Expert to re-rate now (at most once every 2 minutes). Ratings never go down. */
 export const refreshSkillRatings = createServerFn({ method: "POST" }).handler(async () => {
   const { requireUser } = await import("./auth.server");
