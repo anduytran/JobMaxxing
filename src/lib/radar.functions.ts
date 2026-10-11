@@ -27,18 +27,22 @@ export type RadarJob = {
   viewed: boolean;
 };
 
-type AdzunaListing = {
-  id: number;
+/** Source-agnostic listing. id is prefixed ("adz_", "rem_", "muse_", "joo_") so rows
+ *  from different job boards never collide in devup_job_radar. */
+type RawListing = {
+  id: string;
   title: string;
-  company?: { display_name?: string };
-  location?: { display_name?: string };
+  company: string;
+  location: string;
   description: string;
-  redirect_url: string;
-  salary_min?: number;
-  salary_max?: number;
-  created: string;
-  contract_time?: string;
+  url: string;
+  salaryMin: number | null;
+  salaryMax: number | null;
+  postedAt: string;
+  contractTime: string | null;
 };
+
+const stripHtml = (s: string) => s.replace(/<[^>]+>/g, " ").replace(/&[a-z#0-9]+;/gi, " ").replace(/\s+/g, " ").trim();
 
 // ---------------- skill extraction & normalization ----------------
 
