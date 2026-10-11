@@ -3,7 +3,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { Check, ChevronLeft, ChevronRight, Clock, Code2, FileText, Mic, Radar, Sparkles, Users, Zap } from "lucide-react";
 import { useGame } from "@/lib/game";
 import { Button } from "@/components/ui/button";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import meadowDesktop from "@/assets/quest-scenes/meadow-desktop.png.asset.json";
 import meadowMobile from "@/assets/quest-scenes/meadow-mobile.png.asset.json";
 import stageDesktop from "@/assets/quest-scenes/stage-desktop.png.asset.json";
@@ -169,6 +169,30 @@ function Dashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [featured?.id, dir, reducedMotion]);
 
+  // The Start button is stretched to exactly as wide as the longest line of the
+  // quest title, so the headline and the button read as one block.
+  const [titleW, setTitleW] = useState(0);
+  useLayoutEffect(() => {
+    const head = headRef.current;
+    if (!head) return;
+    const measure = () => {
+      const range = document.createRange();
+      let w = 0;
+      head.querySelectorAll("span").forEach((line) => {
+        range.selectNodeContents(line);
+        w = Math.max(w, range.getBoundingClientRect().width);
+      });
+      const next = Math.round(w);
+      setTitleW((prev) => (prev === next ? prev : next));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(head);
+    document.fonts?.ready.then(measure).catch(() => {});
+    return () => ro.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [featured?.id, featLines[0], featLines[1]]);
+
   return (
     <div>
       {/* Phase 1 — the featured quest fills the whole screen, edge to edge, under the top bar. */}
@@ -186,14 +210,14 @@ function Dashboard() {
               {featured ? (
                 <h2 ref={headRef} title={featured.title} className="min-h-[2.2em] break-words text-foreground text-3xl font-bold leading-[1.1] sm:text-4xl lg:text-5xl"><span className="block">{featLines[0]}</span><span className="block">{featLines[1]}</span></h2>
               ) : (
-                <h2 className="min-h-[2.2em] break-words text-foreground text-3xl font-bold leading-[1.1] sm:text-4xl lg:text-5xl"><span className="block">Practice your</span><span className="block">mock interview</span></h2>
+                <h2 ref={headRef} className="min-h-[2.2em] break-words text-foreground text-3xl font-bold leading-[1.1] sm:text-4xl lg:text-5xl"><span className="block">Practice your</span><span className="block">mock interview</span></h2>
               )}
               <p ref={subRef} className="mt-5 max-w-md text-lg text-muted-foreground">{scene.blurb}</p>
               <p className="mt-6 flex items-center gap-2 text-sm font-semibold text-foreground"><Zap className="h-4 w-4 text-primary" />{reward}</p>
               {destination === "/interview" ? (
-                <Button className="mt-7 h-14 min-w-48 rounded-none px-9 text-lg font-bold uppercase tracking-[0.12em]" onClick={openInterviewMode}>Start</Button>
+                <Button style={titleW ? { width: titleW } : undefined} className={cn("mt-7 h-14 rounded-none px-3 text-lg font-bold uppercase tracking-[0.12em]", titleW ? "min-w-0" : "min-w-48")} onClick={openInterviewMode}>Start</Button>
               ) : (
-                <Button asChild className="mt-7 h-14 min-w-48 rounded-none px-9 text-lg font-bold uppercase tracking-[0.12em]">
+                <Button asChild style={titleW ? { width: titleW } : undefined} className={cn("mt-7 h-14 rounded-none px-3 text-lg font-bold uppercase tracking-[0.12em]", titleW ? "min-w-0" : "min-w-48")}>
                   <Link to={destination} search={{}}>Start</Link>
                 </Button>
               )}
