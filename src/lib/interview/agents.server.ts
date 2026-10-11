@@ -5,6 +5,7 @@ import type {
   AgentStatus, InterviewGrade, InterviewLength, InterviewQuestion, InterviewType, ParsedJob, TranscriptTurn,
 } from "./types";
 import { LENGTHS } from "./types";
+import { QUESTION_BANK } from "./question-bank";
 import {
   GRADES, gradeFromScore, SUGGESTION_BATCH, XP_RULES, type AtsCheck, type Grade, type ResumeFields, type ResumeLine, type ResumeReview,
   type ResumeSection, type ResumeSuggestion, type SuggestionType,
@@ -99,39 +100,61 @@ export async function parseJob(jd: string): Promise<ParsedJob> {
 }
 
 // ---------- Question generation ----------
-const TECH = [
-  (s: string) => `Walk me through a project where you used ${s}. What trade-offs did you make?`,
-  (s: string) => `How would you debug a production issue in a ${s} system you didn't write?`,
-  (s: string) => `What's a common pitfall with ${s}, and how do you avoid it?`,
-  (s: string) => `How would you design a scalable feature for this role using ${s}?`,
-];
-const BEHAV = [
-  "Tell me about a time you disagreed with a teammate. How did you resolve it?",
-  "Describe a project that failed or slipped. What did you learn?",
-  "Tell me about a time you had to learn something quickly to deliver.",
-  "Describe a moment you took ownership beyond your assigned work.",
-  "How do you prioritize when everything feels urgent?",
+// Fallback draws from the built-in question bank (the same bank the Raia agent
+// retrieves from its knowledge base), matching stacks to the job's skills.
+
+/** App skill names → question-bank stack tags. */
+const STACK_MAP: [RegExp, string[]][] = [
+  [/python/i, ["python"]],
+  [/^(sql|postgresql|postgres)$/i, ["sql", "postgres"]],
+  [/rest/i, ["rest_api"]],
+  [/^(javascript|typescript)$/i, ["javascript"]],
+  [/react/i, ["react"]],
+  [/^git$/i, ["git"]],
+  [/machine learning|pytorch|tensorflow|sklearn/i, ["ml", "pytorch"]],
+  [/statistics|data analysis|a\/b/i, ["statistics"]],
+  [/^c(\+\+|#)?$/i, ["c"]],
 ];
 
+const bankFor = (kind: "technical" | "behavioral", stacks: string[]) => {
+  const tagged = stacks.length
+    ? QUESTION_BANK.filter((q) => q.kind === kind && q.stack.some((s) => stacks.includes(s)))
+    : [];
+  if (tagged.length) return tagged;
+  // Untagged behavioral pool excludes openers and closers — those are handled separately.
+  return QUESTION_BANK.filter(
+    (q) => q.kind === kind && q.stack.length === 0 && q.category !== "Opener" && q.category !== "Closer",
+  );
+};
+
 function fallbackQuestions(job: ParsedJob, type: InterviewType, count: number, roast: boolean): InterviewQuestion[] {
-  const skills = job.skills.length ? job.skills : ["your main stack"];
+  const stacks = [...new Set((job.skills ?? []).flatMap((s) => STACK_MAP.filter(([re]) => re.test(s)).map(([, tags]) => tags).flat()))];
+  const openers = QUESTION_BANK.filter((q) => q.category === "Opener");
+  const behav = bankFor("behavioral", stacks);
+  const tech = bankFor("technical", stacks);
   const out: InterviewQuestion[] = [];
   for (let i = 0; out.length < count; i++) {
-    const tech = type === "technical" || (type === "mixed" && i % 3 === 2);
-    const skill = skills[i % skills.length] ?? null;
-    let text = tech ? TECH[i % TECH.length]!(skill ?? "your stack") : BEHAV[i % BEHAV.length]!;
+    const wantTech = type === "technical" || (type === "mixed" && i % 3 === 2);
+    const pick = wantTech ? tech[i % tech.length]! : behav[i % behav.length]!;
+    const skill = wantTech ? (job.skills.find((s) => STACK_MAP.some(([re]) => re.test(s))) ?? null) : null;
+    let text = pick.text;
     if (roast) text = `${text} And skip the buzzwords.`;
-    out.push({ id: `q${i + 1}`, kind: tech ? "technical" : "behavioral", text, skill: tech ? skill : null });
+    out.push({ id: `q${i + 1}`, kind: pick.kind, text, skill });
   }
-  const opener = job.title ? `Thanks for joining. Why are you interested in the ${job.title} role?` : "Thanks for joining. Tell me briefly about yourself.";
-  const first: InterviewQuestion = { id: "q0", kind: "behavioral", text: opener, skill: null };
+  const opener = openers[0]!;
+  const first: InterviewQuestion = { id: "q0", kind: "behavioral", text: opener.text, skill: null };
   return [first, ...out].slice(0, count);
 }
+
+/** The bank's planned follow-up for a question, so the live interviewer knows what to probe. */
+const probeFor = (text: string): string | null =>
+  QUESTION_BANK.find((q) => q.text === text)?.probe ?? null;
 
 export async function generateQuestions(job: ParsedJob, type: InterviewType, length: InterviewLength, roast: boolean) {
   const count = LENGTHS[length].questions;
   const ai = await askRaia<{ questions: InterviewQuestion[] }>(ENV.questions, JSON.stringify(job),
-    `You are the recruiter for this role. Generate ${count} ${type} interview questions for this job. ${typeFocus(type)} Tone: ${roast ? "tough, blunt" : "friendly"}. ${GUARDRAILS} ` +
+    `You are the recruiter for this role. Generate ${count} ${type} interview questions for this job. ${typeFocus(type)} Tone: ${roast ? "tough, blunt" : "friendly"}. ` +
+    `Draw your questions from your question bank knowledge base where records fit the role's skills and track; use each record's Probe as the follow-up when an answer is thin. ${GUARDRAILS} ` +
     `Reply JSON {questions:[{id,kind:"technical"|"behavioral",text,skill}]}.`);
   return ai?.questions?.length ? ai.questions.slice(0, count) : fallbackQuestions(job, type, count, roast);
 }
@@ -248,7 +271,7 @@ export async function startInterviewConversation(opts: {
     const context =
       `${TURN_RULES}\nTone: ${opts.roast ? "tough and blunt" : "friendly and professional"}. Interview type: ${opts.type}. ${typeFocus(opts.type)} ` +
       `Budget: about ${LENGTHS[opts.length].questions} questions in ~${Math.round(LENGTHS[opts.length].seconds / 60)} minutes.\n` +
-      `Job: ${JSON.stringify(opts.job)}\nQuestion plan (adapt follow-ups to the answers): ${JSON.stringify(opts.plan.map((q) => q.text))}`;
+      `Job: ${JSON.stringify(opts.job)}\nQuestion plan (adapt follow-ups to the answers; each entry's probe is the follow-up to use when the answer is thin): ${JSON.stringify(opts.plan.map((q) => ({ text: q.text, probe: probeFor(q.text) })))}`;
     const conv = await raiaPost<{ id: string }>(secret, "/conversations", {
       conversationUserId: user.id, title: `Mock interview: ${opts.job.title ?? "role"}`.slice(0, 255), context: context.slice(0, 250000),
     });
