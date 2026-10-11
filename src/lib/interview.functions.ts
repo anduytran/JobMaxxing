@@ -98,6 +98,28 @@ export const refreshSkillRatings = createServerFn({ method: "POST" }).handler(as
   return listRatings(user.id);
 });
 
+/** Tracked skills on the skill web; these are what the Skill Expert grades. */
+export const getTrackedSkills = createServerFn({ method: "GET" }).handler(async () => {
+  const { currentUser } = await import("./auth.server");
+  const user = await currentUser();
+  const { DEFAULT_TRACKED } = await import("./mmr.shared");
+  if (!user) return DEFAULT_TRACKED;
+  const { getTracked } = await import("./skills.server");
+  return getTracked(user.id);
+});
+
+export const saveTrackedSkills = createServerFn({ method: "POST" })
+  .inputValidator((i: { skills: unknown }) => ({ skills: Array.isArray(i.skills) ? i.skills.map(String) : [] }))
+  .handler(async ({ data }) => {
+    const { requireUser } = await import("./auth.server");
+    const user = await requireUser();
+    const { setTracked, refreshSkills } = await import("./skills.server");
+    const skills = await setTracked(user.id, data.skills);
+    await refreshSkills(user.id).catch((e) => console.error("skill refresh failed", e));
+    const { listRatings } = await import("./mmr.server");
+    return { skills, ratings: await listRatings(user.id) };
+  });
+
 export const startLiveInterview = createServerFn({ method: "POST" })
   .inputValidator((i: { job: ParsedJob; type: unknown; length: unknown; roast: unknown; plan: InterviewQuestion[] }) => ({
     job: i.job,

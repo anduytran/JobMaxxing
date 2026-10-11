@@ -2,7 +2,7 @@
 // activity (resume, mock + peer interviews on both sides, Job Radar).
 // Ratings are monotonic: a refresh can only raise or keep a rating, never lower it.
 import { neonExecute, neonQuery } from "./neon.server";
-import { RATING_MIN, RATING_MAX, DEFAULT_RATING } from "./mmr.shared";
+import { RATING_MIN, RATING_MAX, DEFAULT_RATING, SKILL_CATALOG, MAX_TRACKED, DEFAULT_TRACKED } from "./mmr.shared";
 
 const RAIA = "https://api.raia2.com/external";
 const MAX_RISE = 150; // per refresh, so one great session can't max a skill
@@ -13,6 +13,20 @@ type Proposed = { skill: string; rating: number; evidence: string };
 
 const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n));
 const keyOf = (s: string) => s.trim().toLowerCase();
+
+/** The user's tracked skills (catalog names only, max MAX_TRACKED). */
+export async function getTracked(userId: string): Promise<string[]> {
+  const { rows } = await neonQuery(`select skills from public.devup_tracked_skill where user_id = $1`, [userId]);
+  const list = rows[0] ? (rows[0]["skills"] as string[]) : DEFAULT_TRACKED;
+  return list.filter((s) => (SKILL_CATALOG as readonly string[]).includes(s)).slice(0, MAX_TRACKED);
+}
+
+export async function setTracked(userId: string, skills: string[]): Promise<string[]> {
+  const clean = [...new Set(skills)].filter((s) => (SKILL_CATALOG as readonly string[]).includes(s)).slice(0, MAX_TRACKED);
+  await neonExecute([{ query: `insert into public.devup_tracked_skill (user_id, skills, updated_at) values ($1, $2, now())
+    on conflict (user_id) do update set skills = excluded.skills, updated_at = now()`, params: [userId, clean] }]);
+  return clean;
+}
 
 async function gatherEvidence(userId: string) {
   const [profile, resume, peers, radar] = await Promise.all([
@@ -94,14 +108,22 @@ export async function refreshSkills(userId: string, latest?: unknown): Promise<v
   const hasEvidence = !!(evidence.resume || evidence.peerInterviewsAsCandidate.length || evidence.peerInterviewsAsInterviewer.length || latest || current.length || evidence.profile);
   if (!hasEvidence) return;
 
-  const proposed = await askSkillExpert({ current, evidence: { ...evidence, latest: latest ?? null } });
+  const tracked = await getTracked(userId);
+  if (!tracked.length) return;
+  const proposed = await askSkillExpert({
+    instructions: `Rate ONLY these tracked skills, using exactly these names: ${tracked.join(", ")}. Return {"skills":[{"skill","rating","evidence"}]} with one entry per tracked skill.`,
+    trackedSkills: tracked,
+    current: current.filter((c) => tracked.some((t) => keyOf(t) === keyOf(c.skill))),
+    evidence: { ...evidence, latest: latest ?? null },
+  });
+  const trackedByKey = new Map(tracked.map((t) => [keyOf(t), t]));
   const byKey = new Map(current.map((c) => [keyOf(c.skill), c]));
   const writes: { query: string; params: unknown[] }[] = [];
   const seen = new Set<string>();
   for (const p of (proposed ?? []).slice(0, MAX_SKILLS)) {
-    const name = String(p.skill ?? "").trim().slice(0, 100);
-    const k = keyOf(name);
-    if (!name || seen.has(k)) continue;
+    const k = keyOf(String(p.skill ?? ""));
+    const name = trackedByKey.get(k);
+    if (!name || seen.has(k)) continue; // only tracked skills are graded
     seen.add(k);
     const old = byKey.get(k);
     const base = old?.rating ?? DEFAULT_RATING;
