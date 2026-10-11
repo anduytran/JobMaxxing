@@ -712,7 +712,9 @@ const CHECK_TASK =
   "Only count a fix when the resume text shows it; placeholders like [X%] left unfilled do not count. " +
   'QUEST CHECK: OPEN QUESTS lists the candidate\'s unfinished resume quests. Return "questsDone": [ids of OPEN QUESTS this resume upload genuinely completes] at the top level (empty array if none). ' +
   "Only count a quest when this resume version clearly satisfies it. " +
-  'QUEST IDEAS: also return "questsNew": up to 3 NEW resume quests, each {"title": 4-8 word goal, "description": one sentence}, targeting this resume\'s biggest remaining gaps. ' +
+  'QUEST IDEAS: also return "questsNew": up to 3 NEW resume quests, each {"title": 4-8 word goal, "description": one sentence, "kind": "in-app" or "external"}, targeting this resume\'s biggest remaining gaps. ' +
+  'Prefer quests the candidate can complete inside the app and prove with a resume upload (kind "in-app": add metrics, rewrite bullets, tailor a section). ' +
+  'Use kind "external" only for goals that happen outside the app (portfolio work, certifications, networking). ' +
   "Do not repeat OPEN QUESTS or anything this version already achieves; return an empty array when the resume is already strong. ";
 
 async function resumeConversationId(userId: string, name: string, secret: string): Promise<string | null> {
