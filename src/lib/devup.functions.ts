@@ -32,6 +32,8 @@ export type GameState = {
   xp: number;
   roast: boolean;
   reducedMotion: boolean;
+  activeTitle: string | null;
+  activeTheme: string;
   quests: Quest[];
 };
 
@@ -103,7 +105,7 @@ export const loadGame = createServerFn({ method: "GET" }).handler(
         },
         {
           query:
-            "select name, title, xp, roast, reduced_motion, skills, student, job_prefs, resume " +
+            "select name, title, xp, roast, reduced_motion, skills, student, job_prefs, resume, active_title, active_theme " +
             "from public.devup_profile where id = $1 limit 1",
           params: [PROFILE_ID],
         },
