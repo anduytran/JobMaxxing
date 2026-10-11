@@ -520,6 +520,25 @@ export const setRadarStatus = createServerFn({ method: "POST" })
     }
   });
 
+/** One row: remove a role from the radar entirely, whatever its status. */
+export const removeRadarMatch = createServerFn({ method: "POST" })
+  .inputValidator((i: { jobId: unknown }) => {
+    const jobId = clean(i.jobId, 40);
+    if (!jobId || !/^[a-z0-9_-]{3,48}$/i.test(jobId)) throw new Error("Invalid role.");
+    return { jobId };
+  })
+  .handler(async ({ data }): Promise<SaveResult> => {
+    try {
+      const uid = (await requireUser()).id;
+      await neonExecute("delete from public.devup_job_radar where user_id = $1 and job_id = $2", [uid, data.jobId]);
+      return { ok: true };
+    } catch (err) {
+      console.error("removeRadarMatch failed", err);
+      const { neonUserError } = await import("./neon.server");
+      return { ok: false, error: neonUserError(err).message };
+    }
+  });
+
 /** Marks a role reviewed. Every 5 reviewed roles pays +10 XP. */
 export const markRadarViewed = createServerFn({ method: "POST" })
   .inputValidator((i: { jobId: unknown }) => {
