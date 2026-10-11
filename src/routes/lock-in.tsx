@@ -64,11 +64,10 @@ function LockIn() {
       <div className="desk-scene">
         <div className="desk-surface">
           {/* scattered loose papers */}
-          <span aria-hidden className="desk-paper left-[4%] top-[12%] h-40 w-32 -rotate-6" />
-          <span aria-hidden className="desk-paper left-[16%] top-[46%] h-32 w-24 rotate-3" />
-          <span aria-hidden className="desk-paper right-[6%] top-[9%] h-44 w-36 rotate-6" />
-          <span aria-hidden className="desk-paper right-[20%] top-[52%] h-28 w-24 -rotate-3" />
-          <span aria-hidden className="desk-paper left-[42%] top-[6%] h-36 w-28 rotate-2" />
+          <DeskPaper className="left-[1.5%] top-[10%] h-40 w-32 -rotate-6" seed={1} />
+          <DeskPaper className="left-[3%] top-[48%] h-32 w-28 rotate-3" seed={2} />
+          <DeskPaper className="right-[1.5%] top-[8%] h-44 w-36 rotate-6" seed={3} />
+          <DeskPaper className="right-[3%] top-[52%] h-32 w-28 -rotate-3" seed={4} />
 
           {/* Heading on the left, Max's note pinned to the desk on the right. */}
           <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-wrap items-start justify-between gap-6 px-4 pt-10 md:px-8">
@@ -92,5 +91,25 @@ function LockIn() {
       </div>
       {interviewModeDialog}
     </div>
+  );
+}
+
+/** Loose paper with handwriting-like scribbles; lives only in the desk's side gutters so it never sits under UI. */
+function DeskPaper({ className, seed }: { className: string; seed: number }) {
+  let x = seed * 9301 + 49297;
+  const rnd = () => ((x = (x * 9301 + 49297) % 233280) / 233280);
+  const lines = Array.from({ length: 7 }, (_, i) => {
+    const y = 14 + i * 11;
+    const end = 60 + rnd() * 30;
+    let d = `M8 ${y}`;
+    for (let px = 8; px < end; px += 4) d += ` q2 ${(rnd() * 6 - 3).toFixed(1)} 4 0`;
+    return <path key={i} d={d} />;
+  });
+  return (
+    <span aria-hidden className={`desk-paper hidden 2xl:block ${className}`}>
+      <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="h-full w-full" fill="none" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" style={{ color: "oklch(0.35 0.03 260 / 0.55)" }}>
+        {lines}
+      </svg>
+    </span>
   );
 }
