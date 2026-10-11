@@ -442,9 +442,10 @@ export async function continueInterviewConversation(opts: {
 }
 
 // ---------- ElevenLabs voice ----------
-const VOICE_ID = "JBFqnCBsd6RMkjVDRZzb"; // George
 
-export async function synthesize(text: string, userId?: string): Promise<string | null> {
+export async function synthesize(text: string, userId?: string, voiceId?: string): Promise<string | null> {
+  const { DEFAULT_VOICE_ID, VOICE_IDS } = await import("../voices");
+  const VOICE_ID = voiceId && VOICE_IDS.includes(voiceId) ? voiceId : DEFAULT_VOICE_ID;
   const apiKey = key(ENV.voice);
   if (!apiKey) return null;
   await recordTokenUsage(userId, "voice", estimateTokens(text));

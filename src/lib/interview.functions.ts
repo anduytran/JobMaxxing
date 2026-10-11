@@ -308,7 +308,9 @@ export const speakInterviewLine = createServerFn({ method: "POST" })
     const { requireUser } = await import("./auth.server");
     const user = await requireUser();
     const { synthesize } = await import("./interview/agents.server");
-    return { audio: await synthesize(data.text, user.id) };
+    const { neonExecute } = await import("./neon.server");
+    const { rows } = await neonExecute("select interview_voice from public.devup_profile where id = $1", [user.id]).catch(() => ({ rows: [] as any[] }));
+    return { audio: await synthesize(data.text, user.id, rows[0]?.interview_voice ? String(rows[0].interview_voice) : undefined) };
   });
 
 /** Single-use ElevenLabs realtime transcription token (15 min). The API key stays on the server. */
