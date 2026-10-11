@@ -26,9 +26,9 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/interview")({
   head: () => ({
     meta: [
-      { title: "AI Mock Interview — JobMaxxing" },
+      { title: "Set Up Your Interview — JobMaxxing" },
       { name: "description", content: "Paste a real job post and run a timed AI mock interview, then get graded feedback and XP." },
-      { property: "og:title", content: "AI Mock Interview — JobMaxxing" },
+      { property: "og:title", content: "Set Up Your Interview — JobMaxxing" },
       { property: "og:description", content: "Job-specific AI mock interviews with graded feedback and XP rewards." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -254,8 +254,8 @@ function Interview() {
       {!immersive && <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">Build your next chapter</p>
-          <h1 className="mt-2 text-4xl font-bold md:text-5xl">AI Mock Interview</h1>
-          <p className="mt-2 text-lg text-muted-foreground">Turn your potential into progress, one step at a time.</p>
+          <h1 className="mt-2 text-4xl font-bold md:text-5xl">Set Up Your Interview</h1>
+          <p className="mt-2 text-lg text-muted-foreground">Paste description, answer questions, and improve your confidence</p>
           {stage !== "intro" && <Stepper stage={stage} />}
         </div>
       </div>}
