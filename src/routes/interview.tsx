@@ -47,7 +47,7 @@ type Stage = "intro" | "setup" | "review" | "options" | "live" | "your_questions
 function Interview() {
   const agents = Route.useLoaderData() as AgentStatus;
   const search = Route.useSearch();
-  const { completeQuest, gainXp, details } = useGame();
+  const { completeQuest, gainXp, details, captions: captionsPref } = useGame();
   const [stage, setStage] = useState<Stage>("intro");
   const [jd, setJd] = useState("");
   const radarJobId = useRef<string | null>(null);
@@ -74,7 +74,7 @@ function Interview() {
   const [playback, setPlayback] = useState<VoicePlaybackState>("ready");
   const [typing, setTyping] = useState(false);
   const [liveCaption, setLiveCaption] = useState("");
-  const [captionsOn, setCaptionsOn] = useState(true);
+  const [captionsOn, setCaptionsOn] = useState(captionsPref);
   const captureGeneration = useRef(0);
   const jobTerms = useRef<string[]>([]);
   jobTerms.current = job ? [...(job.skills ?? []), job.title].filter((x): x is string => typeof x === "string") : [];

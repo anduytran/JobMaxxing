@@ -10,6 +10,7 @@ import {
   saveRoast as saveRoastFn,
   saveReducedMotion as saveReducedMotionFn,
   saveLargeText as saveLargeTextFn,
+  saveAccessibility as saveAccessibilityFn,
   saveDetails as saveDetailsFn,
   type JobPrefs,
   type ResumeInfo,
@@ -44,6 +45,8 @@ export const ACHIEVEMENTS = [
 type Game = {
   name: string; title: string; xp: number; level: number; levelXp: number;
   quests: Quest[]; roast: boolean; reducedMotion: boolean; largeText: boolean; lastGain: { amount: number; key: number } | null;
+  highContrast: boolean; dyslexiaFont: boolean; captions: boolean;
+  setHighContrast: (v: boolean) => void; setDyslexiaFont: (v: boolean) => void; setCaptions: (v: boolean) => void;
   activeTitle: string | null; activeTheme: string; avatarUrl: string | null;
   setActiveTitle: (t: string | null) => void; setActiveTheme: (t: string) => void;
   setAvatar: (dataUrl: string | null) => Promise<boolean>;
@@ -81,6 +84,9 @@ export function GameProvider({
   const [roast, setRoastState] = useState(false);
   const [reducedMotion, setReducedMotionState] = useState(loaded?.reducedMotion ?? false);
   const [largeText, setLargeTextState] = useState(loaded?.largeText ?? false);
+  const [highContrast, setHighContrastState] = useState(loaded?.highContrast ?? false);
+  const [dyslexiaFont, setDyslexiaFontState] = useState(loaded?.dyslexiaFont ?? false);
+  const [captions, setCaptionsState] = useState(loaded?.captions ?? true);
   const [activeTitle, setActiveTitle] = useState<string | null>(loaded?.activeTitle ?? null);
   const [activeTheme, setActiveTheme] = useState(loaded?.activeTheme ?? "default");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(loaded?.avatarUrl ?? null);
@@ -102,6 +108,23 @@ export function GameProvider({
   useEffect(() => {
     document.documentElement.classList.toggle("large-text", largeText);
   }, [largeText]);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("high-contrast", highContrast);
+  }, [highContrast]);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("dyslexia-font", dyslexiaFont);
+  }, [dyslexiaFont]);
+
+  // One save call carries all three secondary accessibility switches; the
+  // setter flips its own flag and ships the latest trio.
+  const saveA11y = (patch: Partial<{ highContrast: boolean; dyslexiaFont: boolean; captions: boolean }>, rollback: () => void) => {
+    const next = { highContrast, dyslexiaFont, captions, ...patch };
+    saveAccessibilityFn({ data: next }).then((res) => {
+      rejected(res, rollback);
+    });
+  };
 
   // Store-bought dashboard theme.
   useEffect(() => {
@@ -131,6 +154,10 @@ export function GameProvider({
 
   const value: Game = {
     name, title, xp, quests, roast, reducedMotion, largeText, lastGain,
+    highContrast, dyslexiaFont, captions,
+    setHighContrast: (v) => { const prev = highContrast; setHighContrastState(v); saveA11y({ highContrast: v }, () => setHighContrastState(prev)); },
+    setDyslexiaFont: (v) => { const prev = dyslexiaFont; setDyslexiaFontState(v); saveA11y({ dyslexiaFont: v }, () => setDyslexiaFontState(prev)); },
+    setCaptions: (v) => { const prev = captions; setCaptionsState(v); saveA11y({ captions: v }, () => setCaptionsState(prev)); },
     activeTitle, activeTheme, avatarUrl, setActiveTitle, setActiveTheme,
     setAvatar: async (dataUrl) => {
       const prev = avatarUrl;

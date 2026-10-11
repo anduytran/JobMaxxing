@@ -90,6 +90,27 @@ function SettingsPage() {
           </div>
           <Switch checked={g.largeText} onCheckedChange={g.setLargeText} />
         </div>
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <div className="font-medium">High contrast</div>
+            <div className="text-sm text-muted-foreground">Strengthens text, borders, and focus outlines so everything stands out.</div>
+          </div>
+          <Switch checked={g.highContrast} onCheckedChange={g.setHighContrast} />
+        </div>
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <div className="font-medium">Dyslexia-friendly text</div>
+            <div className="text-sm text-muted-foreground">Uses a plainer font with wider letter and line spacing, and removes italics.</div>
+          </div>
+          <Switch checked={g.dyslexiaFont} onCheckedChange={g.setDyslexiaFont} />
+        </div>
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <div className="font-medium">Interview captions</div>
+            <div className="text-sm text-muted-foreground">Shows live text of what the interviewer says and what you say during interviews.</div>
+          </div>
+          <Switch checked={g.captions} onCheckedChange={g.setCaptions} />
+        </div>
       </div>
     </div>
   );

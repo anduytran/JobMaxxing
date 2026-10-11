@@ -33,6 +33,9 @@ export type GameState = {
   roast: boolean;
   reducedMotion: boolean;
   largeText: boolean;
+  highContrast: boolean;
+  dyslexiaFont: boolean;
+  captions: boolean;
   activeTitle: string | null;
   activeTheme: string;
   avatarUrl: string | null;
@@ -107,7 +110,7 @@ export const loadGame = createServerFn({ method: "GET" }).handler(
         },
         {
           query:
-            "select name, title, xp, roast, reduced_motion, large_text, skills, student, job_prefs, resume, active_title, active_theme, avatar_url " +
+            "select name, title, xp, roast, reduced_motion, large_text, high_contrast, dyslexia_font, captions, skills, student, job_prefs, resume, active_title, active_theme, avatar_url " +
             "from public.devup_profile where id = $1 limit 1",
           params: [PROFILE_ID],
         },
@@ -133,6 +136,9 @@ export const loadGame = createServerFn({ method: "GET" }).handler(
         roast: Boolean(profile?.roast ?? false),
         reducedMotion: Boolean(profile?.reduced_motion ?? false),
         largeText: Boolean(profile?.large_text ?? false),
+        highContrast: Boolean(profile?.high_contrast ?? false),
+        dyslexiaFont: Boolean(profile?.dyslexia_font ?? false),
+        captions: profile?.captions == null ? true : Boolean(profile.captions),
         activeTitle: profile?.active_title ? String(profile.active_title) : null,
         activeTheme: String(profile?.active_theme ?? "default"),
         avatarUrl: profile?.avatar_url ? String(profile.avatar_url) : null,
@@ -248,6 +254,28 @@ export const saveReducedMotion = createServerFn({ method: "POST" })
       await neonExecute(
         "update public.devup_profile set reduced_motion = $1, updated_at = now() where id = $2",
         [data.reducedMotion, PROFILE_ID],
+      );
+      return { ok: true };
+    } catch (err) {
+      return fail(err);
+    }
+  });
+
+// The remaining accessibility switches travel together: high contrast,
+// dyslexia-friendly text, and interview captions.
+export const saveAccessibility = createServerFn({ method: "POST" })
+  .inputValidator((input: { highContrast: unknown; dyslexiaFont: unknown; captions: unknown }) => {
+    for (const k of ["highContrast", "dyslexiaFont", "captions"] as const) {
+      if (typeof input[k] !== "boolean") throw new Error("Accessibility preferences must be true or false.");
+    }
+    return { highContrast: input.highContrast, dyslexiaFont: input.dyslexiaFont, captions: input.captions };
+  })
+  .handler(async ({ data }): Promise<SaveResult> => {
+    try {
+      const PROFILE_ID = (await requireUser()).id;
+      await neonExecute(
+        "update public.devup_profile set high_contrast = $1, dyslexia_font = $2, captions = $3, updated_at = now() where id = $4",
+        [data.highContrast, data.dyslexiaFont, data.captions, PROFILE_ID],
       );
       return { ok: true };
     } catch (err) {
