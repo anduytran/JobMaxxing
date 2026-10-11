@@ -36,7 +36,7 @@ export type PeerSession = {
   interviewerGrade: PeerInterviewerGrade | null;
   grading: boolean;
   checks: Record<string, number[]>;
-  signal: { offer?: string; answer?: string; video?: { host?: boolean; guest?: boolean } };
+  signal: { offer?: string; answer?: string; video?: { host?: boolean; guest?: boolean }; ready?: { host?: boolean; guest?: boolean } };
   flag: string | null;
   strikes: Record<string, number>;
   startedAt: string | null;
@@ -151,8 +151,9 @@ export const joinPeerSession = createServerFn({ method: "POST" })
     if (s.guestId && s.guestId !== user.id) throw new Error("That session already has two people.");
     if (s.status === "done") throw new Error("That session is already finished.");
     const name = user.name ?? user.email?.split("@")[0] ?? "Guest";
+    // The clock does NOT start here — it starts when both sides mark ready (peerReady).
     await neonExecute(
-      "update public.devup_peer_session set guest_id = $2::uuid, guest_name = $3, status = 'live', started_at = coalesce(started_at, now()) where id = $1::uuid",
+      "update public.devup_peer_session set guest_id = $2::uuid, guest_name = $3, status = 'live' where id = $1::uuid",
       [s.id, user.id, name],
     );
     return { id: s.id };
