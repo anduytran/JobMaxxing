@@ -6,7 +6,7 @@ import type {
 } from "./types";
 import { LENGTHS } from "./types";
 import {
-  GRADES, gradeFromScore, XP_RULES, type AtsCheck, type Grade, type ResumeFields, type ResumeLine, type ResumeReview,
+  GRADES, gradeFromScore, SUGGESTION_BATCH, XP_RULES, type AtsCheck, type Grade, type ResumeFields, type ResumeLine, type ResumeReview,
   type ResumeSection, type ResumeSuggestion, type SuggestionType,
 } from "../resume";
 
@@ -363,12 +363,12 @@ const RESUME_TASK =
   "1) Transcribe it into sections and lines verbatim (every bullet is its own line). " +
   "2) Grade it with the rubric below; the 0-100 score is the rubric total and the letter grade follows the score bands (S/A ≈ send it, B ≈ strong, C ≈ solid base, D/F ≈ rebuild). " +
   "3) ATS check: flag tables, multi-column layouts, text boxes, graphics or headers/footers that break parsers, and whether Experience, Education and Projects headings are clear. " +
-  "4) Action-verb analyzer: for each weak bullet (worked on, helped, responsible for) add a type \"rewrite\" suggestion with before/after — at most 5 rewrites, " +
-  "chosen for biggest impact, each under 25 words. " +
-  "5) Metric gap detector: for each bullet without numbers or results add a type \"metric\" suggestion with a short question the candidate can answer " +
-  "(for example, \"How many users or records did this handle?\"). " +
-  "6) Normalize skills to canonical names (\"torch\", \"PyTorch 2.0\" → \"PyTorch\"; \"js\" → \"JavaScript\"); put libraries/frameworks in frameworks. " +
-  "7) Add up to 3 general suggestions naming the top priority actions in order. ";
+  `4) Suggestions: return exactly ${SUGGESTION_BATCH} — the ${SUGGESTION_BATCH} changes that would raise this resume most, ordered most important first. ` +
+  "A \"rewrite\" fixes one weak verb bullet (before/after, under 25 words); a \"metric\" names one bullet with no numbers and asks the short question that draws " +
+  "the number out (\"How many users or records did this handle?\"); \"ats\" names one parsing risk; \"general\" is anything else worth real points — ordering, a " +
+  "missing section, keyword fit for the target role. Pick the three with the biggest effect on the score: never trivia, never two versions of the same fix, " +
+  "never a fix the resume already satisfies. " +
+  "5) Normalize skills to canonical names (\"torch\", \"PyTorch 2.0\" → \"PyTorch\"; \"js\" → \"JavaScript\"); put libraries/frameworks in frameworks. ";
 
 // Canonical skill tags so "torch", "PyTorch 2.0" and "pytorch" count as one skill.
 const CANON: [RegExp, string][] = [
@@ -424,21 +424,22 @@ function normalizeAts(a: any): AtsCheck | null {
 
 const TYPES: SuggestionType[] = ["rewrite", "metric", "ats", "general"];
 
-function normalizeReview(ai: any, source: "raia" | "fallback"): ResumeReview | null {
-  const score = num(ai?.score, 0, 100);
-  if (score === null) return null;
-  const grade = (GRADES as string[]).includes(String(ai?.grade)) ? (ai.grade as Grade) : gradeFromScore(score);
-  const sections = normalizeSections(ai?.sections);
-  const lineIds = new Set(sections.flatMap((s) => s.lines.map((l) => l.id)));
+/** Clamp one suggestion array: ids that can't collide with ones already given, real line ids only,
+ *  and never more than the batch size — the app shows a handful at a time, not the whole list. */
+function normalizeSuggestions(v: unknown, lineIds: Set<string>, cap = SUGGESTION_BATCH, taken = new Set<string>()): ResumeSuggestion[] {
   const seen = new Set<string>();
-  const suggestions: ResumeSuggestion[] = (Array.isArray(ai?.suggestions) ? ai.suggestions : [])
-    .slice(0, 20)
+  return (Array.isArray(v) ? v : [])
+    .slice(0, cap * 3)
     .map((raw: any, i: number) => {
       const s = raw ?? {};
       const type = TYPES.includes(s.type) ? (s.type as SuggestionType) : "general";
       const lineId = str(s.lineId, 20);
+      const base = str(s.id, 60)?.toLowerCase().replace(/[^a-z0-9_-]/g, "-") ?? `s${i + 1}`;
+      let id = base;
+      for (let n = 2; taken.has(id) || seen.has(id); n++) id = `${base}-${n}`;
+      seen.add(id);
       return {
-        id: str(s.id, 60)?.toLowerCase().replace(/[^a-z0-9_-]/g, "-") ?? `s${i + 1}`,
+        id,
         title: str(s.title, 60) ?? "Improve this section",
         detail: str(s.detail, 900) ?? "",
         category: str(s.category, 24)?.toLowerCase() ?? (type === "ats" ? "formatting" : "impact"),
@@ -451,7 +452,16 @@ function normalizeReview(ai: any, source: "raia" | "fallback"): ResumeReview | n
         question: type === "metric" ? str(s.question, 300) : null,
       };
     })
-    .filter((s: ResumeSuggestion) => (seen.has(s.id) ? false : (seen.add(s.id), true)));
+    .slice(0, cap);
+}
+
+function normalizeReview(ai: any, source: "raia" | "fallback"): ResumeReview | null {
+  const score = num(ai?.score, 0, 100);
+  if (score === null) return null;
+  const grade = (GRADES as string[]).includes(String(ai?.grade)) ? (ai.grade as Grade) : gradeFromScore(score);
+  const sections = normalizeSections(ai?.sections);
+  const lineIds = new Set(sections.flatMap((s) => s.lines.map((l) => l.id)));
+  const suggestions = normalizeSuggestions(ai?.suggestions, lineIds);
   const f = ai?.fields ?? {};
   const experience = (Array.isArray(f.experience) ? f.experience : [])
     .slice(0, 12)
@@ -600,7 +610,7 @@ function fallbackReview(text: string): ResumeReview {
     summary: missing.length
       ? `Offline check found ${missing.length} gap${missing.length > 1 ? "s" : ""}: ${missing.map((m) => m.label.toLowerCase()).join(", ")}. Work through them in order — the ones about proof move the grade most.`
       : "This resume passes every offline check: contact details, a skills section, quantified impact and a scannable layout. The next gain is a second opinion from the Resume Agent.",
-    suggestions: missing.map((m, i) => ({ id: `f${i + 1}`, title: m.label, detail: m.detail, category: m.category, xp: XP_RULES.perFix, applied: false, type: (m.category === "formatting" ? "ats" : m.category === "impact" ? "metric" : "general") as SuggestionType })),
+    suggestions: missing.slice(0, SUGGESTION_BATCH).map((m, i) => ({ id: `f${i + 1}`, title: m.label, detail: m.detail, category: m.category, xp: XP_RULES.perFix, applied: false, type: (m.category === "formatting" ? "ats" : m.category === "impact" ? "metric" : "general") as SuggestionType })),
     fields: fallbackFields(text),
     source: "fallback",
   };

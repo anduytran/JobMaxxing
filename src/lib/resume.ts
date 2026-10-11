@@ -36,6 +36,11 @@ export type AtsCheck = {
 
 export const XP_RULES = { firstScan: 20, perFix: 15, levelUp: 50, levelUpScore: 80 } as const;
 
+/** Fixes come in batches this size: the grader always shows the highest-impact few,
+ *  and the next batch only unlocks once every one of these is integrated. */
+export const SUGGESTION_BATCH = 3;
+
+
 export type ResumeVersion = { id: string; version: number; fileName: string; note: string | null; createdAt: string; score: number | null; grade: Grade | null };
 
 export type ResumeExperience = {
