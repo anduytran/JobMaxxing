@@ -327,6 +327,17 @@ export const peerGrade = createServerFn({ method: "POST" })
         await applySessionRatings(candidateId, scoredItems(s.questions, asked, candidate.metrics.quality.score))
           .catch((e) => console.error("rating update failed", e));
       }
+      // Skill Expert re-rates both people (candidate and interviewer) from this session.
+      const interviewerId = s.hostRole === "interviewer" ? s.hostId : s.guestId;
+      const { refreshSkills } = await import("./skills.server");
+      const pick = (g: { overall: number; metrics: Record<string, { score: number } | null>; strengths: string[]; improvements: string[] }) => ({
+        overall: g.overall, metrics: Object.fromEntries(Object.entries(g.metrics).map(([k, v]) => [k, v ? v.score : null])),
+        strengths: g.strengths, improvements: g.improvements,
+      });
+      await Promise.all([
+        candidateId && refreshSkills(candidateId, { kind: "peer interview (candidate)", job: s.job?.title ?? null, ...pick(candidate) }),
+        interviewerId && refreshSkills(interviewerId, { kind: "peer interview (interviewer)", job: s.job?.title ?? null, ...pick(interviewer) }),
+      ].map((p) => Promise.resolve(p).catch((e) => console.error("skill refresh failed", e))));
     } catch (e) {
       await neonExecute("update public.devup_peer_session set grade = null where id = $1::uuid", [s.id]);
       throw e;
