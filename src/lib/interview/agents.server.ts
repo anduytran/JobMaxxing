@@ -51,7 +51,7 @@ export async function trackUsage(userId: string | undefined, agent: string, prom
 async function askRaia<T>(
   secretEnv: string, message: string, context: string, timeoutMs = 45_000,
   files?: { fileName: string; storagePath: string }[],
-  track?: { userId?: string; agent: string },
+  track?: { userId: string | undefined; agent: string },
 ): Promise<T | null> {
   const secret = key(secretEnv);
   if (!secret) return null;
