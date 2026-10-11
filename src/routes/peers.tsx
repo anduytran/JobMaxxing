@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Copy, Loader2, Send, Square, Timer, Users } from "lucide-react";
+import { Check, Copy, Loader2, Mic, MicOff, Phone, PhoneOff, Send, ShieldAlert, Square, Timer, Users } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Max } from "@/components/Max";
@@ -9,22 +9,24 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
+import { usePeerCall } from "@/hooks/use-peer-call";
 import { useGame } from "@/lib/game";
-import { generateInterviewQuestions, gradeInterviewTranscript, parseJobDescription } from "@/lib/interview.functions";
+import { generateInterviewQuestions, parseJobDescription } from "@/lib/interview.functions";
+import { createBrowserVoice, type VoiceAgent } from "@/lib/interview/voice";
 import {
-  createPeerSession, getPeerSession, joinPeerSession, peerAnswer, peerAskNext, peerEndSession, peerSaveGrade,
+  createPeerSession, getPeerSession, joinPeerSession, peerAskNext, peerEndSession, peerGrade, peerSay, peerSetChecks,
   type PeerSession,
 } from "@/lib/peer.functions";
-import { LENGTHS, type InterviewLength, type InterviewQuestion, type InterviewType, type ParsedJob } from "@/lib/interview/types";
+import { LENGTHS, type InterviewLength, type InterviewType, type ParsedJob } from "@/lib/interview/types";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/peers")({
   head: () => ({
     meta: [
       { title: "Peer Interviews — JobMaxxing" },
-      { name: "description", content: "Swap mock interviews with a friend — same AI-generated questions, no voice agent." },
+      { name: "description", content: "Mock interview a friend over a live voice call — AI-planned questions, live checklist, and graded feedback for both of you." },
       { property: "og:title", content: "Peer Interviews — JobMaxxing" },
-      { property: "og:description", content: "Match with a friend and run a real mock interview together." },
+      { property: "og:description", content: "Match with a friend, talk it out live, and both get graded." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -33,6 +35,9 @@ export const Route = createFileRoute("/peers")({
 });
 
 type Stage = "intro" | "setup" | "review" | "options" | "lobby" | "live" | "report";
+const QUESTION_SECONDS = 180;
+const capitalize = (s: string) =>
+  s.trim().replace(/\bi\b/g, "I").replace(/(^|[.!?]\s+)([a-z])/g, (_m, p: string, c: string) => p + c.toUpperCase());
 
 function Page() {
   const { gainXp } = useGame();
@@ -44,82 +49,71 @@ function Page() {
   const [length, setLength] = useState<InterviewLength>("standard");
   const [role, setRole] = useState<"candidate" | "interviewer">("candidate");
   const [joinCode, setJoinCode] = useState("");
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [code, setCode] = useState("");
   const [session, setSession] = useState<PeerSession | null>(null);
   const [text, setText] = useState("");
-  const [left, setLeft] = useState(LENGTHS.standard.seconds);
-  const gradedRef = useRef<string | null>(null);
+  const [now, setNow] = useState(() => Date.now());
+  const [skew, setSkew] = useState(0);
+  const [listening, setListening] = useState(false);
+  const [caption, setCaption] = useState("");
+  const voiceRef = useRef<VoiceAgent | null>(null);
+  const gradeAsked = useRef<string | null>(null);
+  const xpPaid = useRef<string | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
-  const myRole: "candidate" | "interviewer" | null = useMemo(() => {
-    if (!session) return null;
-    // The current user is the host iff they created it; derive from role + who joined.
-    // loadForUser scopes to participants, but we need to know which side we are:
-    // the session carries hostId/guestId; compare against the cached "me" flag.
-    return session.hostRole === "candidate" ? (session._meIsHost ? "candidate" : "interviewer") : (session._meIsHost ? "interviewer" : "candidate");
-  }, [session]);
+  const myRole = session ? ((session.meIsHost === (session.hostRole === "interviewer")) ? "interviewer" : "candidate") : null;
+  const call = usePeerCall({ sessionId, isHost: !!session?.meIsHost, live: stage === "live", signal: session?.signal ?? {} });
 
-  // Poll the session while in a shared stage.
+  const refresh = async (id = sessionId) => {
+    if (!id) return;
+    const s = await getPeerSession({ data: { id } });
+    setSkew(new Date(s.serverNow).getTime() - Date.now());
+    setSession(s);
+    setStage((st) => (s.status === "done" ? "report" : s.status === "live" && (st === "lobby" || st === "intro") ? "live" : st));
+  };
+
+  // Poll while shared (faster while live so signalling and lines feel instant).
   useEffect(() => {
-    if (!session || (stage !== "lobby" && stage !== "live" && stage !== "report")) return;
-    let stop = false;
-    const tick = async () => {
-      try {
-        const s = await getPeerSession({ data: { id: session.id } });
-        if (stop) return;
-        setSession((prev) => (prev ? { ...s, _meIsHost: prev._meIsHost } as PeerSession : s));
-        if (s.status === "live" && stage === "lobby") setStage("live");
-        if (s.status === "done") setStage("report");
-      } catch { /* keep polling */ }
-    };
-    const t = setInterval(tick, 3000);
-    void tick();
-    return () => { stop = true; clearInterval(t); };
-  }, [session?.id, stage]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (!sessionId || !["lobby", "live", "report"].includes(stage)) return;
+    if (stage === "report" && session?.grade) return;
+    const t = setInterval(() => void refresh().catch(() => {}), stage === "live" ? 1500 : 3000);
+    void refresh().catch(() => {});
+    return () => clearInterval(t);
+  }, [sessionId, stage, session?.grade]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Timer while live.
   useEffect(() => {
     if (stage !== "live") return;
-    const t = setInterval(() => setLeft((s) => Math.max(0, s - 1)), 1000);
+    const t = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(t);
   }, [stage]);
 
-  // Auto-scroll the transcript.
-  useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
-  }, [session?.transcript?.length]);
+  useEffect(() => { scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight }); }, [session?.transcript?.length]);
 
-  // The candidate's client grades the finished session once, then saves it.
-  useEffect(() => {
-    if (stage !== "report" || !session || session.grade || myRole !== "candidate") return;
-    if (gradedRef.current === session.id) return;
-    gradedRef.current = session.id;
-    void (async () => {
-      try {
-        const g = await gradeInterviewTranscript({ data: { transcript: session.transcript, job: session.job } });
-        await peerSaveGrade({ data: { id: session.id, grade: g } });
-        setSession((prev) => (prev ? ({ ...prev, grade: g } as PeerSession) : prev));
-        if (g.xp > 0) gainXp(g.xp, "peer interview");
-      } catch (e) { toast.error((e as Error).message); }
-    })();
-  }, [stage, session, myRole]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Stop capturing when the interview leaves the live stage.
+  useEffect(() => { if (stage !== "live") { voiceRef.current?.stop(); setListening(false); } }, [stage]);
+  useEffect(() => () => voiceRef.current?.stop(), []);
 
-  // Interviewer XP, once per session.
-  const xpPaidRef = useRef<string | null>(null);
+  // Ask the server to grade both sides once the session is done.
   useEffect(() => {
-    if (stage === "report" && session?.grade && myRole === "interviewer" && xpPaidRef.current !== session.id) {
-      xpPaidRef.current = session.id;
-      gainXp(25, "peer interviewer");
-      toast.success("+25 XP", { description: "Thanks for interviewing a friend." });
-    }
+    if (stage !== "report" || !session || session.flag || session.grade || session.grading) return;
+    if (gradeAsked.current === session.id) return;
+    gradeAsked.current = session.id;
+    void peerGrade({ data: { id: session.id } }).then(() => refresh()).catch((e) => toast.error((e as Error).message));
+  }, [stage, session]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Feed each side's score into XP once.
+  useEffect(() => {
+    if (stage !== "report" || !session?.grade || !myRole || xpPaid.current === session.id) return;
+    xpPaid.current = session.id;
+    const xp = myRole === "candidate" ? session.grade.xp : session.interviewerGrade?.xp ?? 0;
+    if (xp > 0) gainXp(xp, myRole === "candidate" ? "peer interview" : "peer interviewer");
   }, [stage, session?.grade, myRole]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const analyze = async () => {
     setBusy(true);
-    try {
-      const res = await parseJobDescription({ data: { jd } });
-      setJob(res);
-      setStage("review");
-    } catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
+    try { setJob(await parseJobDescription({ data: { jd } })); setStage("review"); }
+    catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
   };
 
   const create = async () => {
@@ -128,10 +122,8 @@ function Page() {
     try {
       const qs = await generateInterviewQuestions({ data: { job, type, length, roast: false } });
       if (!qs.length) throw new Error("No interview questions were returned. Please try again.");
-      const { id, code } = await createPeerSession({ data: { job, questions: qs, type, length, role } });
-      setSession({ id, code, _meIsHost: true } as PeerSession);
-      setLeft(LENGTHS[length].seconds);
-      setStage("lobby");
+      const res = await createPeerSession({ data: { job, questions: qs, type, length, role } });
+      setSessionId(res.id); setCode(res.code); setStage("lobby");
     } catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
   };
 
@@ -139,57 +131,61 @@ function Page() {
     setBusy(true);
     try {
       const { id } = await joinPeerSession({ data: { code: joinCode } });
-      const s = await getPeerSession({ data: { id } });
-      setSession({ ...s, _meIsHost: false } as PeerSession);
-      setLeft(LENGTHS[s.length].seconds);
-      setStage(s.status === "live" ? "live" : "lobby");
-      toast.success("You're in!", { description: `Practicing with ${s.hostName}.` });
+      setSessionId(id);
+      await refresh(id);
+      setStage((st) => (st === "intro" ? "lobby" : st));
+      toast.success("You're in!", { description: "Start the call to talk with your friend." });
     } catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
   };
 
-  const askNext = async () => {
-    if (!session) return;
+  const act = async (fn: () => Promise<unknown>) => {
     setBusy(true);
-    try {
-      await peerAskNext({ data: { id: session.id } });
-      const s = await getPeerSession({ data: { id: session.id } });
-      setSession((prev) => ({ ...s, _meIsHost: prev?._meIsHost ?? true } as PeerSession));
-    } catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
+    try { await fn(); await refresh(); } catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
   };
 
-  const answer = async () => {
-    const v = text.trim();
+  const say = (line: string) => act(async () => {
+    const v = capitalize(line);
     if (!v || !session) return;
-    setText("");
-    setBusy(true);
+    const r = await peerSay({ data: { id: session.id, text: v } });
+    if (r.stopped) toast.error("Interview stopped", { description: r.message ?? undefined });
+    else if (!r.ok) toast.warning(r.message ?? "Line not sent.");
+  });
+
+  const startSpeaking = async () => {
+    voiceRef.current ??= createBrowserVoice();
+    setCaption(""); setListening(true);
     try {
-      await peerAnswer({ data: { id: session.id, text: v } });
-      const s = await getPeerSession({ data: { id: session.id } });
-      setSession((prev) => ({ ...s, _meIsHost: prev?._meIsHost ?? false } as PeerSession));
-    } catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
+      const heard = await voiceRef.current.listen((t) => setCaption(t));
+      if (heard.trim()) await say(heard);
+    } catch (e) { toast.error((e as Error).message); } finally { setListening(false); setCaption(""); }
   };
 
-  const end = async () => {
+  const toggleCheck = (qid: string, idx: number) => {
     if (!session) return;
-    setBusy(true);
-    try {
-      await peerEndSession({ data: { id: session.id } });
-      setStage("report");
-    } catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
+    const cur = session.checks[qid] ?? [];
+    const next = cur.includes(idx) ? cur.filter((n) => n !== idx) : [...cur, idx];
+    setSession({ ...session, checks: { ...session.checks, [qid]: next } });
+    void peerSetChecks({ data: { id: session.id, questionId: qid, ticked: next } }).catch((e) => toast.error((e as Error).message));
   };
 
   const reset = () => {
-    setStage("intro"); setSession(null); setJob(null); setJd(""); setJoinCode("");
-    gradedRef.current = null; xpPaidRef.current = null;
+    call.hangUp();
+    setStage("intro"); setSession(null); setSessionId(null); setCode(""); setJob(null); setJd(""); setJoinCode("");
+    gradeAsked.current = null; xpPaid.current = null;
   };
 
   const askedCount = session?.transcript?.filter((t) => t.speaker === "interviewer" && t.phase === "interview").length ?? 0;
   const allAsked = session?.questions ? session.current >= session.questions.length : false;
-  const awaitingAnswer = session?.transcript?.length ? session.transcript[session.transcript.length - 1]?.speaker === "interviewer" : false;
+  const currentQ = session && askedCount ? session.questions[askedCount - 1] : undefined;
+  const serverNow = now + skew;
+  const qLeft = session?.questionStartedAt ? Math.max(0, QUESTION_SECONDS - Math.floor((serverNow - Date.parse(session.questionStartedAt)) / 1000)) : QUESTION_SECONDS;
+  const totalLeft = session?.startedAt ? Math.max(0, LENGTHS[session.length].seconds - Math.floor((serverNow - Date.parse(session.startedAt)) / 1000)) : session ? LENGTHS[session.length].seconds : 0;
+  const partner = session ? (session.meIsHost ? session.guestName : session.hostName) : null;
+  const ticks = useMemo(() => Object.values(session?.checks ?? {}).reduce((n, a) => n + a.length, 0), [session?.checks]);
 
   return (
     <div className="mx-auto max-w-6xl space-y-4">
-      <PageHeader eyebrow="Build your next chapter" title="Peer Interviews" sub="Same AI-generated questions — but a friend interviews you, no voice agent." />
+      <PageHeader eyebrow="Build your next chapter" title="Peer Interviews" sub="AI-planned questions, a live voice call with a friend, and graded feedback for both of you." />
 
       {stage === "intro" && (
         <div className="grid gap-4 md:grid-cols-2">
@@ -261,8 +257,8 @@ function Page() {
           </div>
           <p className="text-sm text-muted-foreground">
             {role === "candidate"
-              ? "Your friend reads the questions out loud (or in chat) and you type your answers. You earn the interview XP."
-              : "You read the questions and your friend answers. They earn the interview XP; you earn +25 XP for hosting."}
+              ? "Your friend reads the questions over a live call and you answer out loud. Both of you are graded and earn XP."
+              : "You read the questions aloud and tick a live checklist while your friend answers. Both of you are graded and earn XP."}
           </p>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => setStage("review")}>Back</Button>
@@ -271,14 +267,14 @@ function Page() {
         </section>
       )}
 
-      {stage === "lobby" && session && (
+      {stage === "lobby" && (
         <section className="panel flex flex-col items-center px-6 py-20 text-center">
           <Max pose="wave" className="mascot-float h-24 w-24" />
           <h2 className="mt-6 text-2xl font-bold">Waiting for your friend…</h2>
           <p className="mt-2 text-sm text-muted-foreground">Share this code — the session starts as soon as they join.</p>
           <div className="mt-6 flex items-center gap-3">
-            <div className="rounded-lg border-2 border-primary bg-primary/10 px-8 py-4 font-mono text-4xl font-bold tracking-[0.4em] text-primary">{session.code}</div>
-            <Button variant="outline" size="icon" aria-label="Copy code" onClick={() => { void navigator.clipboard.writeText(session.code); toast.success("Code copied"); }}>
+            <div className="rounded-lg border-2 border-primary bg-primary/10 px-8 py-4 font-mono text-4xl font-bold tracking-[0.4em] text-primary">{code || session?.code}</div>
+            <Button variant="outline" size="icon" aria-label="Copy code" onClick={() => { void navigator.clipboard.writeText(code); toast.success("Code copied"); }}>
               <Copy />
             </Button>
           </div>
@@ -288,82 +284,163 @@ function Page() {
       )}
 
       {stage === "live" && session && (
-        <section className="flex min-h-[36rem] flex-col border-y bg-card">
-          <div className="flex items-center gap-3 border-b p-4">
-            <div className="grid h-9 w-9 place-items-center rounded bg-primary text-primary-foreground"><Users className="h-4 w-4" /></div>
-            <div className="flex-1">
-              <div className="text-sm font-semibold">
-                {myRole === "candidate" ? `${session.hostRole === "interviewer" ? session.hostName : session.guestName} is interviewing you` : `You're interviewing ${session.hostRole === "candidate" ? session.hostName : session.guestName}`}
-              </div>
-              <div className="font-mono text-[10px] text-muted-foreground">
-                {allAsked ? "Wrap-up — candidate's questions" : `Question ${Math.min(askedCount + 1, session.questions.length)} / ${session.questions.length}`}
-              </div>
-            </div>
-            <div className={cn("flex items-center gap-1 font-mono text-sm", left < 30 && "text-destructive")}>
-              <Timer className="h-4 w-4" /> {fmt(left)}
-            </div>
-          </div>
-          <Progress value={(askedCount / Math.max(1, session.questions.length)) * 100} className="h-1 rounded-none" />
-
-          <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto p-4">
-            {session.transcript.length === 0 && (
-              <p className="py-12 text-center text-sm text-muted-foreground">
-                {myRole === "interviewer" ? "Ask the first question when you're both ready." : "Waiting for the first question…"}
-              </p>
-            )}
-            {session.transcript.map((t, i) => (
-              <div key={i} className={cn("max-w-[80%] rounded-lg border px-4 py-3 text-sm", t.speaker === "interviewer" ? "bg-muted/50" : "ml-auto border-primary/40 bg-primary/10")}>
-                <div className="mb-1 font-mono text-[10px] uppercase text-muted-foreground">
-                  {t.speaker === "interviewer" ? "Interviewer" : "Candidate"}
+        <div className="grid gap-4 lg:grid-cols-[1fr_20rem]">
+          <section className="flex min-h-[36rem] flex-col border-y bg-card">
+            <audio ref={call.audioRef} autoPlay className="hidden" />
+            <div className="flex flex-wrap items-center gap-3 border-b p-4">
+              <div className="grid h-9 w-9 place-items-center rounded bg-primary text-primary-foreground"><Users className="h-4 w-4" /></div>
+              <div className="flex-1">
+                <div className="text-sm font-semibold">{myRole === "candidate" ? `${partner ?? "Your friend"} is interviewing you` : `You're interviewing ${partner ?? "your friend"}`}</div>
+                <div className="font-mono text-[10px] text-muted-foreground">
+                  {allAsked ? "Wrap-up — candidate's questions" : `Question ${Math.min(askedCount + 1, session.questions.length)} / ${session.questions.length}`}
                 </div>
-                {t.text}
               </div>
-            ))}
-          </div>
+              <div className="flex items-center gap-4 font-mono text-sm">
+                <span className={cn("flex items-center gap-1", askedCount && qLeft < 30 && "text-destructive")} title="This question">
+                  <Timer className="h-4 w-4" /> Q {fmt(askedCount ? qLeft : QUESTION_SECONDS)}
+                </span>
+                <span className={cn("text-muted-foreground", totalLeft < 60 && "text-destructive")} title="Whole interview">Total {fmt(totalLeft)}</span>
+              </div>
+            </div>
+            <Progress value={(askedCount / Math.max(1, session.questions.length)) * 100} className="h-1 rounded-none" />
+            {askedCount > 0 && qLeft === 0 && !allAsked && (
+              <p className="bg-destructive/10 px-4 py-2 text-center text-xs text-destructive">Time's up on this question — wrap up and move on.</p>
+            )}
 
-          <div className="flex flex-wrap items-center justify-center gap-2 border-t p-4">
-            {myRole === "interviewer" && (
-              <>
-                {!allAsked && (
-                  <Button onClick={askNext} disabled={busy || awaitingAnswer}>
-                    {busy && <Loader2 className="animate-spin" />} {awaitingAnswer ? "Waiting for answer…" : askedCount === 0 ? "Ask first question" : "Ask next question"}
+            <div className="flex flex-wrap items-center gap-2 border-b px-4 py-2 text-xs">
+              {call.state === "idle" || call.state === "failed" ? (
+                <Button size="sm" variant="outline" onClick={() => void call.start()}><Phone /> {call.state === "failed" ? "Retry call" : "Start voice call"}</Button>
+              ) : (
+                <>
+                  <span className={cn("font-mono", call.state === "connected" ? "text-accent" : "text-muted-foreground")}>
+                    {call.state === "connected" ? "● Live audio" : "Connecting audio…"}
+                  </span>
+                  <Button size="sm" variant="ghost" onClick={() => call.setMuted(!call.muted)}>{call.muted ? <MicOff /> : <Mic />} {call.muted ? "Unmute" : "Mute"}</Button>
+                  <Button size="sm" variant="ghost" onClick={call.hangUp}><PhoneOff /> Leave call</Button>
+                </>
+              )}
+              {call.error && <span className="text-destructive">{call.error}</span>}
+            </div>
+
+            <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto p-4">
+              {session.transcript.length === 0 && (
+                <p className="py-12 text-center text-sm text-muted-foreground">
+                  {myRole === "interviewer" ? "Start the call, then reveal the first question and read it aloud." : "Start the call and wait for the first question…"}
+                </p>
+              )}
+              {session.transcript.map((t, i) => (
+                <div key={i} className={cn("max-w-[80%] rounded-lg border px-4 py-3 text-sm", t.speaker === "interviewer" ? "bg-muted/50" : "ml-auto border-primary/40 bg-primary/10")}>
+                  <div className="mb-1 font-mono text-[10px] uppercase text-muted-foreground">{t.speaker === "interviewer" ? "Interviewer" : "Candidate"}</div>
+                  {t.text}
+                </div>
+              ))}
+              {listening && caption && <p className="ml-auto max-w-[80%] text-right text-sm italic text-muted-foreground">{caption}…</p>}
+            </div>
+
+            <div className="space-y-3 border-t p-4">
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                {listening ? (
+                  <Button onClick={() => voiceRef.current?.finishListening()}><Square /> Done speaking</Button>
+                ) : (
+                  <Button variant="outline" onClick={() => void startSpeaking()} disabled={busy || (myRole === "candidate" && !askedCount)}>
+                    <Mic /> {myRole === "interviewer" ? "Transcribe a follow-up" : allAsked ? "Ask your question" : "Answer (transcribe)"}
                   </Button>
                 )}
-                <Button variant="destructive" onClick={end} disabled={busy}><Square /> End interview</Button>
+                {myRole === "interviewer" && !allAsked && (
+                  <Button onClick={() => void act(() => peerAskNext({ data: { id: session.id } }))} disabled={busy}>
+                    {busy && <Loader2 className="animate-spin" />} {askedCount === 0 ? "Reveal first question" : "Next question"}
+                  </Button>
+                )}
+                {myRole === "interviewer" && (
+                  <Button variant="destructive" onClick={() => void act(() => peerEndSession({ data: { id: session.id } }))} disabled={busy}><Square /> End interview</Button>
+                )}
+              </div>
+              <form className="mx-auto flex w-full max-w-2xl gap-2" onSubmit={(e) => { e.preventDefault(); const v = text; setText(""); void say(v); }}>
+                <Input value={text} onChange={(e) => setText(e.target.value)} disabled={busy || (myRole === "candidate" && !askedCount)}
+                  placeholder="Or type a line…" aria-label="Type a line" />
+                <Button type="submit" size="icon" aria-label="Send" disabled={busy || !text.trim()}><Send /></Button>
+              </form>
+              <p className="text-center text-[11px] text-muted-foreground"><ShieldAlert className="mr-1 inline h-3 w-3" />Moderated live: slurs, threats or harassment end the interview; repeated profanity does too.</p>
+            </div>
+          </section>
+
+          <aside className="panel space-y-3 p-4">
+            {myRole === "interviewer" ? (
+              <>
+                <h3 className="font-display text-lg">Live checklist</h3>
+                {currentQ ? (
+                  <>
+                    <p className="text-sm text-muted-foreground">Tick each point as they hit it.</p>
+                    <p className="text-sm font-medium">{currentQ.text}</p>
+                    <ul className="space-y-2">
+                      {currentQ.checklist.map((c, i) => {
+                        const on = (session.checks[currentQ.id] ?? []).includes(i);
+                        return (
+                          <li key={i}>
+                            <button type="button" onClick={() => toggleCheck(currentQ.id, i)}
+                              className={cn("flex w-full items-start gap-2 rounded border p-2 text-left text-sm transition-colors", on ? "border-accent bg-accent/15" : "hover:bg-muted/50")}>
+                              <span className={cn("mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded-sm border", on && "border-accent bg-accent text-accent-foreground")}>{on && <Check className="h-3 w-3" />}</span>
+                              {c}
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </>
+                ) : <p className="text-sm text-muted-foreground">Reveal the first question to see what to listen for.</p>}
+                {session.questions[session.current] && (
+                  <div className="border-t pt-3 text-xs text-muted-foreground"><b>Up next:</b> {session.questions[session.current]!.text}</div>
+                )}
+              </>
+            ) : (
+              <>
+                <h3 className="font-display text-lg">Tips</h3>
+                <p className="text-sm text-muted-foreground">Answer out loud, then hit "Done speaking" so your words land in the transcript. Aim for about two minutes per answer — situation, what you did, the result.</p>
+                {allAsked && <p className="text-sm font-medium text-primary">Your turn: ask your interviewer a question or two.</p>}
               </>
             )}
-            {myRole === "candidate" && (
-              <form className="flex w-full max-w-2xl gap-2" onSubmit={(e) => { e.preventDefault(); void answer(); }}>
-                <Input value={text} onChange={(e) => setText(e.target.value)} disabled={busy || !awaitingAnswer}
-                  placeholder={allAsked ? "Ask your interviewer a question…" : "Type your answer…"} aria-label="Your answer" />
-                <Button type="submit" size="icon" aria-label="Send" disabled={busy || !text.trim() || !awaitingAnswer}><Send /></Button>
-              </form>
-            )}
-          </div>
-        </section>
+          </aside>
+        </div>
       )}
 
       {stage === "report" && session && (
         <section className="panel space-y-5 p-6">
-          {session.grade ? (
+          {session.flag ? (
+            <div className="flex flex-col items-center gap-2 py-10 text-center">
+              <ShieldAlert className="h-10 w-10 text-destructive" />
+              <h2 className="text-xl font-bold">Interview stopped by moderation</h2>
+              <p className="text-sm text-muted-foreground">{session.flag} It wasn't graded and no XP was awarded.</p>
+            </div>
+          ) : session.grade ? (
             <>
-              <div className="text-center">
-                <div className="font-display text-6xl font-bold text-primary text-glow">{session.grade.overall}</div>
-                <div className="font-mono text-xs text-muted-foreground">
-                  OVERALL SCORE · {myRole === "candidate" ? `+${session.grade.xp} XP EARNED` : "+25 XP FOR INTERVIEWING"}
-                </div>
-              </div>
               <div className="grid gap-4 md:grid-cols-2">
-                <Metric label="Quality & accuracy" m={session.grade.metrics.quality} />
-                <Metric label="Conciseness" m={session.grade.metrics.conciseness} />
+                <ScoreBlock title="Candidate" you={myRole === "candidate"} overall={session.grade.overall} xp={session.grade.xp} />
+                {session.interviewerGrade && <ScoreBlock title="Interviewer" you={myRole === "interviewer"} overall={session.interviewerGrade.overall} xp={session.interviewerGrade.xp} />}
               </div>
-              <div className="grid gap-4 text-sm md:grid-cols-2">
-                <ul className="space-y-1">{session.grade.strengths.map((s) => <li key={s}>✓ {s}</li>)}</ul>
-                <ul className="space-y-1 text-muted-foreground">{session.grade.improvements.map((s) => <li key={s}>→ {s}</li>)}</ul>
+              <div className="grid gap-6 md:grid-cols-2">
+                <div className="space-y-3">
+                  <h3 className="font-display text-lg">Candidate feedback</h3>
+                  <Metric label="Quality & accuracy of answers" m={session.grade.metrics.quality} />
+                  <Metric label="Conciseness" m={session.grade.metrics.conciseness} />
+                  <Metric label="Questions they asked" m={session.grade.metrics.candidateQuestions} />
+                  {session.grade.metrics.tone && <Metric label="Tone" m={session.grade.metrics.tone} />}
+                  <Bullets good={session.grade.strengths} bad={session.grade.improvements} />
+                </div>
+                {session.interviewerGrade && (
+                  <div className="space-y-3">
+                    <h3 className="font-display text-lg">Interviewer feedback</h3>
+                    <Metric label="Quality & accuracy of questions" m={session.interviewerGrade.metrics.quality} />
+                    <Metric label="Conciseness" m={session.interviewerGrade.metrics.conciseness} />
+                    <Metric label="Follow-up questions" m={session.interviewerGrade.metrics.followUps} />
+                    {session.interviewerGrade.metrics.tone && <Metric label="Tone" m={session.interviewerGrade.metrics.tone} />}
+                    <p className="text-xs text-muted-foreground">Checklist: {ticks} key point(s) ticked.</p>
+                    <Bullets good={session.interviewerGrade.strengths} bad={session.interviewerGrade.improvements} />
+                  </div>
+                )}
               </div>
             </>
           ) : (
-            <p className="flex items-center justify-center gap-2 py-12 text-muted-foreground"><Loader2 className="animate-spin" /> Grading the interview…</p>
+            <p className="flex items-center justify-center gap-2 py-12 text-muted-foreground"><Loader2 className="animate-spin" /> Grading both of you…</p>
           )}
           <details className="text-sm">
             <summary className="cursor-pointer font-mono text-xs text-muted-foreground">TRANSCRIPT</summary>
@@ -377,6 +454,25 @@ function Page() {
 }
 
 const fmt = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+
+function ScoreBlock({ title, you, overall, xp }: { title: string; you: boolean; overall: number; xp: number }) {
+  return (
+    <div className={cn("rounded border p-4 text-center", you && "border-primary")}>
+      <div className="font-mono text-xs text-muted-foreground">{title.toUpperCase()}{you ? " · YOU" : ""}</div>
+      <div className="font-display text-5xl font-bold text-primary">{overall}</div>
+      <div className="font-mono text-xs text-muted-foreground">+{xp} XP</div>
+    </div>
+  );
+}
+
+function Bullets({ good, bad }: { good: string[]; bad: string[] }) {
+  return (
+    <div className="space-y-1 text-sm">
+      {good.map((s) => <p key={s}>✓ {s}</p>)}
+      {bad.map((s) => <p key={s} className="text-muted-foreground">→ {s}</p>)}
+    </div>
+  );
+}
 
 function Choice<T extends string>({ label, value, onChange, options }: { label: string; value: T; onChange: (v: T) => void; options: [T, string][] }) {
   return (

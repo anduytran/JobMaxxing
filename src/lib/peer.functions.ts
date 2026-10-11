@@ -1,12 +1,22 @@
 import { createServerFn } from "@tanstack/react-start";
 import type { InterviewGrade, InterviewLength, InterviewQuestion, InterviewType, ParsedJob, TranscriptTurn } from "./interview/types";
+import { MAX_STRIKES, moderate } from "./moderation";
 
 // Peer interviews: two signed-in friends share one session row in Neon. The
-// question plan comes from the same generator as the AI mock interview, but
-// there is no voice agent and no Raia conversation — the friend reads the
-// questions and the candidate types answers. Both sides poll getPeerSession.
+// question plan comes from the same generator as the AI mock interview. Audio
+// goes peer-to-peer over WebRTC (offer/answer signalled through this row);
+// each side's own browser transcribes its speech into the shared transcript.
+// Every line is moderated; the Grader grades both sides at the end.
 
 export type PeerRole = "candidate" | "interviewer";
+export type PeerQuestion = InterviewQuestion & { checklist: string[] };
+export type PeerInterviewerGrade = {
+  overall: number;
+  xp: number;
+  metrics: { quality: { score: number; feedback: string }; conciseness: { score: number; feedback: string }; followUps: { score: number; feedback: string }; tone: { score: number; feedback: string } | null };
+  strengths: string[];
+  improvements: string[];
+};
 export type PeerSession = {
   id: string;
   code: string;
@@ -16,15 +26,23 @@ export type PeerSession = {
   guestName: string | null;
   hostRole: PeerRole;
   job: ParsedJob;
-  questions: InterviewQuestion[];
+  questions: PeerQuestion[];
   type: InterviewType;
   length: InterviewLength;
   status: "waiting" | "live" | "done";
   current: number;
   transcript: TranscriptTurn[];
   grade: InterviewGrade | null;
-  /** Client-only marker: set by the page, never stored — which side am I? */
-  _meIsHost?: boolean;
+  interviewerGrade: PeerInterviewerGrade | null;
+  grading: boolean;
+  checks: Record<string, number[]>;
+  signal: { offer?: string; answer?: string };
+  flag: string | null;
+  strikes: Record<string, number>;
+  startedAt: string | null;
+  questionStartedAt: string | null;
+  serverNow: string;
+  meIsHost: boolean;
 };
 
 const TYPES = ["technical", "behavioral", "mixed"] as const;
@@ -35,32 +53,55 @@ const makeCode = () =>
   Array.from(crypto.getRandomValues(new Uint8Array(6)), (b) => CODE_ALPHABET[b % CODE_ALPHABET.length]).join("");
 
 type Row = Record<string, unknown>;
-const toSession = (r: Row): PeerSession => ({
-  id: String(r["id"]),
-  code: String(r["code"]),
-  hostId: String(r["host_id"]),
-  hostName: String(r["host_name"]),
-  guestId: r["guest_id"] ? String(r["guest_id"]) : null,
-  guestName: r["guest_name"] ? String(r["guest_name"]) : null,
-  hostRole: r["host_role"] === "interviewer" ? "interviewer" : "candidate",
-  job: r["job"] as ParsedJob,
-  questions: (r["questions"] as InterviewQuestion[]) ?? [],
-  type: (TYPES.includes(r["type"] as InterviewType) ? r["type"] : "mixed") as InterviewType,
-  length: (LENS.includes(r["length"] as InterviewLength) ? r["length"] : "standard") as InterviewLength,
-  status: (["waiting", "live", "done"].includes(String(r["status"])) ? r["status"] : "waiting") as PeerSession["status"],
-  current: Number(r["current"]) || 0,
-  transcript: (r["transcript"] as TranscriptTurn[]) ?? [],
-  grade: (r["grade"] as InterviewGrade | null) ?? null,
-});
+const iso = (v: unknown) => (v ? new Date(String(v)).toISOString() : null);
+const toSession = (r: Row, userId: string): PeerSession => {
+  const grade = (r["grade"] as (InterviewGrade & { pending?: boolean }) | null) ?? null;
+  return {
+    id: String(r["id"]),
+    code: String(r["code"]),
+    hostId: String(r["host_id"]),
+    hostName: String(r["host_name"]),
+    guestId: r["guest_id"] ? String(r["guest_id"]) : null,
+    guestName: r["guest_name"] ? String(r["guest_name"]) : null,
+    hostRole: r["host_role"] === "interviewer" ? "interviewer" : "candidate",
+    job: r["job"] as ParsedJob,
+    questions: ((r["questions"] as PeerQuestion[]) ?? []).map((q) => ({ ...q, checklist: q.checklist ?? [] })),
+    type: (TYPES.includes(r["type"] as InterviewType) ? r["type"] : "mixed") as InterviewType,
+    length: (LENS.includes(r["length"] as InterviewLength) ? r["length"] : "standard") as InterviewLength,
+    status: (["waiting", "live", "done"].includes(String(r["status"])) ? r["status"] : "waiting") as PeerSession["status"],
+    current: Number(r["current"]) || 0,
+    transcript: (r["transcript"] as TranscriptTurn[]) ?? [],
+    grade: grade && !grade.pending ? grade : null,
+    interviewerGrade: (r["interviewer_grade"] as PeerInterviewerGrade | null) ?? null,
+    grading: !!grade?.pending,
+    checks: (r["checks"] as Record<string, number[]>) ?? {},
+    signal: (r["signal"] as PeerSession["signal"]) ?? {},
+    flag: r["flag"] ? String(r["flag"]) : null,
+    strikes: (r["strikes"] as Record<string, number>) ?? {},
+    startedAt: iso(r["started_at"]),
+    questionStartedAt: iso(r["question_started_at"]),
+    serverNow: new Date().toISOString(),
+    meIsHost: String(r["host_id"]) === userId,
+  };
+};
+
+const roleOf = (s: PeerSession, userId: string): PeerRole =>
+  (s.hostId === userId) === (s.hostRole === "interviewer") ? "interviewer" : "candidate";
+
+async function me() {
+  const { requireUser } = await import("./auth.server");
+  return (await requireUser()) as { id: string; name?: string; email?: string };
+}
 
 async function loadForUser(id: string, userId: string): Promise<PeerSession> {
+  if (!/^[0-9a-f-]{36}$/i.test(id)) throw new Error("Invalid session.");
   const { neonQuery } = await import("./neon.server");
   const { rows } = await neonQuery(
     "select * from public.devup_peer_session where id = $1::uuid and (host_id = $2::uuid or guest_id = $2::uuid)",
     [id, userId],
   );
   if (!rows.length) throw new Error("Session not found.");
-  return toSession(rows[0]!);
+  return toSession(rows[0]!, userId);
 }
 
 export const createPeerSession = createServerFn({ method: "POST" })
@@ -73,9 +114,10 @@ export const createPeerSession = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data }) => {
     if (!data.questions.length) throw new Error("No questions to practice with.");
-    const { requireUser } = await import("./auth.server");
-    const user = (await requireUser()) as { id: string; name?: string; email?: string };
+    const user = await me();
     const { neonExecute } = await import("./neon.server");
+    const { checklistFor } = await import("./interview/agents.server");
+    const questions: PeerQuestion[] = data.questions.map((q) => ({ ...q, checklist: checklistFor(q) }));
     const name = user.name ?? user.email?.split("@")[0] ?? "Host";
     for (let attempt = 0; attempt < 3; attempt++) {
       const code = makeCode();
@@ -83,7 +125,7 @@ export const createPeerSession = createServerFn({ method: "POST" })
         const { rows } = await neonExecute(
           `insert into public.devup_peer_session (code, host_id, host_name, host_role, job, questions, type, length)
            values ($1, $2::uuid, $3, $4, $5::jsonb, $6::jsonb, $7, $8) returning id`,
-          [code, user.id, name, data.role, JSON.stringify(data.job), JSON.stringify(data.questions), data.type, data.length],
+          [code, user.id, name, data.role, JSON.stringify(data.job), JSON.stringify(questions), data.type, data.length],
         );
         return { id: String(rows[0]!["id"]), code };
       } catch (e) {
@@ -100,91 +142,124 @@ export const joinPeerSession = createServerFn({ method: "POST" })
     return { code };
   })
   .handler(async ({ data }) => {
-    const { requireUser } = await import("./auth.server");
-    const user = (await requireUser()) as { id: string; name?: string; email?: string };
+    const user = await me();
     const { neonExecute, neonQuery } = await import("./neon.server");
     const { rows } = await neonQuery("select * from public.devup_peer_session where code = $1", [data.code]);
     if (!rows.length) throw new Error("No session with that code.");
-    const s = toSession(rows[0]!);
+    const s = toSession(rows[0]!, user.id);
     if (s.hostId === user.id) return { id: s.id };
     if (s.guestId && s.guestId !== user.id) throw new Error("That session already has two people.");
     if (s.status === "done") throw new Error("That session is already finished.");
     const name = user.name ?? user.email?.split("@")[0] ?? "Guest";
     await neonExecute(
-      "update public.devup_peer_session set guest_id = $2::uuid, guest_name = $3, status = 'live' where id = $1::uuid",
+      "update public.devup_peer_session set guest_id = $2::uuid, guest_name = $3, status = 'live', started_at = coalesce(started_at, now()) where id = $1::uuid",
       [s.id, user.id, name],
     );
     return { id: s.id };
   });
 
 export const getPeerSession = createServerFn({ method: "GET" })
-  .inputValidator((i: { id: unknown }) => {
-    const id = String(i.id ?? "");
-    if (!/^[0-9a-f-]{36}$/i.test(id)) throw new Error("Invalid session.");
-    return { id };
-  })
-  .handler(async ({ data }) => {
-    const { requireUser } = await import("./auth.server");
-    const user = (await requireUser()) as { id: string };
-    return loadForUser(data.id, user.id);
-  });
+  .inputValidator((i: { id: unknown }) => ({ id: String(i.id ?? "") }))
+  .handler(async ({ data }) => loadForUser(data.id, (await me()).id));
 
-// Interviewer asks the next planned question.
+// Interviewer moves on to the next planned question (reads it aloud over the call).
 export const peerAskNext = createServerFn({ method: "POST" })
   .inputValidator((i: { id: unknown }) => ({ id: String(i.id ?? "") }))
   .handler(async ({ data }) => {
-    const { requireUser } = await import("./auth.server");
-    const user = (await requireUser()) as { id: string };
+    const user = await me();
     const s = await loadForUser(data.id, user.id);
     if (s.status !== "live") throw new Error("The session is not live.");
-    const amInterviewer = (s.hostId === user.id) === (s.hostRole === "interviewer");
-    if (!amInterviewer) throw new Error("Only the interviewer asks questions.");
+    if (roleOf(s, user.id) !== "interviewer") throw new Error("Only the interviewer asks questions.");
     const q = s.questions[s.current];
     if (!q) throw new Error("No questions left.");
-    const last = s.current + 1 >= s.questions.length;
-    const turn: TranscriptTurn = { speaker: "interviewer", phase: "interview", text: q.text, questionId: q.id };
-    const transcript = [...s.transcript, turn];
-    if (last) {
+    const transcript: TranscriptTurn[] = [...s.transcript, { speaker: "interviewer", phase: "interview", text: q.text, questionId: q.id }];
+    if (s.current + 1 >= s.questions.length) {
       transcript.push({ speaker: "interviewer", phase: "candidate_questions", text: "That covers my questions — do you have any questions for me?" });
     }
     const { neonExecute } = await import("./neon.server");
     await neonExecute(
-      "update public.devup_peer_session set current = current + 1, transcript = $2::jsonb where id = $1::uuid",
+      "update public.devup_peer_session set current = current + 1, question_started_at = now(), transcript = $2::jsonb where id = $1::uuid",
       [s.id, JSON.stringify(transcript)],
     );
     return { ok: true };
   });
 
-// Candidate answers (or asks their wrap-up question).
-export const peerAnswer = createServerFn({ method: "POST" })
+// Either side adds a spoken (transcribed) or typed line. Every line is moderated first.
+export const peerSay = createServerFn({ method: "POST" })
   .inputValidator((i: { id: unknown; text: unknown }) => {
     const text = String(i.text ?? "").trim().slice(0, 4000);
-    if (!text) throw new Error("Empty answer.");
+    if (!text) throw new Error("Nothing to send.");
     return { id: String(i.id ?? ""), text };
   })
   .handler(async ({ data }) => {
-    const { requireUser } = await import("./auth.server");
-    const user = (await requireUser()) as { id: string };
+    const user = await me();
     const s = await loadForUser(data.id, user.id);
     if (s.status !== "live") throw new Error("The session is not live.");
-    const amCandidate = (s.hostId === user.id) === (s.hostRole === "candidate");
-    if (!amCandidate) throw new Error("Only the candidate answers.");
-    const asked = s.transcript.filter((t) => t.speaker === "interviewer" && t.phase === "interview").length;
-    if (!asked) throw new Error("Wait for the first question.");
-    const phase: TranscriptTurn["phase"] = s.current >= s.questions.length ? "candidate_questions" : "interview";
-    const q = s.questions[Math.min(asked - 1, s.questions.length - 1)];
-    const transcript = [...s.transcript, { speaker: "candidate", phase, text: data.text, questionId: q?.id } satisfies TranscriptTurn];
+    const role = roleOf(s, user.id);
     const { neonExecute } = await import("./neon.server");
-    await neonExecute("update public.devup_peer_session set transcript = $2::jsonb where id = $1::uuid", [s.id, JSON.stringify(transcript)]);
+    const verdict = moderate(data.text);
+    if (verdict.level !== "ok") {
+      const strikes = { ...s.strikes, [user.id]: (s.strikes[user.id] ?? 0) + 1 };
+      const stop = verdict.level === "severe" || strikes[user.id]! >= MAX_STRIKES;
+      const flag = stop ? `Stopped: ${verdict.reason} from the ${role}.` : null;
+      await neonExecute(
+        `update public.devup_peer_session set strikes = $2::jsonb, flag = coalesce(flag, $3), status = case when $3::text is null then status else 'done' end where id = $1::uuid`,
+        [s.id, JSON.stringify(strikes), flag],
+      );
+      if (stop) return { ok: false, stopped: true, message: flag };
+      return { ok: false, stopped: false, message: `Line not sent — ${verdict.reason!.toLowerCase()}. Strike ${strikes[user.id]}/${MAX_STRIKES}.` };
+    }
+    const asked = s.transcript.filter((t) => t.speaker === "interviewer" && t.phase === "interview").length;
+    if (role === "candidate" && !asked) throw new Error("Wait for the first question.");
+    const phase: TranscriptTurn["phase"] = s.current >= s.questions.length ? "candidate_questions" : "interview";
+    const q = s.questions[Math.max(0, Math.min(asked - 1, s.questions.length - 1))];
+    const turn: TranscriptTurn = { speaker: role, phase, text: data.text, questionId: q?.id };
+    await neonExecute(
+      "update public.devup_peer_session set transcript = transcript || $2::jsonb where id = $1::uuid",
+      [s.id, JSON.stringify([turn])],
+    );
+    return { ok: true, stopped: false, message: null };
+  });
+
+// Interviewer's live checklist ticks for one question.
+export const peerSetChecks = createServerFn({ method: "POST" })
+  .inputValidator((i: { id: unknown; questionId: unknown; ticked: unknown }) => ({
+    id: String(i.id ?? ""),
+    questionId: String(i.questionId ?? "").slice(0, 60),
+    ticked: Array.isArray(i.ticked) ? i.ticked.map(Number).filter((n) => Number.isInteger(n) && n >= 0 && n < 10) : [],
+  }))
+  .handler(async ({ data }) => {
+    const user = await me();
+    const s = await loadForUser(data.id, user.id);
+    if (roleOf(s, user.id) !== "interviewer") throw new Error("Only the interviewer keeps the checklist.");
+    const { neonExecute } = await import("./neon.server");
+    await neonExecute(
+      "update public.devup_peer_session set checks = jsonb_set(checks, array[$2::text], $3::jsonb) where id = $1::uuid",
+      [s.id, data.questionId, JSON.stringify(data.ticked)],
+    );
     return { ok: true };
   });
 
-// Either participant ends the session; the candidate's side grades it.
+// WebRTC signalling: the host posts the offer, the guest the answer (full SDP, ICE gathered).
+export const peerSignal = createServerFn({ method: "POST" })
+  .inputValidator((i: { id: unknown; sdp: unknown; reset?: unknown }) => ({
+    id: String(i.id ?? ""), sdp: String(i.sdp ?? "").slice(0, 20000), reset: !!i.reset,
+  }))
+  .handler(async ({ data }) => {
+    const user = await me();
+    const s = await loadForUser(data.id, user.id);
+    const { neonExecute } = await import("./neon.server");
+    const signal = s.meIsHost
+      ? (data.reset || !s.signal.offer ? { offer: data.sdp } : { ...s.signal, offer: data.sdp })
+      : { ...s.signal, answer: data.sdp };
+    await neonExecute("update public.devup_peer_session set signal = $2::jsonb where id = $1::uuid", [s.id, JSON.stringify(signal)]);
+    return { ok: true };
+  });
+
 export const peerEndSession = createServerFn({ method: "POST" })
   .inputValidator((i: { id: unknown }) => ({ id: String(i.id ?? "") }))
   .handler(async ({ data }) => {
-    const { requireUser } = await import("./auth.server");
-    const user = (await requireUser()) as { id: string };
+    const user = await me();
     const s = await loadForUser(data.id, user.id);
     if (s.status === "done") return { ok: true };
     const { neonExecute } = await import("./neon.server");
@@ -192,13 +267,36 @@ export const peerEndSession = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-export const peerSaveGrade = createServerFn({ method: "POST" })
-  .inputValidator((i: { id: unknown; grade: InterviewGrade }) => ({ id: String(i.id ?? ""), grade: i.grade }))
+// Grade both sides once. The first caller claims the job; flagged sessions are not graded.
+export const peerGrade = createServerFn({ method: "POST" })
+  .inputValidator((i: { id: unknown }) => ({ id: String(i.id ?? "") }))
   .handler(async ({ data }) => {
-    const { requireUser } = await import("./auth.server");
-    const user = (await requireUser()) as { id: string };
+    const user = await me();
     const s = await loadForUser(data.id, user.id);
+    if (s.status !== "done" || s.flag || s.grade) return { ok: true };
     const { neonExecute } = await import("./neon.server");
-    await neonExecute("update public.devup_peer_session set grade = $2::jsonb, status = 'done' where id = $1::uuid", [s.id, JSON.stringify(data.grade)]);
+    const claim = await neonExecute(
+      `update public.devup_peer_session set grade = '{"pending":true}'::jsonb
+       where id = $1::uuid and (grade is null or (grade->>'pending' = 'true' and now() - coalesce(question_started_at, started_at, now()) > interval '10 minutes')) returning id`,
+      [s.id],
+    );
+    if (!claim.rows.length) return { ok: true };
+    const { gradeInterview, gradeInterviewer } = await import("./interview/agents.server");
+    const asked = s.transcript.filter((t) => t.speaker === "interviewer" && t.phase === "interview").length;
+    const total = s.questions.slice(0, asked).reduce((n, q) => n + q.checklist.length, 0);
+    const ticked = Object.values(s.checks).reduce((n, a) => n + a.length, 0);
+    try {
+      const [candidate, interviewer] = await Promise.all([
+        gradeInterview(s.transcript, s.job),
+        gradeInterviewer(s.transcript, s.job, { asked, ticked, total }),
+      ]);
+      await neonExecute(
+        "update public.devup_peer_session set grade = $2::jsonb, interviewer_grade = $3::jsonb where id = $1::uuid",
+        [s.id, JSON.stringify(candidate), JSON.stringify(interviewer)],
+      );
+    } catch (e) {
+      await neonExecute("update public.devup_peer_session set grade = null where id = $1::uuid", [s.id]);
+      throw e;
+    }
     return { ok: true };
   });
