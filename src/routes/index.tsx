@@ -139,7 +139,7 @@ function Dashboard() {
   const featKey = featured?.category?.toLowerCase() ?? "interview";
   const featPose = MAX_ART[featKey] ?? "interview";
   const interviewQuest = open.find((q) => q.category.toLowerCase() === "interview");
-  const reward = featured ? `+${featured.xp} XP` : interviewQuest ? `+${interviewQuest.xp} quest XP · up to 400 interview XP` : "Up to 400 XP";
+  const reward = featured ? `+${featured.xp} XP` : interviewQuest ? `+${interviewQuest.xp} quest bonus · up to 400 XP by score` : "Up to 400 XP by score";
   const wornWearables = useWornWearables();
   const destination = featKey === "interview" ? "/interview" : featKey === "setup" || featKey === "resume" ? "/setup" : featKey === "hunt" ? "/market" : "/quests/add";
   const featArt = MAX_POSES[featPose];
