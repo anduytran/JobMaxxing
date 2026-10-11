@@ -160,9 +160,9 @@ function CapsuleMachine({
             <motion.div key="machine" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="relative">
               <motion.img
                 src={MACHINE_ART}
-                alt="Capsule machine"
-                width={180}
-                height={266}
+                alt="Mimic chest"
+                width={210}
+                height={210}
                 draggable={false}
                 animate={phase === "rolling" ? { rotate: [0, -1.5, 1.5, -1, 0] } : { rotate: 0 }}
                 transition={{ duration: 0.5, repeat: phase === "rolling" ? 1 : 0 }}
