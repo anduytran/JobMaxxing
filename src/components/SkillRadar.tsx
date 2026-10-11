@@ -22,23 +22,32 @@ export function SkillRadar() {
   const [draft, setDraft] = useState<string[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [changes, setChanges] = useState<Change[]>([]);
 
   useEffect(() => {
-    Promise.all([getSkillRatings(), getTrackedSkills()])
-      .then(([r, t]) => { setRatings(r as Rating[]); setTracked(t); })
+    Promise.all([getSkillRatings(), getTrackedSkills(), getSkillChanges()])
+      .then(([r, t, c]) => { setRatings(r as Rating[]); setTracked(t); setChanges(c as Change[]); })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
   const update = () => {
     setBusy(true);
-    refreshSkillRatings().then((r) => setRatings(r as Rating[])).catch(() => {}).finally(() => setBusy(false));
+    Promise.all([refreshSkillRatings().then((r) => r as Rating[]), getSkillChanges().then((c) => c as Change[])])
+      .then(([r, c]) => { setRatings(r); setChanges(c); })
+      .catch(() => {})
+      .finally(() => setBusy(false));
   };
   const save = () => {
     if (!draft) return;
     setBusy(true);
-    saveTrackedSkills({ data: { skills: draft } })
-      .then((r) => { setTracked(r.skills); setRatings(r.ratings as Rating[]); setDraft(null); })
+    Promise.all([saveTrackedSkills({ data: { skills: draft } }), getSkillChanges()])
+      .then(([r, c]) => {
+        setTracked(r.skills);
+        setRatings(r.ratings as Rating[]);
+        setChanges(c as Change[]);
+        setDraft(null);
+      })
       .catch(() => {})
       .finally(() => setBusy(false));
   };
