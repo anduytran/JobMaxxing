@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, FileText, Mic, Radar } from "lucide-react";
+import { FileText, Mic, Radar } from "lucide-react";
 import { MAX_POSES } from "@/components/Max";
 import { useInterviewModePicker } from "@/components/InterviewModePicker";
 import { MaxNote, useRandomMaxNote } from "@/components/MaxNote";
@@ -52,7 +52,6 @@ function LockIn() {
                 </div>
                 <h2 className="mt-4 text-2xl font-bold">{m.title}</h2>
                 <p className="mt-2 flex-1 text-muted-foreground">{m.blurb}</p>
-                <span className="mt-6 flex items-center gap-2 font-semibold text-primary">Lock in <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" /></span>
               </div>
             </>
           );
