@@ -25,7 +25,7 @@ export const Route = createFileRoute("/interview")({
   loader: () => getInterviewAgents(),
   staleTime: 5 * 60_000, // agent status rarely changes; skip the refetch on every visit
   component: Interview,
-  errorComponent: ({ error }) => <div role="alert" className="p-10">{error.message}</div>,
+  errorComponent: ({ error }) => <div role="alert" className="p-10">{(error as Error).message}</div>,
 });
 
 const api: InterviewApi = {
