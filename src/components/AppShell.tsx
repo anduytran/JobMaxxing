@@ -2,9 +2,13 @@ import { Link, useLocation, useRouter, useRouterState } from "@tanstack/react-ro
 import { signOut } from "@/lib/auth.functions";
 import { AnimatePresence, motion, MotionConfig, useReducedMotion } from "framer-motion";
 import {
-  LayoutGrid, FileText, Mic, Radar, LineChart, Network, UsersRound, Swords, Settings, Menu, LogOut, Zap, Flame, CircleHelp, X, Store, ArrowRight,
+  LayoutGrid, FileText, Mic, Radar, LineChart, Network, UsersRound, Swords, Settings, Menu, LogOut, Zap, Flame, CircleHelp, X, Store, ArrowRight, ImagePlus, ImageOff,
 } from "lucide-react";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { toast } from "sonner";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { getStreak } from "@/lib/career.functions";
 import { useGame, levelTitle } from "@/lib/game";
 import { type MaxPose } from "@/components/Max";
@@ -33,7 +37,7 @@ export function Mascot({ className }: { className?: string }) {
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const { level, lastGain, name } = useGame();
+  const { level, lastGain, name, avatarUrl, setAvatar } = useGame();
   const loc = useLocation();
   const router = useRouter();
   const navigating = useRouterState({ select: (s) => s.status === "pending" });
@@ -51,6 +55,34 @@ export function AppShell({ children }: { children: ReactNode }) {
   const doSignOut = async () => {
     setSigningOut(true);
     try { await signOut(); await router.invalidate(); } finally { setSigningOut(false); }
+  };
+
+  // Profile photo: read the picked file, downscale to a 256px square on a
+  // canvas, and hand the small data URL to the server (no file storage).
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [savingAvatar, setSavingAvatar] = useState(false);
+  const pickAvatar = async (file: File | undefined) => {
+    if (!file) return;
+    if (!/^image\/(png|jpeg|webp)$/.test(file.type)) { toast.error("Choose a PNG, JPG, or WebP image."); return; }
+    setSavingAvatar(true);
+    try {
+      const bitmap = await createImageBitmap(file);
+      const side = Math.min(bitmap.width, bitmap.height);
+      const canvas = document.createElement("canvas");
+      canvas.width = canvas.height = 256;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) throw new Error("no canvas");
+      ctx.drawImage(bitmap, (bitmap.width - side) / 2, (bitmap.height - side) / 2, side, side, 0, 0, 256, 256);
+      bitmap.close();
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+      if (!(await setAvatar(dataUrl))) return;
+      toast.success("Profile picture updated.");
+    } catch {
+      toast.error("Couldn't read that image. Try another one.");
+    } finally {
+      setSavingAvatar(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
   };
 
   return (
@@ -90,14 +122,43 @@ export function AppShell({ children }: { children: ReactNode }) {
                 )}
               </AnimatePresence>
             </div>
-            <Link to="/settings" className="hidden items-center gap-2 rounded-full border bg-card px-3 py-1.5 text-sm transition-shadow hover:shadow-md md:flex" title="Settings">
-              <span className="grid h-7 w-7 place-items-center rounded-full bg-sidebar-accent text-xs font-semibold text-primary">{initials}</span>
-              <span className="font-semibold">Lv {level}</span>
-              <span className="hidden text-xs text-muted-foreground xl:inline">{levelTitle(level)}</span>
-            </Link>
-            <Button variant="ghost" size="icon" className="hidden md:inline-flex" onClick={doSignOut} disabled={signingOut} aria-label="Sign out" title="Sign out">
-              <LogOut className="h-4 w-4" />
-            </Button>
+            {/* Profile menu: avatar button holding level, settings, photo, sign out. */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button type="button" className="hidden items-center gap-2 rounded-full border bg-card px-3 py-1.5 text-sm transition-shadow hover:shadow-md md:flex" aria-label="Profile menu">
+                  <AvatarFace url={avatarUrl} initials={initials} className="h-7 w-7 text-xs" />
+                  <span className="font-semibold">Lv {level}</span>
+                  <span className="hidden text-xs text-muted-foreground xl:inline">{levelTitle(level)}</span>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel className="flex items-center gap-3">
+                  <AvatarFace url={avatarUrl} initials={initials} className="h-9 w-9 text-sm" />
+                  <span className="min-w-0">
+                    <span className="block truncate font-semibold">{name}</span>
+                    <span className="block text-xs font-normal text-muted-foreground">Level {level} · {levelTitle(level)}</span>
+                  </span>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={() => fileRef.current?.click()} disabled={savingAvatar}>
+                  <ImagePlus className="h-4 w-4" />{savingAvatar ? "Saving photo…" : avatarUrl ? "Change photo" : "Add profile photo"}
+                </DropdownMenuItem>
+                {avatarUrl && (
+                  <DropdownMenuItem onSelect={() => void setAvatar(null)}>
+                    <ImageOff className="h-4 w-4" />Remove photo
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem onSelect={() => void router.navigate({ to: "/settings" })}>
+                  <Settings className="h-4 w-4" />Settings
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={() => void doSignOut()} disabled={signingOut} className="text-primary focus:text-primary">
+                  <LogOut className="h-4 w-4" />{signingOut ? "Signing out…" : "Sign out"}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" className="hidden" aria-hidden="true"
+              onChange={(e) => void pickAvatar(e.target.files?.[0])} />
             <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setOpen(!open)} aria-label="Menu" aria-expanded={open}>
               {open ? <X /> : <Menu />}
             </Button>
@@ -123,7 +184,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                   );
                 })}
                 <div className="mt-3 flex items-center gap-3 rounded-xl border bg-background p-3 text-sm">
-                  <div className="grid h-9 w-9 place-items-center rounded-full bg-sidebar-accent text-xs font-semibold text-primary">{initials}</div>
+                  <AvatarFace url={avatarUrl} initials={initials} className="h-9 w-9 text-xs" />
                   <div className="min-w-0 flex-1">
                     <div className="truncate font-medium">{name}</div>
                     <div className="text-xs text-muted-foreground">Level {level} · {levelTitle(level)}</div>
@@ -176,6 +237,12 @@ function TopTab({ item: { to, label }, active }: { item: Item; active: boolean }
 }
 
 function CheckReward() { return <Zap className="h-5 w-5 text-primary" />; }
+
+/** Round profile photo, falling back to initials when none is set. */
+function AvatarFace({ url, initials, className }: { url: string | null; initials: string; className?: string }) {
+  if (url) return <img src={url} alt="" className={cn("shrink-0 rounded-full object-cover", className)} />;
+  return <span className={cn("grid shrink-0 place-items-center rounded-full bg-sidebar-accent font-semibold text-primary", className)}>{initials}</span>;
+}
 
 export function PanelHead({ title, level }: { title: string; level: number }) {
   return (

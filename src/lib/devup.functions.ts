@@ -35,6 +35,7 @@ export type GameState = {
   largeText: boolean;
   activeTitle: string | null;
   activeTheme: string;
+  avatarUrl: string | null;
   quests: Quest[];
 };
 
@@ -106,7 +107,7 @@ export const loadGame = createServerFn({ method: "GET" }).handler(
         },
         {
           query:
-            "select name, title, xp, roast, reduced_motion, large_text, skills, student, job_prefs, resume, active_title, active_theme " +
+            "select name, title, xp, roast, reduced_motion, large_text, skills, student, job_prefs, resume, active_title, active_theme, avatar_url " +
             "from public.devup_profile where id = $1 limit 1",
           params: [PROFILE_ID],
         },
@@ -134,6 +135,7 @@ export const loadGame = createServerFn({ method: "GET" }).handler(
         largeText: Boolean(profile?.large_text ?? false),
         activeTitle: profile?.active_title ? String(profile.active_title) : null,
         activeTheme: String(profile?.active_theme ?? "default"),
+        avatarUrl: profile?.avatar_url ? String(profile.avatar_url) : null,
         quests: (results[3]?.rows ?? []).map((r: any) => ({
           id: String(r.id),
           title: String(r.title),
@@ -168,6 +170,30 @@ export const saveProfile = createServerFn({ method: "POST" })
       await neonExecute(
         "update public.devup_profile set name = $1, title = $2, updated_at = now() where id = $3",
         [data.name, data.title, PROFILE_ID],
+      );
+      return { ok: true };
+    } catch (err) {
+      return fail(err);
+    }
+  });
+
+// Profile picture: stored as a small data URL (the client pre-resizes to
+// 256px), so no file storage is needed. Null clears it back to initials.
+export const saveAvatar = createServerFn({ method: "POST" })
+  .inputValidator((input: { avatarUrl: unknown }) => {
+    const v = input.avatarUrl;
+    if (v === null) return { avatarUrl: null };
+    if (typeof v !== "string" || !/^data:image\/(png|jpeg|webp);base64,/.test(v) || v.length > 400_000) {
+      throw new Error("Choose a PNG, JPG, or WebP image.");
+    }
+    return { avatarUrl: v };
+  })
+  .handler(async ({ data }): Promise<SaveResult> => {
+    try {
+      const PROFILE_ID = (await requireUser()).id;
+      await neonExecute(
+        "update public.devup_profile set avatar_url = $1, updated_at = now() where id = $2",
+        [data.avatarUrl, PROFILE_ID],
       );
       return { ok: true };
     } catch (err) {
