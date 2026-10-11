@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import {
+  loadGame as loadGameFn,
   addQuest as addQuestFn,
   removeQuest as removeQuestFn,
   completeQuest as completeQuestFn,
@@ -53,6 +54,7 @@ type Game = {
   setProfile: (n: string, t: string) => Promise<boolean>;
   completeQuest: (id: string) => void;
   addQuest: (q: Omit<Quest, "done">) => void;
+  refreshQuests: () => Promise<void>;
   removeQuest: (id: string) => void;
   claimInterviewXp: (kind: "solo" | "peer", id: string) => void;
   setRoast: (v: boolean) => void;
@@ -200,6 +202,10 @@ export function GameProvider({
       addQuestFn({ data: q }).then((res) => {
         rejected(res, () => setQuests((qs) => qs.filter((x) => x.id !== q.id)));
       });
+    },
+    refreshQuests: async () => {
+      const res = await loadGameFn();
+      if (res.ok) setQuests(res.quests);
     },
     removeQuest: (id) => {
       const prev = quests;
