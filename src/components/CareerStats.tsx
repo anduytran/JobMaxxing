@@ -3,11 +3,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { Briefcase, Flame, Snowflake, Target, Users } from "lucide-react";
+import { Briefcase, Flame, Snowflake, Target, Trash2, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  getCareerDashboard, saveCareerGoal, GOAL_LEVELS,
+  getCareerDashboard, saveCareerGoal, trashInterview, GOAL_LEVELS,
   type CareerDashboard, type GoalLevel,
 } from "@/lib/career.functions";
 import { cn } from "@/lib/utils";
@@ -228,9 +228,12 @@ function PeerHub({ active, recent }: { active: CareerDashboard["peerActive"]; re
   );
 }
 
-function SavedInterviews({ items }: { items: CareerDashboard["solo"] }) {
+function SavedInterviews({ items, onChanged }: { items: CareerDashboard["solo"]; onChanged: () => void }) {
   const [open, setOpen] = useState<string | null>(null);
   const [full, setFull] = useState<string | null>(null);
+  const trash = (id: string) => {
+    trashInterview({ data: { id } }).then(onChanged).catch(() => {});
+  };
   return (
     <div className="panel p-6 lg:col-span-2">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -249,6 +252,15 @@ function SavedInterviews({ items }: { items: CareerDashboard["solo"] }) {
                   {s.overall != null && <b className="text-success">{s.overall}%</b>}
                   {s.at && <span>{new Date(s.at).toLocaleDateString()}</span>}
                   <span className="underline">{open === s.id ? "Hide" : "Details"}</span>
+                  <span
+                    role="button"
+                    aria-label="Trash this interview"
+                    title="Trash this interview"
+                    className="text-muted-foreground transition-colors hover:text-destructive"
+                    onClick={(e) => { e.stopPropagation(); trash(s.id); }}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </span>
                 </span>
               </button>
               {open === s.id && (
@@ -295,7 +307,7 @@ export function CareerStats({ data, onGoalSaved }: { data: CareerDashboard; onGo
       <EloProgressCard series={data.elo} />
       <GoalsCard goal={data.goal} onSaved={onGoalSaved} />
       <AtsTracker rows={data.radar} />
-      <SavedInterviews items={data.solo ?? []} />
+      <SavedInterviews items={data.solo ?? []} onChanged={onGoalSaved} />
       <PeerHub active={data.peerActive} recent={data.peerRecent} />
     </div>
   );
