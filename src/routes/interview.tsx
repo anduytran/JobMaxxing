@@ -99,6 +99,10 @@ function Interview() {
   const voiceState: InterviewVoiceState = stage === "grading" ? "grading" : listening ? "listening" : thinking ? "thinking" : playback;
   const currentCaption = [...turns].reverse().find((turn) => turn.speaker === "interviewer")?.text;
 
+  // Set when the Question agent concludes the interview: the closing line
+  // plays out, then the interview ends itself — no End press needed.
+  const autoFinish = useRef(false);
+
   const say = (t: string, phase: TranscriptTurn["phase"], questionId?: string) => {
     setTurns((x) => [...x, { speaker: "interviewer", phase, text: t, questionId }]);
     if (voiceOn) void voice.current?.speak(t);
