@@ -73,7 +73,7 @@ const clean = (v: unknown, max: number): string | null => {
 };
 
 const questId = (v: unknown): string | null => {
-  const s = clean(v, 40);
+  const s = clean(v, 80);
   return s && /^[a-z0-9_-]+$/i.test(s) ? s : null;
 };
 

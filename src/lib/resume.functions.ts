@@ -209,7 +209,7 @@ export const scanResume = createServerFn({ method: "POST" })
           ? []
           : review.suggestions.slice(0, 2).map((s) => ({ title: s.title.slice(0, 120), description: s.detail ?? "" }));
       for (const q of ideas) {
-        const slug = q.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40) || "goal";
+        const slug = q.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 24) || "goal";
         const id = `resume-ai-${slug}-${Math.random().toString(36).slice(2, 7)}`;
         try {
           const { rows } = await neonQuery(
