@@ -153,7 +153,6 @@ function Dashboard() {
   }, [sceneKey]);
   useEffect(() => { [gymDesktop.url, gymMobile.url, stageDesktop.url, stageMobile.url, meadowDesktop.url, meadowMobile.url, billboardDesktop.url, billboardMobile.url, openToWork.url, ...Object.values(MAX_POSES)].forEach((s) => { const i = new Image(); i.src = s; }); }, []);
   const sceneReady = readyKey === sceneKey;
-  const featLink = QUEST_LINK[featKey] ?? "/quests";
   const scene = SCENES[featKey] ?? (featKey === "setup" ? SCENES["resume"] : undefined) ?? DEFAULT_SCENE;
   const featLines = featured ? questTitleLines(featured.title) : ["", ""];
   const reducedMotion = useReducedMotion();
@@ -186,7 +185,7 @@ function Dashboard() {
       {/* Phase 1 — the featured quest fills the whole screen, edge to edge, under the top bar. */}
       <div className="relative">
         <section
-          className={cn("featured-screen relative flex min-h-[calc(100svh_-_4rem)] items-stretch overflow-hidden border-b bg-hero px-6 pb-24 pt-16 md:px-20 md:pb-28 md:pt-16", (featKey === "interview" || featKey === "social") && "featured-stage")}
+          className={cn("featured-screen relative flex min-h-[calc(100svh_-_4rem)] items-stretch overflow-hidden border-b bg-hero px-6 pb-24 pt-8 md:px-20 md:pb-28 md:pt-14", (featKey === "interview" || featKey === "social") && "featured-stage")}
           aria-label="Featured quest"
         >
           <SceneBackdrop kind={featKey} />
