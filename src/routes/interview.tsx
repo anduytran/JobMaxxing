@@ -291,7 +291,7 @@ function Interview() {
     return () => clearTimeout(t);
   }, [thinking, playback, stage, turns, voiceOn]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const reset = () => { stopVoice(); setTyping(false); setConvId(null); setStage("intro"); setGrade(null); setTurns([]); setJob(null); setAck(false); radarJobId.current = null; };
+  const reset = () => { stopVoice(); setTyping(false); setConvId(null); setStage("intro"); setGrade(null); setTurns([]); setJob(null); setAck(false); radarJobId.current = null; autoFinish.current = false; };
 
   return (
     <div className={cn(immersive ? "w-full" : "mx-auto max-w-6xl space-y-4 px-4 py-6 md:px-10 md:py-10")}>
