@@ -10,7 +10,7 @@ export const GOAL_LEVELS = ["internship", "new_grad", "experienced"] as const;
 export type GoalLevel = (typeof GOAL_LEVELS)[number];
 export const LEVEL_BUMPS: Record<GoalLevel, number> = { internship: 50, new_grad: 125, experienced: 150 };
 
-export type StreakInfo = { current: number; longest: number; lastActivity: string | null; freezes: number };
+export type StreakInfo = { current: number; longest: number; lastActivity: string | null; freezes: number; bonusPaid: number };
 export type EloPoint = { t: string; rating: number };
 export type EloSeries = { skill: string; points: EloPoint[] };
 export type RadarTrackerRow = {
@@ -41,7 +41,7 @@ export type SoloInterview = {
 };
 export type XpEvent = { label: string; amount: number; at: string };
 
-const EMPTY_STREAK: StreakInfo = { current: 0, longest: 0, lastActivity: null, freezes: 0 };
+const EMPTY_STREAK: StreakInfo = { current: 0, longest: 0, lastActivity: null, freezes: 0, bonusPaid: 0 };
 
 /** XP paid the first time a streak reaches each 7-day mark (7, 14, 21 …). */
 export const STREAK_BONUS_XP = 250;
@@ -110,8 +110,10 @@ export const getStreak = createServerFn({ method: "GET" }).handler(async (): Pro
   const user = await currentUser();
   if (!user) return EMPTY_STREAK;
   try {
-    const res = await neonQuery<{ rows: { current_streak: number; longest_streak: number; last: string | null; streak_freeze_count: number }[] }>(
-      `select current_streak, longest_streak, to_json(last_activity_date) as last, streak_freeze_count
+    const res = await neonQuery<{ rows: { current_streak: number; longest_streak: number; last: string | null; streak_freeze_count: number; bonus_paid: number }[] }>(
+      `select current_streak, longest_streak, to_json(last_activity_date) as last, streak_freeze_count,
+              coalesce((select max(split_part(reason, ':', 2)::int) from public.devup_xp_event
+                         where user_id = $1 and reason like 'streak:%'), 0)::int as bonus_paid
          from public.devup_activity_streak where user_id = $1`,
       [user.id],
     );
@@ -122,6 +124,7 @@ export const getStreak = createServerFn({ method: "GET" }).handler(async (): Pro
       longest: Number(s.longest_streak),
       lastActivity: s.last ? String(s.last) : null,
       freezes: Number(s.streak_freeze_count),
+      bonusPaid: Number(s.bonus_paid) || 0,
     };
     return { ...info, current: effectiveStreak(info) };
   } catch {
@@ -136,7 +139,9 @@ export const getCareerDashboard = createServerFn({ method: "GET" }).handler(asyn
   try {
     const [streak, goal, log, ratings, profile, radar, peers, solos, xpEvents, interviewCount] = await Promise.all([
       neonQuery(
-        `select current_streak, longest_streak, to_json(last_activity_date) as last, streak_freeze_count
+        `select current_streak, longest_streak, to_json(last_activity_date) as last, streak_freeze_count,
+                coalesce((select max(split_part(reason, ':', 2)::int) from public.devup_xp_event
+                           where user_id = $1 and reason like 'streak:%'), 0)::int as bonus_paid
            from public.devup_activity_streak where user_id = $1`,
         [user.id],
       ),
@@ -257,7 +262,7 @@ export const getCareerDashboard = createServerFn({ method: "GET" }).handler(asyn
 
     const s = streak.rows[0];
     const streakInfo: StreakInfo = s
-      ? { current: Number(s["current_streak"]), longest: Number(s["longest_streak"]), lastActivity: (s["last"] as string | null) ?? null, freezes: Number(s["streak_freeze_count"]) }
+      ? { current: Number(s["current_streak"]), longest: Number(s["longest_streak"]), lastActivity: (s["last"] as string | null) ?? null, freezes: Number(s["streak_freeze_count"]), bonusPaid: Number(s["bonus_paid"]) || 0 }
       : EMPTY_STREAK;
     return {
       streak: { ...streakInfo, current: effectiveStreak(streakInfo) },
