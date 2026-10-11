@@ -58,34 +58,6 @@ export function AppShell({ children }: { children: ReactNode }) {
     try { await signOut(); await router.invalidate(); } finally { setSigningOut(false); }
   };
 
-  // Profile photo: read the picked file, downscale to a 256px square on a
-  // canvas, and hand the small data URL to the server (no file storage).
-  const fileRef = useRef<HTMLInputElement>(null);
-  const [savingAvatar, setSavingAvatar] = useState(false);
-  const pickAvatar = async (file: File | undefined) => {
-    if (!file) return;
-    if (!/^image\/(png|jpeg|webp)$/.test(file.type)) { toast.error("Choose a PNG, JPG, or WebP image."); return; }
-    setSavingAvatar(true);
-    try {
-      const bitmap = await createImageBitmap(file);
-      const side = Math.min(bitmap.width, bitmap.height);
-      const canvas = document.createElement("canvas");
-      canvas.width = canvas.height = 256;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) throw new Error("no canvas");
-      ctx.drawImage(bitmap, (bitmap.width - side) / 2, (bitmap.height - side) / 2, side, side, 0, 0, 256, 256);
-      bitmap.close();
-      const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
-      if (!(await setAvatar(dataUrl))) return;
-      toast.success("Profile picture updated.");
-    } catch {
-      toast.error("Couldn't read that image. Try another one.");
-    } finally {
-      setSavingAvatar(false);
-      if (fileRef.current) fileRef.current.value = "";
-    }
-  };
-
   return (
     <MotionConfig reducedMotion="user"><div className="flex min-h-screen flex-col">
       <InviteListener />
@@ -142,14 +114,6 @@ export function AppShell({ children }: { children: ReactNode }) {
                   </span>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onSelect={() => fileRef.current?.click()} disabled={savingAvatar}>
-                  <ImagePlus className="h-4 w-4" />{savingAvatar ? "Saving photo…" : avatarUrl ? "Change photo" : "Add profile photo"}
-                </DropdownMenuItem>
-                {avatarUrl && (
-                  <DropdownMenuItem onSelect={() => void setAvatar(null)}>
-                    <ImageOff className="h-4 w-4" />Remove photo
-                  </DropdownMenuItem>
-                )}
                 <DropdownMenuItem onSelect={() => void router.navigate({ to: "/settings" })}>
                   <Settings className="h-4 w-4" />Settings
                 </DropdownMenuItem>
@@ -159,8 +123,6 @@ export function AppShell({ children }: { children: ReactNode }) {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" className="hidden" aria-hidden="true"
-              onChange={(e) => void pickAvatar(e.target.files?.[0])} />
             <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setOpen(!open)} aria-label="Menu" aria-expanded={open}>
               {open ? <X /> : <Menu />}
             </Button>
