@@ -83,10 +83,11 @@ export const saveSoloSession = createServerFn({ method: "POST" })
   });
 
 export const gradeInterviewTranscript = createServerFn({ method: "POST" })
-  .inputValidator((i: { transcript: TranscriptTurn[]; job: ParsedJob; plan?: InterviewQuestion[] }) => {
+  .inputValidator((i: { transcript: TranscriptTurn[]; job: ParsedJob; plan?: InterviewQuestion[]; sessionId?: unknown }) => {
     if (!Array.isArray(i.transcript) || i.transcript.length > 200) throw new Error("Invalid transcript.");
     return {
       job: i.job,
+      sessionId: typeof i.sessionId === "string" && /^[0-9a-f-]{36}$/i.test(i.sessionId) ? i.sessionId : null,
       transcript: i.transcript.map((t) => ({ ...t, text: String(t.text).slice(0, 4000) })),
       plan: (Array.isArray(i.plan) ? i.plan.slice(0, 12) : []).map((q) => ({
         id: String(q.id), kind: q.kind === "technical" ? "technical" as const : "behavioral" as const,
@@ -114,11 +115,18 @@ export const gradeInterviewTranscript = createServerFn({ method: "POST" })
           strengths: grade.strengths, improvements: grade.improvements,
         });
         const { neonExecute } = await import("./neon.server");
-        await neonExecute(
-          `insert into public.devup_interview (user_id, job, type, overall, grade, transcript) values ($1, $2, $3, $4, $5::jsonb, $6::jsonb)
-           on conflict (user_id, job, type) do update set overall = excluded.overall, grade = excluded.grade, transcript = excluded.transcript, created_at = now(), deleted_at = null`,
-          [user.id, data.job?.title ?? null, data.plan.some((q) => q.kind === "technical") ? (data.plan.every((q) => q.kind === "technical") ? "technical" : "mixed") : "behavioral",
-            Math.round(Number(grade.overall) || 0), JSON.stringify(grade), JSON.stringify(data.transcript)],
+        const saveArgs = [user.id, data.job?.title ?? null, data.plan.some((q) => q.kind === "technical") ? (data.plan.every((q) => q.kind === "technical") ? "technical" : "mixed") : "behavioral",
+          Math.round(Number(grade.overall) || 0), JSON.stringify(grade), JSON.stringify(data.transcript)];
+        await (data.sessionId
+          ? neonExecute(
+              `update public.devup_interview set overall = $4, grade = $5::jsonb, transcript = $6::jsonb, deleted_at = null
+               where id = $7::uuid and user_id = $1`,
+              [...saveArgs, data.sessionId],
+            )
+          : neonExecute(
+              `insert into public.devup_interview (user_id, job, type, overall, grade, transcript) values ($1, $2, $3, $4, $5::jsonb, $6::jsonb)`,
+              saveArgs,
+            )
         ).catch((e) => console.error("interview save failed", e));
         const { bumpStreak } = await import("./career.functions");
         await bumpStreak(user.id).catch((e) => console.error("streak update failed", e));
