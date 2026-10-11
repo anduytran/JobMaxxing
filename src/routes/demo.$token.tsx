@@ -77,10 +77,7 @@ function Demo() {
 
   const id = () => run.current ?? runId;
   const api: InterviewApi = {
-    parseJob: async (jd) => {
-      // A job "upload" lands as text in the box; very short pastes may be a link, which the demo doesn't fetch.
-      return demoParseJob({ data: { runId: id(), jd } });
-    },
+    parseJob: (jd) => demoParseJob({ data: { runId: id(), jd } }),
     questions: (job, type, length) => demoQuestions({ data: { runId: id(), job, type, length, resumeText: resume?.text ?? "" } }),
     startLive: (job, type, length, plan) => demoStartLive({ data: { runId: id(), job, type, length, plan } }),
     turn: (_conv, text, phase, secondsLeft, lastQuestion) => demoTurn({ data: { runId: id(), text, phase, secondsLeft, lastQuestion } }),
@@ -93,7 +90,7 @@ function Demo() {
     <Shell bare>
       <InterviewFlow
         demo agents={agents} api={api}
-        setupExtra={<DemoUploads resume={resume} onResume={setResume} />}
+        setupExtra={(fillJd) => <DemoUploads resume={resume} onResume={setResume} onJd={fillJd} />}
         reportExtra={(g) => <DemoFeedback runId={id()} grade={g} />}
       />
     </Shell>
@@ -117,7 +114,7 @@ function Gone({ text }: { text: string }) {
 }
 
 /** Resume and job-description uploads. Files are read in the browser; only their text is sent. */
-function DemoUploads({ resume, onResume }: { resume: { name: string; text: string } | null; onResume: (r: { name: string; text: string } | null) => void }) {
+function DemoUploads({ resume, onResume, onJd }: { resume: { name: string; text: string } | null; onResume: (r: { name: string; text: string } | null) => void; onJd: (text: string) => void }) {
   const resumeInput = useRef<HTMLInputElement>(null);
   const jdInput = useRef<HTMLInputElement>(null);
   const [reading, setReading] = useState(false);
@@ -135,13 +132,7 @@ function DemoUploads({ resume, onResume }: { resume: { name: string; text: strin
     if (!f) return;
     const text = await readFileText(f).catch(() => "");
     if (text.length < 40) return void toast.error("Couldn't read text from that file. Paste the description instead.");
-    // Fill the description box the flow reads from.
-    const box = document.querySelector<HTMLTextAreaElement>("textarea");
-    if (box) {
-      const setter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value")?.set;
-      setter?.call(box, text.slice(0, 20000));
-      box.dispatchEvent(new Event("input", { bubbles: true }));
-    }
+    onJd(text.slice(0, 20000));
   };
 
   return (

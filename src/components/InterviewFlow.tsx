@@ -45,7 +45,7 @@ export function InterviewFlow({ agents, api, radar, profileSkills = [], captions
   onGraded?: (g: InterviewGrade & { sessionId?: string | null }, savedId: string | null, radarJobId: string | null) => void | Promise<void>;
   /** Demo mode: no XP, skill changes or Home link. */
   demo?: boolean;
-  setupExtra?: ReactNode;
+  setupExtra?: (fillJd: (text: string) => void) => ReactNode;
   reportExtra?: (g: InterviewGrade) => ReactNode;
 }) {
   const search = { radar };
@@ -319,7 +319,7 @@ export function InterviewFlow({ agents, api, radar, profileSkills = [], captions
             <h2 className="font-display text-xl">1 · Paste a real job description</h2>
             <p className="text-sm text-muted-foreground">Find a posting that matches the role you want and paste the full text.</p>
           </div>
-          {setupExtra}
+          {setupExtra?.(setJd)}
           <Textarea value={jd} onChange={(e) => setJd(e.target.value)} rows={10} placeholder="Senior Frontend Engineer — We're looking for 4+ years of React and TypeScript…" />
           <Button onClick={() => analyze()} disabled={busy || jd.trim().length < 40}>
             {busy && <Loader2 className="animate-spin" />} Analyze job
