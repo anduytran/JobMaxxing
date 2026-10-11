@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Check, Copy, Loader2, Mic, MicOff, Phone, PhoneOff, Send, ShieldAlert, Square, Timer, Users } from "lucide-react";
+import { Check, Copy, Loader2, Mic, MicOff, Phone, PhoneOff, Send, ShieldAlert, Square, Timer, Users, Video, VideoOff } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Max } from "@/components/Max";
@@ -14,7 +14,7 @@ import { useGame } from "@/lib/game";
 import { generateInterviewQuestions, parseJobDescription } from "@/lib/interview.functions";
 import { createBrowserVoice, type VoiceAgent } from "@/lib/interview/voice";
 import {
-  createPeerSession, getPeerSession, joinPeerSession, peerAskNext, peerEndSession, peerGrade, peerSay, peerSetChecks,
+  createPeerSession, getPeerSession, joinPeerSession, peerAskNext, peerEndSession, peerGrade, peerSay, peerSetChecks, peerVideoConsent,
   type PeerSession,
 } from "@/lib/peer.functions";
 import { LENGTHS, type InterviewLength, type InterviewType, type ParsedJob } from "@/lib/interview/types";
@@ -63,7 +63,10 @@ function Page() {
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
   const myRole = session ? ((session.meIsHost === (session.hostRole === "interviewer")) ? "interviewer" : "candidate") : null;
-  const call = usePeerCall({ sessionId, isHost: !!session?.meIsHost, live: stage === "live", signal: session?.signal ?? {} });
+  const videoConsent = session?.signal.video ?? {};
+  const myVideoConsent = session ? (session.meIsHost ? videoConsent.host : videoConsent.guest) : false;
+  const bothVideoConsent = !!(videoConsent.host && videoConsent.guest);
+  const call = usePeerCall({ sessionId, isHost: !!session?.meIsHost, live: stage === "live", signal: session?.signal ?? {}, video: bothVideoConsent });
 
   const refresh = async (id = sessionId) => {
     if (!id) return;
@@ -319,8 +322,34 @@ function Page() {
                   <Button size="sm" variant="ghost" onClick={call.hangUp}><PhoneOff /> Leave call</Button>
                 </>
               )}
+              {myVideoConsent ? (
+                bothVideoConsent ? (
+                  <Button size="sm" variant="ghost" onClick={() => void act(() => peerVideoConsent({ data: { id: session.id, on: false } }))} disabled={busy}>
+                    <VideoOff /> Camera off
+                  </Button>
+                ) : (
+                  <span className="flex items-center gap-1 text-muted-foreground"><Video className="h-3.5 w-3.5" /> Waiting for {partner ?? "your friend"} to allow camera…</span>
+                )
+              ) : (
+                <Button size="sm" variant="outline" onClick={() => void act(() => peerVideoConsent({ data: { id: session.id, on: true } }))} disabled={busy}>
+                  <Video /> Turn on camera
+                </Button>
+              )}
               {call.error && <span className="text-destructive">{call.error}</span>}
             </div>
+
+            {bothVideoConsent && (
+              <div className="grid grid-cols-2 gap-2 border-b bg-muted/30 p-2">
+                <div className="relative overflow-hidden rounded-lg border bg-black/80">
+                  <video ref={call.remoteVideoRef} autoPlay playsInline className="aspect-[4/3] w-full object-cover" aria-label={`${partner ?? "Partner"}'s camera`} />
+                  <span className="absolute bottom-1 left-1 rounded bg-black/60 px-1.5 py-0.5 font-mono text-[10px] text-white">{partner ?? "Partner"}</span>
+                </div>
+                <div className="relative overflow-hidden rounded-lg border bg-black/80">
+                  <video ref={call.localVideoRef} autoPlay playsInline muted className="aspect-[4/3] w-full -scale-x-100 object-cover" aria-label="Your camera" />
+                  <span className="absolute bottom-1 left-1 rounded bg-black/60 px-1.5 py-0.5 font-mono text-[10px] text-white">You</span>
+                </div>
+              </div>
+            )}
 
             <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto p-4">
               {session.transcript.length === 0 && (

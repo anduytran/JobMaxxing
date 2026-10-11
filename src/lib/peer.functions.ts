@@ -36,7 +36,7 @@ export type PeerSession = {
   interviewerGrade: PeerInterviewerGrade | null;
   grading: boolean;
   checks: Record<string, number[]>;
-  signal: { offer?: string; answer?: string };
+  signal: { offer?: string; answer?: string; video?: { host?: boolean; guest?: boolean } };
   flag: string | null;
   strikes: Record<string, number>;
   startedAt: string | null;
@@ -250,9 +250,25 @@ export const peerSignal = createServerFn({ method: "POST" })
     const s = await loadForUser(data.id, user.id);
     const { neonExecute } = await import("./neon.server");
     const signal = s.meIsHost
-      ? (data.reset || !s.signal.offer ? { offer: data.sdp } : { ...s.signal, offer: data.sdp })
+      ? (data.reset || !s.signal.offer ? { offer: data.sdp, video: s.signal.video } : { ...s.signal, offer: data.sdp })
       : { ...s.signal, answer: data.sdp };
     await neonExecute("update public.devup_peer_session set signal = $2::jsonb where id = $1::uuid", [s.id, JSON.stringify(signal)]);
+    return { ok: true };
+  });
+
+// Webcam consent: each side opts in (or revokes) independently; video only
+// flows when both flags are true. Stored on the signal row so both polls see it.
+export const peerVideoConsent = createServerFn({ method: "POST" })
+  .inputValidator((i: { id: unknown; on: unknown }) => ({ id: String(i.id ?? ""), on: !!i.on }))
+  .handler(async ({ data }) => {
+    const user = await me();
+    const s = await loadForUser(data.id, user.id);
+    const { neonExecute } = await import("./neon.server");
+    const video = { ...(s.signal.video ?? {}), [s.meIsHost ? "host" : "guest"]: data.on };
+    await neonExecute(
+      "update public.devup_peer_session set signal = jsonb_set(signal, '{video}', $2::jsonb) where id = $1::uuid",
+      [s.id, JSON.stringify(video)],
+    );
     return { ok: true };
   });
 
