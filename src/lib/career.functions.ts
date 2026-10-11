@@ -31,11 +31,15 @@ export type CareerDashboard = {
   peerActive: PeerActive[];
   peerRecent: PeerRecent[];
   solo: SoloInterview[];
+  xpEvents: XpEvent[];
+  interviewCount: number;
 };
 export type SoloInterview = {
   id: string; job: string | null; type: string | null; overall: number | null; at: string;
   strengths: string[]; improvements: string[]; transcript: { speaker: string; text: string }[];
+  metrics: { quality: number | null; conciseness: number | null; questions: number | null };
 };
+export type XpEvent = { label: string; amount: number; at: string };
 
 const EMPTY_STREAK: StreakInfo = { current: 0, longest: 0, lastActivity: null, freezes: 0 };
 
