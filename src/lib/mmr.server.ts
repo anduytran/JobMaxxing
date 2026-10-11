@@ -103,7 +103,7 @@ export async function listRatingChanges(userId: string, limit = 5) {
   const { rows } = await neonQuery(
     `select skill_name, prev, rating, at from (
        select skill_name, lag(rating) over (partition by skill_name order by created_at) as prev,
-              rating, to_json(created_at) as at
+              rating, created_at::text as at
        from public.devup_skill_rating_log where user_id = $1::uuid
      ) t
      where prev is not null and rating > prev
