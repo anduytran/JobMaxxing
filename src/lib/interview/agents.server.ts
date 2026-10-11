@@ -351,14 +351,14 @@ async function ensureConversationUser(secret: string, opts: { userId: string; na
   }
 }
 
-/** The Question agent answers in its JSON schema; pull out the line to speak. */
-function spokenLine(raw: string): string {
+/** The Question agent answers in its JSON schema; pull out the line to speak and whether it concluded the interview. */
+function parseTurn(raw: string): { line: string; done: boolean } {
   try {
-    const j = JSON.parse(raw.slice(raw.indexOf("{"), raw.lastIndexOf("}") + 1)) as { questions?: { text?: string }[] };
+    const j = JSON.parse(raw.slice(raw.indexOf("{"), raw.lastIndexOf("}") + 1)) as { questions?: { text?: string }[]; done?: boolean; concluded?: boolean };
     const t = j.questions?.map((q) => q.text).filter(Boolean).join(" ");
-    if (t) return t;
+    if (t) return { line: t, done: j.done === true || j.concluded === true };
   } catch { /* plain text reply */ }
-  return raw.trim();
+  return { line: raw.trim(), done: false };
 }
 
 /** Guardrails shared by every user-facing interview agent turn. */
@@ -372,7 +372,10 @@ const GUARDRAILS =
 const TURN_RULES =
   "You are the recruiter conducting a spoken screening interview for this role. Speak like a real recruiter: warm, professional, natural, and concise — " +
   "at most 2 short sentences per turn (optionally a brief acknowledgment of the candidate's last answer, then ONE question). Never list multiple questions. " +
-  "Put your entire spoken line in questions[0].text. " + GUARDRAILS;
+  "Put your entire spoken line in questions[0].text. " +
+  "ENDING: when the candidate clearly signals they are finished — says they are done, has no more questions, thanks you and wraps up, or the interview has " +
+  "naturally concluded after your closing — reply with ONE short warm closing sentence (no new question) and set the top-level JSON field \"done\" to true. " +
+  "Set \"done\" to false on every other turn. Never end early just because an answer was short; only end on a clear signal from the candidate or after your own closing exchange. " + GUARDRAILS;
 
 const typeFocus = (t: InterviewType) =>
   t === "behavioral"
