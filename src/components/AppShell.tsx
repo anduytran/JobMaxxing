@@ -2,7 +2,7 @@ import { Link, useLocation, useRouter, useRouterState } from "@tanstack/react-ro
 import { signOut } from "@/lib/auth.functions";
 import { AnimatePresence, motion, MotionConfig, useReducedMotion } from "framer-motion";
 import {
-  LayoutGrid, FileText, Mic, Radar, LineChart, Network, UsersRound, Swords, Settings, Menu, LogOut, Zap, Flame, CircleHelp, X, Store,
+  LayoutGrid, FileText, Mic, Radar, LineChart, Network, UsersRound, Swords, Settings, Menu, LogOut, Zap, Flame, CircleHelp, X, Store, ArrowRight,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { useGame, levelTitle } from "@/lib/game";
@@ -18,7 +18,7 @@ const LEFT: Item[] = [
   { to: "/", label: "Home", icon: LayoutGrid },
   { to: "/quests", label: "Collection", icon: Swords },
 ];
-const LOCKIN: Item = { to: "/lock-in", label: "Lock In", icon: Zap };
+const LOCKIN: Item = { to: "/lock-in", label: "Lock In", icon: ArrowRight };
 const RIGHT: Item[] = [
   { to: "/progress", label: "Career", icon: LineChart },
   { to: "/store", label: "Store", icon: Store },
@@ -56,12 +56,12 @@ export function AppShell({ children }: { children: ReactNode }) {
             <span className="font-display text-xl font-bold">JobMaxxing<span className="text-primary">.</span></span>
           </Link>
 
-          {/* Lock In is the one loud button and it sits at the far left, right after the brand. */}
+          {/* Lock In is the one loud button: hard left, full nav height, arrow to the right. */}
           <Link to={LOCKIN.to}
-            className={cn("relative my-2 flex shrink-0 items-center gap-2 bg-primary px-6 text-[13px] font-bold uppercase tracking-[0.14em] text-primary-foreground transition-colors hover:bg-primary/90",
-              loc.pathname === LOCKIN.to && "ring-1 ring-primary-foreground/40")}>
-            <LOCKIN.icon className="h-4 w-4" />
+            className={cn("group relative flex shrink-0 items-center gap-3 self-stretch bg-primary px-6 text-[13px] font-bold uppercase tracking-[0.14em] text-primary-foreground transition-colors hover:bg-primary/90",
+              loc.pathname === LOCKIN.to && "ring-1 ring-inset ring-primary-foreground/40")}>
             {LOCKIN.label}
+            <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" />
           </Link>
 
           <nav className="hidden flex-1 items-stretch justify-center gap-1 self-stretch lg:flex" aria-label="Main">
