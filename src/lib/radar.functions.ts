@@ -72,6 +72,19 @@ async function extractSkills(text: string): Promise<string[]> {
 
 // ---------------- match scoring ----------------
 
+const STOP = new Set(["and", "the", "for", "with", "sr", "jr", "i", "ii", "iii", "of", "a", "an", "to", "in"]);
+const words = (s: string) => s.toLowerCase().replace(/[^a-z0-9+#]+/g, " ").split(" ").filter((w) => w && !STOP.has(w));
+/** 1 = exact phrase in title, 0.75 = every key word in title, 0.4 = most, 0 = weak. */
+function titleFit(title: string, role: string): number {
+  const t = title.toLowerCase();
+  if (t.includes(role.toLowerCase())) return 1;
+  const tw = new Set(words(title));
+  const rw = words(role);
+  if (!rw.length) return 0;
+  const hit = rw.filter((w) => tw.has(w) || [...tw].some((x) => x.startsWith(w) || w.startsWith(x) && x.length > 3)).length / rw.length;
+  return hit === 1 ? 0.75 : hit >= 0.5 && rw.length > 2 ? 0.4 : 0;
+}
+
 const tokens = (s: string | undefined) =>
   (s ?? "").toLowerCase().split(/[,;\n/|]+/).map((x) => x.trim()).filter((x) => x.length > 2);
 
@@ -93,11 +106,11 @@ function scoreJob(job: { title: string; description: string; location: string; s
   if (overlap.length) { score += Math.min(45, overlap.length * 9); why.push(`${overlap.length} of your skills`); }
 
   const roleTokens = tokens(profile.prefs.roles);
-  const titleLower = job.title.toLowerCase();
   const descLower = job.description.toLowerCase();
-  const roleHits = roleTokens.filter((t) => titleLower.includes(t)).length;
-  if (roleHits) { score += 25; why.push("Matches your target role"); }
-  else if (roleTokens.some((t) => descLower.includes(t))) score += 8;
+  const fit = Math.max(0, ...roleTokens.map((t) => titleFit(job.title, t)));
+  if (fit >= 0.75) { score += fit === 1 ? 35 : 28; why.push("Matches your target role"); }
+  else if (fit > 0) { score += 12; why.push("Close to your target role"); }
+  else if (roleTokens.some((t) => descLower.includes(t))) score += 4;
 
   const wantRemote = /remote/i.test(profile.prefs.workMode ?? "");
   const jobRemote = /remote|work from home|anywhere/i.test(`${job.location} ${descLower}`);
@@ -122,29 +135,39 @@ async function fetchAdzuna(prefs: JobPrefs): Promise<{ listings: AdzunaListing[]
   const appId = process.env["ADZUNA_APPLICATION_ID"];
   const appKey = process.env["ADZUNA_API_KEY"];
   if (!appId || !appKey) return { listings: [], error: "Job listings aren't connected yet. Add the Adzuna Application ID and API key in project settings." };
-  const what = tokens(prefs.roles)[0] ?? "developer";
+  const roles = tokens(prefs.roles).slice(0, 3);
+  if (!roles.length) roles.push("software developer");
   const where = tokens(prefs.locations).filter((t) => !/^remote/.test(t))[0];
+  const seen = new Set<string>();
   const jobs: AdzunaListing[] = [];
-  for (const page of [1, 2]) {
+  // Title-only search per target role: plain "what" matches any word anywhere in the
+  // description, which is why "AI Architect" pulled warehouse and sales roles.
+  const search = async (params: Record<string, string>, page: number) => {
+    const url = new URL(`https://api.adzuna.com/v1/api/jobs/us/search/${page}`);
+    url.searchParams.set("app_id", appId);
+    url.searchParams.set("app_key", appKey);
+    url.searchParams.set("results_per_page", "25");
+    url.searchParams.set("max_days_old", "30");
+    url.searchParams.set("sort_by", "relevance");
+    for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
+    if (where) url.searchParams.set("where", where);
+    url.searchParams.set("content-type", "application/json");
     try {
-      const url = new URL(`https://api.adzuna.com/v1/api/jobs/us/search/${page}`);
-      url.searchParams.set("app_id", appId);
-      url.searchParams.set("app_key", appKey);
-      url.searchParams.set("results_per_page", "20");
-      url.searchParams.set("max_days_old", "30");
-      url.searchParams.set("what", what);
-      if (where) url.searchParams.set("where", where);
-      url.searchParams.set("content-type", "application/json");
       const res = await fetch(url, { signal: AbortSignal.timeout(15_000) });
-      if (!res.ok) { console.error("Adzuna search failed", res.status, (await res.text()).slice(0, 300)); break; }
+      if (!res.ok) { console.error("Adzuna search failed", res.status, (await res.text()).slice(0, 300)); return; }
       const body = (await res.json()) as { results?: AdzunaListing[] };
-      jobs.push(...(body.results ?? []));
-    } catch (err) {
-      console.error("Adzuna fetch error", err);
-      break;
-    }
+      for (const l of body.results ?? []) if (!seen.has(String(l.id))) { seen.add(String(l.id)); jobs.push(l); }
+    } catch (err) { console.error("Adzuna fetch error", err); }
+  };
+  for (const role of roles) {
+    await search({ title_only: role }, 1);
+    if (jobs.length < 20) await search({ title_only: role }, 2);
   }
-  return { listings: jobs };
+  // Too few exact titles (rare roles): widen to the exact phrase anywhere, then keep only
+  // listings whose title shares the role's key words.
+  if (jobs.length < 8) for (const role of roles) await search({ what_phrase: role }, 1);
+  const filtered = jobs.filter((l) => roles.some((r) => titleFit(String(l.title ?? ""), r) > 0));
+  return { listings: filtered.length >= 3 ? filtered : jobs };
 }
 
 const clean = (v: unknown, max: number): string | null => {
@@ -193,6 +216,11 @@ export const getRadar = createServerFn({ method: "POST" })
               contractTime: clean(l.contract_time, 40) ?? null,
             })],
           }));
+          // Drop untouched listings from earlier searches so old titles stop crowding the radar.
+          statements.push({
+            query: "delete from public.devup_job_radar where user_id = $1 and status = 'new' and not (job_id = any($2::text[]))",
+            params: [uid, listings.slice(0, 40).map((l) => String(l.id))],
+          } as never);
           await neonExecute(statements);
         }
       }
