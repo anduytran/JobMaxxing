@@ -86,7 +86,7 @@ function Page() {
   // Auto-scroll the transcript.
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
-  }, [session?.transcript.length]);
+  }, [session?.transcript?.length]);
 
   // The candidate's client grades the finished session once, then saves it.
   useEffect(() => {
