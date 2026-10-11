@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CollectionRouteImport } from './routes/collection'
 import { Route as CrewRouteImport } from './routes/crew'
 import { Route as InterviewRouteImport } from './routes/interview'
 import { Route as LockInRouteImport } from './routes/lock-in'
@@ -26,6 +27,11 @@ import { Route as QuestsAddRouteImport } from './routes/quests.add'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CollectionRoute = CollectionRouteImport.update({
+  id: '/collection',
+  path: '/collection',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CrewRoute = CrewRouteImport.update({
@@ -91,6 +97,7 @@ const QuestsAddRoute = QuestsAddRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/collection': typeof CollectionRoute
   '/crew': typeof CrewRoute
   '/interview': typeof InterviewRoute
   '/lock-in': typeof LockInRoute
@@ -106,6 +113,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/collection': typeof CollectionRoute
   '/crew': typeof CrewRoute
   '/interview': typeof InterviewRoute
   '/lock-in': typeof LockInRoute
@@ -122,6 +130,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/collection': typeof CollectionRoute
   '/crew': typeof CrewRoute
   '/interview': typeof InterviewRoute
   '/lock-in': typeof LockInRoute
@@ -139,6 +148,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/collection'
     | '/crew'
     | '/interview'
     | '/lock-in'
@@ -154,6 +164,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/collection'
     | '/crew'
     | '/interview'
     | '/lock-in'
@@ -169,6 +180,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/collection'
     | '/crew'
     | '/interview'
     | '/lock-in'
@@ -185,6 +197,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CollectionRoute: typeof CollectionRoute
   CrewRoute: typeof CrewRoute
   InterviewRoute: typeof InterviewRoute
   LockInRoute: typeof LockInRoute
@@ -205,6 +218,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/collection': {
+      id: '/collection'
+      path: '/collection'
+      fullPath: '/collection'
+      preLoaderRoute: typeof CollectionRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/crew': {
@@ -307,6 +327,7 @@ const QuestsRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CollectionRoute: CollectionRoute,
   CrewRoute: CrewRoute,
   InterviewRoute: InterviewRoute,
   LockInRoute: LockInRoute,
