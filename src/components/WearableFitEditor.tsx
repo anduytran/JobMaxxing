@@ -37,7 +37,7 @@ export function WearableFitEditor({ worn }: { worn: string[] }) {
   }
 
   function nudge(id: string, key: string) {
-    const step = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[key];
+    const step = ({ ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] } as Record<string, [number, number]>)[key];
     if (!step) return false;
     const p = placeWearable(WEARABLES.find((w) => w.id === id)!, pose, spots);
     move(id, p.left + step[0], p.top + step[1]);
@@ -55,7 +55,7 @@ export function WearableFitEditor({ worn }: { worn: string[] }) {
     setSaving(true);
     const r = await saveWearableSpots({ data: { spots: draft } });
     setSaving(false);
-    if (!r.ok) return toast.error(r.error);
+    if (!r.ok) { toast.error(r.error); return; }
     setWearableSpots(draft);
     setDraft(null);
     toast.success("Fit saved — every Max is wearing it that way now");

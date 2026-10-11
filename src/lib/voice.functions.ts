@@ -7,7 +7,7 @@ export const getInterviewVoice = createServerFn({ method: "GET" }).handler(async
   const { neonExecute } = await import("./neon.server");
   const user = await requireUser();
   const { rows } = await neonExecute("select interview_voice from public.devup_profile where id = $1", [user.id]);
-  const v = String(rows[0]?.interview_voice ?? "");
+  const v = String(rows[0]?.["interview_voice"] ?? "");
   return { voiceId: VOICE_IDS.includes(v) ? v : DEFAULT_VOICE_ID };
 });
 
