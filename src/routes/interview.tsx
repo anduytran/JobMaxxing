@@ -9,7 +9,6 @@ import { AcknowledgeDisclosure, InterviewDisclosure } from "@/components/Intervi
 import { SkillText } from "@/components/skill-text";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Progress } from "@/components/ui/progress";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useGame } from "@/lib/game";
