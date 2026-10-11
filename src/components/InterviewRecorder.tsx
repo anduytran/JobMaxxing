@@ -25,6 +25,30 @@ export function InterviewRecorder({ active, kind, title, onSaved }: {
   const preview = useRef<HTMLVideoElement>(null);
   const meta = useRef({ kind, title, onSaved });
   meta.current = { kind, title, onSaved };
+  // Draggable preview: null = default spot (top right); once dragged, absolute x/y.
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
+  const drag = useRef<{ dx: number; dy: number } | null>(null);
+
+  const onDragStart = (e: React.PointerEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    const r = el.getBoundingClientRect();
+    drag.current = { dx: e.clientX - r.left, dy: e.clientY - r.top };
+    el.setPointerCapture(e.pointerId);
+    const move = (ev: PointerEvent) => {
+      if (!drag.current) return;
+      setPos({
+        x: Math.min(Math.max(0, ev.clientX - drag.current.dx), window.innerWidth - r.width),
+        y: Math.min(Math.max(0, ev.clientY - drag.current.dy), window.innerHeight - r.height),
+      });
+    };
+    const up = () => {
+      drag.current = null;
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+  };
 
   const stop = () => {
     const r = rec.current;
