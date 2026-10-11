@@ -125,12 +125,14 @@ export const listFriends = createServerFn({ method: "GET" }).handler(async () =>
       id: String(r["id"]),
       email: String(r["email"]),
       name: displayName(String(r["email"]), r["name"] as string | null),
+      avatarUrl: (r["avatar_url"] as string | null) ?? null,
       status: r["in_interview"] ? "in_interview" : r["online"] ? "online" : "offline",
     })),
     requests: requests.map((r): FriendRequest => ({
       id: String(r["id"]),
       email: String(r["email"]),
       name: displayName(String(r["email"]), r["name"] as string | null),
+      avatarUrl: (r["avatar_url"] as string | null) ?? null,
       createdAt: String(r["created_at"]),
     })),
   };
