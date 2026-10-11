@@ -127,6 +127,28 @@ export const getStore = createServerFn({ method: "GET" }).handler(
   },
 );
 
+/** Lightweight read of just the equipped wearables, for dressing Max app-wide. */
+export const getActiveWearables = createServerFn({ method: "GET" }).handler(
+  async (): Promise<{ ok: true; ids: string[] } | { ok: false; error: string }> => {
+    try {
+      const userId = (await requireUser()).id;
+      const { results } = await neonExecute<{ results: any[] }>([
+        {
+          query: "select active_wearables from public.devup_profile where id = $1",
+          params: [userId],
+        },
+      ]);
+      const raw = results[0]?.rows?.[0]?.active_wearables;
+      const ids = (Array.isArray(raw) ? (raw as unknown[]) : [])
+        .map(String)
+        .filter((id) => WEARABLE_IDS.includes(id));
+      return { ok: true, ids };
+    } catch (err) {
+      return fail(err);
+    }
+  },
+);
+
 export const buyItem = createServerFn({ method: "POST" })
   .inputValidator((input: { itemId: unknown }) => {
     const itemId = typeof input.itemId === "string" ? input.itemId.trim() : "";

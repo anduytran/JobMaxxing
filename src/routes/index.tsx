@@ -19,6 +19,9 @@ import openToWork from "@/assets/open-to-work.png.asset.json";
 import { questTitleLines } from "@/lib/quest-titles";
 import { ResetCountdown } from "@/components/ResetCountdown";
 import { useInterviewModePicker } from "@/components/InterviewModePicker";
+import { WEARABLE_ART } from "@/components/Wearables";
+import { WEARABLES } from "@/lib/wearables";
+import { useWornWearables } from "@/lib/use-wearables";
 
 const MAX_ART: Record<string, MaxPose> = { setup: "resume", resume: "resume", interview: "interview", skills: "skills", hunt: "hunt", branding: "dap", social: "dap" };
 
@@ -133,6 +136,7 @@ function Dashboard() {
   const featPose = MAX_ART[featKey] ?? "interview";
   const interviewQuest = open.find((q) => q.category.toLowerCase() === "interview");
   const reward = featured ? `+${featured.xp} XP` : interviewQuest ? `+${interviewQuest.xp} quest XP · up to 400 interview XP` : "Up to 400 XP";
+  const wornWearables = useWornWearables();
   const destination = featKey === "interview" ? "/interview" : featKey === "setup" || featKey === "resume" ? "/setup" : featKey === "hunt" ? "/market" : "/quests";
   const featArt = MAX_POSES[featPose];
   const featScale = MAX_SCALE[featPose];
@@ -242,7 +246,12 @@ function Dashboard() {
                    className="absolute left-1/2 top-1/2 h-[150%] w-[150%] max-w-none -translate-x-1/2 -translate-y-1/2 object-contain"
                 />
               )}
-              <div className="relative h-full w-full"><img key={featArt} src={featArt} alt={featured ? `Max ready for: ${featured.title}` : "Max with a microphone, ready to interview you"} width={816} height={816} decoding="sync" draggable={false} className="h-full w-full object-contain" /></div>
+              <div className="relative h-full w-full">
+                <img key={featArt} src={featArt} alt={featured ? `Max ready for: ${featured.title}` : "Max with a microphone, ready to interview you"} width={816} height={816} decoding="sync" draggable={false} className="h-full w-full object-contain" />
+                {WEARABLES.filter((w) => wornWearables.includes(w.id)).map((w) => (
+                  <img key={w.id} src={WEARABLE_ART[w.id]} alt="" draggable={false} className="pointer-events-none absolute" style={{ left: `${w.left}%`, top: `${w.top}%`, width: `${w.width}%` }} />
+                ))}
+              </div>
             </div>
           </motion.div>
           <aside aria-label="Quick overview" className="absolute right-20 top-1/2 z-10 hidden w-1/2 -translate-y-1/2 justify-end">

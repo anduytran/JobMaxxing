@@ -13,6 +13,7 @@ import {
   type StoreState,
 } from "@/lib/store.functions";
 import { WEARABLES, slotsConflict } from "@/lib/wearables";
+import { refreshWearables } from "@/lib/use-wearables";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/collection")({
@@ -78,6 +79,7 @@ function Collection() {
     setState({ ...state, activeWearables: next });
     equipWearables({ data: { ids: next } }).then((r) => {
       if (!r.ok) toast.error(r.error);
+      else refreshWearables();
     });
   };
 

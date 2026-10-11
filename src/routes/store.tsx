@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useGame } from "@/lib/game";
 import { CAPSULE_ART, MACHINE_ART, MaxFigure, WearableArt } from "@/components/Wearables";
+import { refreshWearables } from "@/lib/use-wearables";
 import { ROLL_COST, WEARABLES, slotsConflict, type WearableDef } from "@/lib/wearables";
 import {
   buyItem,
@@ -112,6 +113,7 @@ function CapsuleMachine({
       ];
       equipWearables({ data: { ids: next } }).then((r) => {
         if (!r.ok) toast.error(r.error);
+        else refreshWearables();
       });
       toast.success(`Max is wearing the ${def.name.toLowerCase()}.`);
     }
@@ -235,6 +237,7 @@ function Wardrobe({ state, onChanged }: { state: StoreState; onChanged: () => vo
       toast.error(res.error);
       return;
     }
+    refreshWearables();
     onChanged();
   };
 
