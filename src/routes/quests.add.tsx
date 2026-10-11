@@ -112,7 +112,7 @@ function AddQuests() {
   };
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className="mx-auto max-w-[1500px] space-y-6">
       <div>
         <Link to="/" className="mb-2 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4" /> Back to Home
@@ -126,7 +126,7 @@ function AddQuests() {
         )}
       </div>
 
-      <div className="grid gap-x-5 gap-y-8 pt-4 md:grid-cols-2">
+      <div className="grid items-start gap-x-5 gap-y-10 pt-4 md:grid-cols-2 xl:grid-cols-4">
         {drawers(packs).map((d) => {
           const count = d.quests.filter((q) => owned.has(q.id)).length;
           const all = count === d.quests.length;
