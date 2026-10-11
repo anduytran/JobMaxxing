@@ -80,6 +80,7 @@ function Interview() {
   jobTerms.current = job ? [...(job.skills ?? []), job.title].filter((x): x is string => typeof x === "string") : [];
 
   const [convId, setConvId] = useState<string | null>(null);
+  const [savedId, setSavedId] = useState<string | null>(null);
   const [thinking, setThinking] = useState(false);
   useEffect(() => {
     const base = agents.voice === "elevenlabs"
@@ -244,7 +245,7 @@ function Interview() {
     if (!job) return;
     setStage("grading");
     try {
-      const g = await gradeInterviewTranscript({ data: { transcript: turns, job, plan: questions } });
+      const g = await gradeInterviewTranscript({ data: { transcript: turns, job, plan: questions, sessionId: savedId } });
       setGrade(g);
       setRatings(g.ratings ?? []);
       setStage("report");
