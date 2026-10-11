@@ -535,7 +535,7 @@ function Metric({ label, m }: { label: string; m: { score: number; feedback: str
       <div className="text-sm font-medium text-muted-foreground">{label}</div>
       <div className="mt-2 flex items-baseline gap-1"><span className="font-display text-5xl font-bold">{m.score}</span><span className="text-sm text-muted-foreground">%</span></div>
       <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-muted">
-        <div className={cn("h-full rounded-full", good ? "bg-secondary" : "bg-primary")} style={{ width: `${m.score}%` }} />
+        <div className={cn("h-full rounded-full", good ? "bg-success" : "bg-primary")} style={{ width: `${m.score}%` }} />
       </div>
       <p className="mt-3 text-sm text-muted-foreground">{m.feedback}</p>
     </div>
