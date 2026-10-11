@@ -126,45 +126,45 @@ function AddQuests() {
         )}
       </div>
 
-      {packs.map((p) => {
-        const count = p.quests.filter((q) => owned.has(q.id)).length;
-        const all = count === p.quests.length;
-        return (
-          <section key={p.key} className="panel p-5">
-            <div className="mb-4 flex items-center gap-3">
-              <div className="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 text-primary"><p.icon className="h-5 w-5" /></div>
-              <div className="flex-1">
-                <h2 className="text-lg font-semibold">{p.name}</h2>
-                <p className="text-sm text-muted-foreground">{p.blurb} · {count}/{p.quests.length} in pool</p>
+      <div className="grid gap-x-5 gap-y-8 pt-4 md:grid-cols-2">
+        {drawers(packs).map((d) => {
+          const count = d.quests.filter((q) => owned.has(q.id)).length;
+          const all = count === d.quests.length;
+          return (
+            <section key={d.key} className="relative">
+              {/* folder tab */}
+              <div className="absolute -top-7 left-5 flex h-8 items-center gap-2 rounded-t-lg border border-b-0 bg-secondary px-4 text-xs font-semibold uppercase tracking-wide text-secondary-foreground">
+                <d.icon className="h-3.5 w-3.5" /> {d.name}
               </div>
-              <Button size="sm" variant={all ? "outline" : "default"} onClick={() => togglePack(p)}>
-                {all ? "Remove all" : "Add all"}
-              </Button>
-            </div>
-            <div className="grid gap-2 sm:grid-cols-2">
-              {p.quests.map((q) => {
-                const on = owned.has(q.id);
-                return (
-                  <button
-                    key={q.id}
-                    onClick={() => (on ? removeQuest(q.id) : addQuest(q))}
-                    aria-pressed={on}
-                    className={`flex items-start gap-3 rounded-xl border p-3 text-left transition-colors ${on ? "border-primary bg-primary/10" : "border-border hover:bg-muted"}`}
-                  >
-                    <span className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-md border ${on ? "border-primary bg-primary text-primary-foreground" : "border-border"}`}>
-                      {on ? <Check className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5 text-muted-foreground" />}
-                    </span>
-                    <span className="flex-1">
-                      <span className="block text-sm font-medium">{q.title}</span>
-                      <span className="text-xs text-muted-foreground">{PERIOD_LABEL[q.period]} · +{q.xp} XP</span>
-                    </span>
+              <div className="rounded-2xl rounded-tl-none border bg-secondary/60 p-4 pt-5">
+                <div className="mb-3 flex items-center justify-between gap-3 px-1">
+                  <p className="text-xs text-muted-foreground">{d.blurb} · {count}/{d.quests.length} pinned</p>
+                  <button onClick={() => togglePack({ ...d, quests: d.quests })} className="text-xs font-semibold text-primary hover:underline">
+                    {all ? "Unpin all" : "Pin all"}
                   </button>
-                );
-              })}
-            </div>
-          </section>
-        );
-      })}
+                </div>
+                <ul className="space-y-2">
+                  {d.quests.map((q, i) => {
+                    const on = owned.has(q.id);
+                    return (
+                      <li key={q.id} style={{ transform: `rotate(${((i % 3) - 1) * 0.4}deg)` }}>
+                        <button onClick={() => (on ? removeQuest(q.id) : addQuest(q))} aria-pressed={on}
+                          className={`flex w-full items-center gap-3 border-l-4 bg-card px-3 py-2.5 text-left shadow-sm transition hover:-translate-y-0.5 ${on ? "border-l-primary" : "border-l-border opacity-80 hover:opacity-100"}`}>
+                          <span className="flex-1 text-sm">{q.title}</span>
+                          <span className="shrink-0 text-right text-[11px] leading-tight text-muted-foreground">
+                            {PERIOD_LABEL[q.period]}<br /><b className="text-foreground">+{q.xp}</b>
+                          </span>
+                          {on ? <Check className="h-4 w-4 shrink-0 text-primary" /> : <Plus className="h-4 w-4 shrink-0 text-muted-foreground" />}
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            </section>
+          );
+        })}
+      </div>
 
       <section className="panel p-5">
         <div className="mb-4 flex items-center gap-3">
