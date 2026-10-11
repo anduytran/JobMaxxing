@@ -445,7 +445,7 @@ export function InterviewFlow({ agents, api, radar, profileSkills = [], captions
               aria-label={listening ? "Click to end your answer" : "Click to answer"}
               disabled={thinking || stage === "grading" || playback !== "ready"}
               onClick={() => { if (listening) voice.current?.finishListening(); else void speak(); }}
-              className={cn("hidden h-14 w-14 shrink-0 place-items-center rounded-full border-2 transition md:grid",
+              className={cn("grid h-14 w-14 shrink-0 place-items-center rounded-full border-2 transition",
                 listening ? "border-primary bg-primary text-primary-foreground" : "border-foreground/60 hover:border-primary hover:text-primary",
                 (thinking || stage === "grading" || playback !== "ready") && "opacity-40")}
             >
