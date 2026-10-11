@@ -86,9 +86,9 @@ export function InterviewRecorder({ active, kind, title, onSaved, onDecision }: 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 1280 }, height: { ideal: 720 } }, audio: true });
       // Blend the interviewer's voice in alongside the mic so the video has both sides.
-      const mix = beginRecorderMix();
+      const mix = beginRecorderMix(stream);
       const recorded = mix
-        ? new MediaStream([...stream.getVideoTracks(), ...stream.getAudioTracks(), ...mix.getAudioTracks()])
+        ? new MediaStream([...stream.getVideoTracks(), ...mix.getAudioTracks()])
         : stream;
       const mimeType = MIMES.find((m) => typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported(m));
       const mr = new MediaRecorder(recorded, mimeType ? { mimeType } : undefined);
