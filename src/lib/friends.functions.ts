@@ -103,18 +103,18 @@ export const listFriends = createServerFn({ method: "GET" }).handler(async () =>
        union
        select user_id as other_id from public.devup_friendship where friend_id = $1 and status = 'accepted'
      )
-     select u.id::text as id, u.email, p.name,
+     select u.id::text as id, u.email, p.name, p.avatar_url,
        exists(select 1 from public.devup_peer_session s
               where s.status = 'live' and (s.host_id::text = u.id::text or s.guest_id::text = u.id::text)) as in_interview,
        exists(select 1 from public.devup_session sess
               where sess.user_id = u.id and sess.expires_at > now()) as online
-     from pairs join public.devup_user u on u.id::text = pairs.other_id
+      from pairs join public.devup_user u on u.id::text = pairs.other_id
      left join public.devup_profile p on p.id = u.id::text
      order by u.email`,
     [me.id],
   );
   const { rows: requests } = await neonQuery(
-    `select f.id::text as id, u.email, p.name, f.created_at from public.devup_friendship f
+    `select f.id::text as id, u.email, p.name, p.avatar_url, f.created_at from public.devup_friendship f
      join public.devup_user u on u.id::text = f.user_id
      left join public.devup_profile p on p.id = u.id::text
      where f.friend_id = $1 and f.status = 'pending' order by f.created_at desc`,
