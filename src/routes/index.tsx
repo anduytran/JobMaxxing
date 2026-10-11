@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { motion, useReducedMotion } from "framer-motion";
-import { ArrowRight, Check, ChevronLeft, ChevronRight, Clock, Code2, FileText, Mic, Radar, Sparkles, Users, Zap } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Clock, Code2, FileText, Mic, Radar, Sparkles, Users, Zap } from "lucide-react";
 import { useGame } from "@/lib/game";
 import { Button } from "@/components/ui/button";
 import { useEffect, useRef, useState } from "react";
@@ -179,10 +179,9 @@ function Dashboard() {
         >
           <SceneBackdrop kind={featKey} />
           <div className="featured-scrim pointer-events-none absolute inset-0" />
-          {/* The column stretches to the card so the eyebrow, the pitch and the dots
-              anchor the top, middle and bottom of the screen. */}
+          {/* The column stretches to the card so the pitch and the dots
+              anchor the top and bottom of the screen. */}
           <div className="relative z-10 flex w-full max-w-2xl flex-col justify-start md:max-w-[calc(50%_-_13svh_-_1.5rem)] md:justify-between">
-            <p className="flex items-center gap-2 whitespace-nowrap text-xs font-semibold uppercase tracking-[0.2em] text-foreground/70"><span className="h-1.5 w-1.5 rounded-full bg-foreground/60" />{featured ? `Today's featured quest · ${featured.category}` : "Your main event · Mock interview"}</p>
             <div className="pb-8 pt-8 md:py-10">
               {featured ? (
                 <h2 ref={headRef} title={featured.title} className="min-h-[2.2em] break-words text-foreground text-3xl font-bold leading-[1.1] sm:text-4xl lg:text-5xl"><span className="block">{featLines[0]}</span><span className="block">{featLines[1]}</span></h2>
@@ -192,10 +191,10 @@ function Dashboard() {
               <p ref={subRef} className="mt-5 max-w-md text-lg text-muted-foreground">{scene.blurb}</p>
               <p className="mt-6 flex items-center gap-2 text-sm font-semibold text-foreground"><Zap className="h-4 w-4 text-primary" />{reward}</p>
               {destination === "/interview" ? (
-                <Button className="mt-5 min-w-32 rounded-none" onClick={openInterviewMode}>Start<ArrowRight className="h-4 w-4" /></Button>
+                <Button className="mt-7 h-14 min-w-48 rounded-none px-9 text-lg font-bold uppercase tracking-[0.12em]" onClick={openInterviewMode}>Start</Button>
               ) : (
-                <Button asChild className="mt-5 min-w-32 rounded-none">
-                  <Link to={destination} search={{}}>Start<ArrowRight className="h-4 w-4" /></Link>
+                <Button asChild className="mt-7 h-14 min-w-48 rounded-none px-9 text-lg font-bold uppercase tracking-[0.12em]">
+                  <Link to={destination} search={{}}>Start</Link>
                 </Button>
               )}
             </div>
