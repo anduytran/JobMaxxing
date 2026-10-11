@@ -375,7 +375,9 @@ function Page() {
             <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto p-4">
               {session.transcript.length === 0 && (
                 <p className="py-12 text-center text-sm text-muted-foreground">
-                  {myRole === "interviewer" ? "Start the call, then reveal the first question and read it aloud." : "Start the call and wait for the first question…"}
+                  {!bothReady
+                    ? "Once the call connects, both of you press \"I'm ready\" — the clock starts then."
+                    : myRole === "interviewer" ? "Reveal the first question and read it aloud." : "Wait for the first question…"}
                 </p>
               )}
               {session.transcript.map((t, i) => (
@@ -397,7 +399,8 @@ function Page() {
                   </Button>
                 )}
                 {myRole === "interviewer" && !allAsked && (
-                  <Button onClick={() => void act(() => peerAskNext({ data: { id: session.id } }))} disabled={busy}>
+                  <Button onClick={() => void act(() => peerAskNext({ data: { id: session.id } }))} disabled={busy || !bothReady}
+                    title={bothReady ? undefined : "The interview starts once you're both ready"}>
                     {busy && <Loader2 className="animate-spin" />} {askedCount === 0 ? "Reveal first question" : "Next question"}
                   </Button>
                 )}
