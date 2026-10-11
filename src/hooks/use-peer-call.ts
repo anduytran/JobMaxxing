@@ -165,10 +165,13 @@ export function usePeerCall(opts: {
   // Apply the other side's SDP when it arrives.
   const busy = useRef(false);
   const [recheck, setRecheck] = useState(0);
+  const latest = useRef(signal);
+  latest.current = signal;
   useEffect(() => {
     if (!live || !sessionId || state === "idle" || state === "failed" || busy.current) return;
     const pc = pcRef.current;
     if (!pc) return;
+    const seen = { offer: signal.offer, answer: signal.answer };
     void (async () => {
       busy.current = true;
       try {
@@ -194,7 +197,8 @@ export function usePeerCall(opts: {
         setError((e as Error).message);
       } finally {
         busy.current = false;
-        setRecheck((n) => n + 1); // re-evaluate signals that arrived while busy
+        // Re-evaluate only if new signals arrived while we were busy.
+        if (latest.current.offer !== seen.offer || latest.current.answer !== seen.answer) setRecheck((n) => n + 1);
       }
     })();
   }, [live, sessionId, isHost, signal.offer, signal.answer, state, makePc, start, recheck]);
