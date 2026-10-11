@@ -365,6 +365,19 @@ export const peerGrade = createServerFn({ method: "POST" })
       await Promise.all(
         [candidateId, interviewerId].filter(Boolean).map((id) => bumpStreak(id as string).catch((e) => console.error("streak update failed", e))),
       );
+      // Save the session to both users' Career history.
+      const jobTitle = s.job?.title ?? null;
+      const peerType = s.questions.some((q) => q.kind === "technical") ? (s.questions.every((q) => q.kind === "technical") ? "technical" : "mixed") : "behavioral";
+      await Promise.all([
+        candidateId && neonExecute(
+          `insert into public.devup_interview (user_id, job, type, overall, grade, transcript) values ($1, $2, $3, $4, $5::jsonb, $6::jsonb)`,
+          [candidateId, jobTitle, `peer ${peerType}`, Math.round(Number(candidate.overall) || 0), JSON.stringify(candidate), JSON.stringify(s.transcript)],
+        ),
+        interviewerId && neonExecute(
+          `insert into public.devup_interview (user_id, job, type, overall, grade, transcript) values ($1, $2, $3, $4, $5::jsonb, $6::jsonb)`,
+          [interviewerId, jobTitle, `peer ${peerType} (interviewer)`, Math.round(Number(interviewer.overall) || 0), JSON.stringify(interviewer), JSON.stringify(s.transcript)],
+        ),
+      ].map((p) => Promise.resolve(p).catch((e) => console.error("peer interview save failed", e))));
     } catch (e) {
       await neonExecute("update public.devup_peer_session set grade = null where id = $1::uuid", [s.id]);
       throw e;
