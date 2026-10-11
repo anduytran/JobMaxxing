@@ -378,7 +378,7 @@ export const getRadar = createServerFn({ method: "POST" })
       };
       let fetchError: string | undefined;
       if (data.refresh) {
-        const { listings, error } = await fetchJobs(prefs);
+        const { listings, error } = await fetchJobs(prefs, uid);
         fetchError = error;
         if (listings.length) {
           // Score every candidate that is in the user's areas, then keep only the best
