@@ -215,17 +215,18 @@ export function withScribeListening(base: VoiceAgent, getToken: () => Promise<st
         });
         const fail = (m: unknown) => {
           if (done) return;
-          if (!opened && !committed.length) {
-            // Socket never came up: fall back to browser recognition for this answer.
-            done = true; finish = undefined; cancel = undefined;
+          console.error("Scribe error", opened ? "(after open)" : "(before open)", m);
+          if (!committed.length && !partial.trim()) {
+            // Nothing captured yet: fall back to browser recognition for this answer.
+            done = true; clearTimeout(flushTimer); finish = undefined; cancel = undefined;
             try { conn.close(); } catch { /* closed */ }
             usingBase = true;
             base.listen(onTranscript).then(resolve, reject);
             return;
           }
-          console.error("Scribe error", m);
           end(true, new Error("Voice capture failed — type your answer instead."));
         };
+        conn.on(RealtimeEvents.CLOSE as never, (() => { if (!done && !flushTimer) fail("socket closed"); }) as never);
         for (const e of [RealtimeEvents.ERROR, RealtimeEvents.AUTH_ERROR, RealtimeEvents.QUOTA_EXCEEDED, RealtimeEvents.RATE_LIMITED, RealtimeEvents.INPUT_ERROR, RealtimeEvents.TRANSCRIBER_ERROR]) conn.on(e, fail as never);
         finish = () => {
           if (done || flushTimer) return;
