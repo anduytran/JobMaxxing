@@ -19,7 +19,7 @@ export function useCareerDashboard() {
     getCareerDashboard().then(setData).catch(() => {}).finally(() => setLoading(false));
   };
   useEffect(reload, []);
-  return { data, loading };
+  return { data, loading, reload };
 }
 
 const PALETTE = ["var(--primary)", "var(--accent)", "var(--success)"];
@@ -31,7 +31,8 @@ function dayRows(series: CareerDashboard["elo"], days: number) {
   for (const s of series) {
     let pts = s.points.filter((p) => new Date(p.t).getTime() >= cutoff);
     if (!pts.length) continue;
-    if (pts.length === 1) pts = [{ t: new Date(new Date(pts[0].t).getTime() - 86_400_000).toISOString(), rating: pts[0].rating }, ...pts];
+    const only = pts[0]!;
+    if (pts.length === 1) pts = [{ t: new Date(new Date(only.t).getTime() - 86_400_000).toISOString(), rating: only.rating }, ...pts];
     for (const p of pts) {
       const key = p.t.slice(0, 10);
       if (!rows.has(key)) { rows.set(key, {}); keys.push(key); }
