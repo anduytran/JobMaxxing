@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import meadowDesktop from "@/assets/quest-scenes/meadow-desktop.png.asset.json";
 import meadowMobile from "@/assets/quest-scenes/meadow-mobile.png.asset.json";
+import officeDesktop from "@/assets/quest-scenes/office-desktop.png.asset.json";
+import officeMobile from "@/assets/quest-scenes/office-mobile.png.asset.json";
 import stageDesktop from "@/assets/quest-scenes/stage-desktop.png.asset.json";
 import stageMobile from "@/assets/quest-scenes/stage-mobile.png.asset.json";
 import { MAX_POSES, MAX_SCALE, type MaxPose } from "@/components/Max";
@@ -97,6 +99,8 @@ function sceneSources(kind: string) {
     return { desktop: stageDesktop.url, mobile: stageMobile.url };
   }
   if (kind === "skills") return { desktop: gymDesktop.url, mobile: gymMobile.url };
+  // The resume quest reads as the office scene; the hunt quest keeps the open meadow.
+  if (kind === "resume" || kind === "setup") return { desktop: officeDesktop.url, mobile: officeMobile.url };
   return { desktop: meadowDesktop.url, mobile: meadowMobile.url };
 }
 function SceneBackdrop({ kind }: { kind: string }) {
@@ -151,7 +155,7 @@ function Dashboard() {
     return () => { live = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sceneKey]);
-  useEffect(() => { [gymDesktop.url, gymMobile.url, stageDesktop.url, stageMobile.url, meadowDesktop.url, meadowMobile.url, billboardDesktop.url, billboardMobile.url, openToWork.url, ...Object.values(MAX_POSES)].forEach((s) => { const i = new Image(); i.src = s; }); }, []);
+  useEffect(() => { [gymDesktop.url, gymMobile.url, stageDesktop.url, stageMobile.url, meadowDesktop.url, meadowMobile.url, officeDesktop.url, officeMobile.url, billboardDesktop.url, billboardMobile.url, openToWork.url, ...Object.values(MAX_POSES)].forEach((s) => { const i = new Image(); i.src = s; }); }, []);
   const sceneReady = readyKey === sceneKey;
   const scene = SCENES[featKey] ?? (featKey === "setup" ? SCENES["resume"] : undefined) ?? DEFAULT_SCENE;
   const featLines = featured ? questTitleLines(featured.title) : ["", ""];

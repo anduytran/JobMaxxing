@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 import waveAsset from "@/assets/max/sized-wave.png.asset.json";
-import resumeAsset from "@/assets/max/sized-resume.png.asset.json";
+import resumeAsset from "@/assets/max/sized-max-resume.png.asset.json";
 import interviewAsset from "@/assets/max/sized-interview-clean.png.asset.json";
 import skillsAsset from "@/assets/max/sized-skills.png.asset.json";
 import hunt from "@/assets/max/max-hunt.svg";
@@ -20,7 +20,9 @@ export const MAX_SCALE: Record<MaxPose, number> = {
   dap: 1,
   interview: 1.04,
   dizzy: 1.1,
-  resume: 1.06,
+  // The resume composite was trimmed to the same framing as the other sized poses
+  // (body height 0.883 of canvas vs 0.996 for the branding pose).
+  resume: 1.13,
   skills: 1.16,
   wave: 1.16,
   hunt: 1.23,
