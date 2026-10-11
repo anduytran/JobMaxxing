@@ -33,5 +33,5 @@
 - Friends and interview invites live in `devup_friendship` + `devup_interview_invite` via `src/lib/friends.functions.ts`; presence is derived (live peer session = in_interview, unexpired app session = online), and `InviteListener` polls every 8s instead of WebSockets — invites carry the peer session's 6-char code, so accepting just calls joinPeerSession. Why: no realtime server; reuses the proven peer flow
 - Tracked skills may be custom, but a new one must pass the Skill Expert's check (`vetSkill`) before it is added. Why: only real skills get rated
 - New Max pose art is trimmed to the shared "sized" framing (figure nearly filling its square canvas, feet on the bottom line) before it is given a `MAX_SCALE` factor. Why: art with wide empty margins floats out of the featured card's mobile band no matter what factor it gets
-- Interview XP is paid only by `claimInterviewXp` (devup.functions), which reads the stored grade and is idempotent via `iv:<kind>:<id>` reasons; no endpoint accepts a client-sent XP amount. Why: the browser can't mint XP or store points
-- Server-side fetches of user-supplied URLs must pass `assertPublicUrl` (`src/lib/safe-url.server.ts`) on every redirect hop and require sign-in. Why: blocks reaching private network/metadata hosts
+- Interview XP is paid only by `claimInterviewXp` from the stored grade, once per `iv:` reason; no endpoint takes a client XP amount. Why: no XP minting
+- User-supplied URLs are fetched only signed-in, through `assertPublicUrl` per redirect hop. Why: no private-network fetches
