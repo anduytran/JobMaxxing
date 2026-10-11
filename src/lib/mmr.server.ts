@@ -104,7 +104,7 @@ export async function listRatingChanges(userId: string, limit = 5) {
     `select skill_name, prev, rating, at from (
        select skill_name, lag(rating) over (partition by skill_name order by created_at) as prev,
               rating, created_at::text as at
-       from public.devup_skill_rating_log where user_id = $1::uuid
+       from public.devup_skill_rating_log where user_id = $1::text
      ) t
      where prev is not null and rating > prev
      order by at desc limit ${Math.max(1, Math.min(20, Math.round(limit)))}`,
