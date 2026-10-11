@@ -9,6 +9,7 @@ import { ResumeScoreCard } from "@/components/ResumeScoreCard";
 import { XpCareerCard } from "@/components/DashboardProgressCards";
 import { getLatestResumeReview } from "@/lib/resume.functions";
 import type { StoredReview } from "@/lib/resume";
+import { useInterviewModePicker } from "@/components/InterviewModePicker";
 
 export const Route = createFileRoute("/progress")({
   head: () => ({
@@ -26,6 +27,7 @@ export const Route = createFileRoute("/progress")({
 
 function Page() {
   const { name, title, xp, level, levelXp, quests, details, lastGain } = useGame();
+  const { openInterviewMode, interviewModeDialog } = useInterviewModePicker();
   const done = quests.filter((q) => q.done).length;
   const first = name.split(" ")[0] || "there";
   const [review, setReview] = useState<StoredReview | null>(null);
@@ -56,11 +58,11 @@ function Page() {
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <Link to="/interview" search={{ radar: undefined }} className="hover-lift flex items-center gap-4 rounded-2xl border bg-card p-5">
+          <button type="button" onClick={openInterviewMode} className="hover-lift flex w-full items-center gap-4 rounded-2xl border bg-card p-5 text-left">
             <span className="grid h-12 w-12 place-items-center rounded-xl bg-primary/15 text-primary"><Mic className="h-6 w-6" /></span>
-            <span className="flex-1"><span className="block font-semibold">Interviews</span><span className="text-sm text-muted-foreground">Jump into a mock interview</span></span>
+            <span className="flex-1"><span className="block font-semibold">Interviews</span><span className="text-sm text-muted-foreground">Solo with an AI recruiter, or peer with a friend</span></span>
             <ArrowRight className="h-5 w-5 text-muted-foreground" />
-          </Link>
+          </button>
           <Link to="/setup" className="hover-lift flex items-center gap-4 rounded-2xl border bg-card p-5">
             <span className="grid h-12 w-12 place-items-center rounded-xl bg-accent/20 text-accent-foreground"><FileText className="h-6 w-6" /></span>
             <span className="flex-1"><span className="block font-semibold">Resume Lab</span><span className="text-sm text-muted-foreground">Grade and polish your resume</span></span>
@@ -103,6 +105,7 @@ function Page() {
           </div>
         </div>
       </div>
+      {interviewModeDialog}
     </div>
   );
 }
