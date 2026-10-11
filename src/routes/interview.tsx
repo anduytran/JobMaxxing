@@ -391,19 +391,17 @@ function Interview() {
             <div className="hidden w-full max-w-64 flex-col items-center gap-3 text-center md:flex">
               <button
                 type="button"
-                aria-label="Hold to answer"
+                aria-label={listening ? "Click to end your answer" : "Click to answer"}
                 disabled={thinking || stage === "grading" || playback !== "ready"}
-                onPointerDown={(e) => { e.preventDefault(); if (!listening) void speak(); }}
-                onPointerUp={() => { if (listening) voice.current?.finishListening(); }}
-                onPointerLeave={() => { if (listening) voice.current?.finishListening(); }}
+                onClick={() => { if (listening) voice.current?.finishListening(); else void speak(); }}
                 className={cn("grid h-14 w-14 place-items-center rounded-full border-2 transition",
                   listening ? "border-primary bg-primary text-primary-foreground" : "border-foreground/60 hover:border-primary hover:text-primary",
                   (thinking || stage === "grading" || playback !== "ready") && "opacity-40")}
               >
-                <Mic className="h-5 w-5" />
+                {listening ? <Square className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
               </button>
-              <div className="text-sm font-semibold">{listening ? "Release to send" : "Hold to answer"}</div>
-              <p className="text-xs text-muted-foreground">The room stays quiet while you talk. Hold Space or press and hold the button, then let go when you're done.</p>
+              <div className="text-sm font-semibold">{listening ? "Click to end" : "Click to answer"}</div>
+              <p className="text-xs text-muted-foreground">Click the mic or press Space to start talking, then click again (or press Space) when you're done.</p>
             </div>
           </div>
 
