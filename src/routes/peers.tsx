@@ -14,7 +14,7 @@ import { useGame } from "@/lib/game";
 import { generateInterviewQuestions, parseJobDescription } from "@/lib/interview.functions";
 import { createBrowserVoice, type VoiceAgent } from "@/lib/interview/voice";
 import {
-  createPeerSession, getPeerSession, joinPeerSession, peerAskNext, peerEndSession, peerGrade, peerSay, peerSetChecks, peerVideoConsent,
+  createPeerSession, getPeerSession, joinPeerSession, peerAskNext, peerEndSession, peerGrade, peerReady, peerSay, peerSetChecks, peerVideoConsent,
   type PeerSession,
 } from "@/lib/peer.functions";
 import { LENGTHS, type InterviewLength, type InterviewType, type ParsedJob } from "@/lib/interview/types";
@@ -66,6 +66,9 @@ function Page() {
   const videoConsent = session?.signal.video ?? {};
   const myVideoConsent = session ? (session.meIsHost ? videoConsent.host : videoConsent.guest) : false;
   const bothVideoConsent = !!(videoConsent.host && videoConsent.guest);
+  const readyFlags = session?.signal.ready ?? {};
+  const myReady = session ? !!(session.meIsHost ? readyFlags.host : readyFlags.guest) : false;
+  const bothReady = !!(readyFlags.host && readyFlags.guest);
   const call = usePeerCall({ sessionId, isHost: !!session?.meIsHost, live: stage === "live", signal: session?.signal ?? {}, video: bothVideoConsent });
 
   const refresh = async (id = sessionId) => {
