@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useGame } from "@/lib/game";
 import {
-  getRadar, markRadarViewed, setRadarStatus, awardRadarPracticeXp,
+  getRadar, markRadarViewed, setRadarStatus, removeRadarMatch, awardRadarPracticeXp,
   type RadarJob, type RadarStatus,
 } from "@/lib/radar.functions";
 import { cn } from "@/lib/utils";
