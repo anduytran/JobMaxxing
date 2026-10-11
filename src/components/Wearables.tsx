@@ -9,7 +9,7 @@ import googlyAsset from "@/assets/wearables/googly.png.asset.json";
 import mcapAsset from "@/assets/wearables/mcap.png.asset.json";
 import afroAsset from "@/assets/wearables/afro.png.asset.json";
 import gemAsset from "@/assets/wearables/gem.png.asset.json";
-import machineAsset from "@/assets/wearables/machine.png.asset.json";
+import mimicAsset from "@/assets/wearables/mimic-chest.png.asset.json";
 import capsuleAsset from "@/assets/wearables/capsule.png.asset.json";
 
 export const WEARABLE_ART: Record<string, string> = {
@@ -23,7 +23,7 @@ export const WEARABLE_ART: Record<string, string> = {
   wearable_gem: gemAsset.url,
 };
 
-export const MACHINE_ART = machineAsset.url;
+export const MACHINE_ART = mimicAsset.url;
 export const CAPSULE_ART = capsuleAsset.url;
 
 /** A single wearable, rendered at its natural aspect ratio. */
