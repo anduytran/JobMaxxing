@@ -37,13 +37,12 @@ async function useRun(runId: string): Promise<{ token: string; conversationId: s
 
 const cleanJob = (j: ParsedJob): ParsedJob => ({
   title: j?.title ? String(j.title).slice(0, 200) : null,
-  company: j?.company ? String(j.company).slice(0, 200) : null,
   location: j?.location ? String(j.location).slice(0, 200) : null,
   summary: String(j?.summary ?? "").slice(0, 2000),
   skills: (Array.isArray(j?.skills) ? j.skills : []).slice(0, 30).map((s) => String(s).slice(0, 80)),
   qualifications: (Array.isArray(j?.qualifications) ? j.qualifications : []).slice(0, 20).map((s) => String(s).slice(0, 400)),
   specialNotes: (Array.isArray(j?.specialNotes) ? j.specialNotes : []).slice(0, 10).map((s) => String(s).slice(0, 400)),
-} as ParsedJob);
+});
 
 /** Is this link usable? Public: reveals only the label and whether uses remain. */
 export const checkDemoLink = createServerFn({ method: "GET" })
@@ -114,7 +113,6 @@ export const demoStartLive = createServerFn({ method: "POST" })
     plan: (Array.isArray(i.plan) ? i.plan.slice(0, 12) : []).map((q) => ({
       id: String(q.id).slice(0, 40), kind: q.kind === "technical" ? "technical" as const : "behavioral" as const,
       text: String(q.text).slice(0, 2000), skill: q.skill ? String(q.skill).slice(0, 100) : null,
-      ...(q.probe ? { probe: String(q.probe).slice(0, 1000) } : {}),
     })) as InterviewQuestion[],
   }))
   .handler(async ({ data }) => {
