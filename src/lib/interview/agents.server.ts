@@ -690,53 +690,121 @@ async function uploadPromptFile(fileName: string, contentType: string, bytes: Ui
   }
 }
 
+// ---------- Persistent grader conversation ----------
+// Each user has ONE Resume Agent conversation (devup_resume_conversation) that every
+// grade and every "next fixes" request goes through, so the grader remembers prior
+// versions, scores and fixes. Conversation messages can't carry files, so a
+// scanned-only upload is read through /prompts and its result recorded in the thread.
+
+const CHECK_TASK =
+  "FIX CHECK: OPEN FIXES lists fixes you gave on the previous version that were not yet confirmed. Compare against THIS resume and return " +
+  '"integrated": [ids of OPEN FIXES the candidate has genuinely made in this version] at the top level of your JSON (empty array if none or no OPEN FIXES). ' +
+  "Only count a fix when the resume text shows it; placeholders like [X%] left unfilled do not count. ";
+
+async function resumeConversationId(userId: string, name: string, secret: string): Promise<string | null> {
+  try {
+    const { neonQuery, neonExecute } = await import("../neon.server");
+    const { rows } = await neonQuery(`select conversation_id from public.devup_resume_conversation where user_id = $1`, [userId]);
+    if (rows[0]) return String(rows[0]["conversation_id"]);
+    const user = await ensureConversationUser(secret, { userId, name });
+    const conv = await raiaPost<{ id: string }>(secret, "/conversations", {
+      conversationUserId: user.id, title: "Resume grading", context: `${RESUME_TASK}${RESUME_RUBRIC} ${RESUME_GUARDRAILS} ${RESUME_SCHEMA}`.slice(0, 250000),
+    });
+    await neonExecute(`insert into public.devup_resume_conversation (user_id, conversation_id) values ($1, $2) on conflict (user_id) do nothing`, [userId, conv.id]);
+    const again = await neonQuery(`select conversation_id from public.devup_resume_conversation where user_id = $1`, [userId]);
+    return String(again.rows[0]?.["conversation_id"] ?? conv.id);
+  } catch (err) {
+    console.error("Resume conversation setup failed", err);
+    return null;
+  }
+}
+
+async function askResumeConversation<T>(owner: { userId: string; name: string } | undefined, message: string, context: string): Promise<T | null> {
+  const secret = key(ENV.resume);
+  if (!secret || !owner) return null;
+  const id = await resumeConversationId(owner.userId, owner.name, secret);
+  if (!id) return null;
+  try {
+    const msg = await raiaPost<{ message: string }>(secret, `/conversations/${id}/messages`, { message, context });
+    const text = msg.message ?? "";
+    return JSON.parse(text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1)) as T;
+  } catch (err) {
+    console.error("Resume conversation turn failed", err);
+    return null;
+  }
+}
+
+const openFixesText = (open: ResumeSuggestion[]) =>
+  open.length ? `\n\nOPEN FIXES (from the previous version):\n${open.map((s) => `[${s.id}] ${s.title} — ${s.detail}`).join("\n")}` : "\n\nOPEN FIXES: (none)";
+
 /**
- * Grade a resume. With a file the Resume Agent reads the original (so scanned
- * resumes work); with only sections/text it grades the transcription. Falls back
- * to the offline rubric when the agent is unreachable.
+ * Grade a resume through the user's persistent grader conversation. A file with no
+ * readable text (scans) goes through /prompts so the agent can see it, then the
+ * result is noted in the conversation. Falls back to the offline rubric when the
+ * agent is unreachable. `integrated` = ids of the previous version's open fixes
+ * the grader confirmed in this upload.
  */
 export async function reviewResume(input: {
   text?: string | undefined;
   sections?: ResumeSection[] | undefined;
   file?: { name: string; type: string; bytes: Uint8Array } | undefined;
-}): Promise<ResumeReview> {
-  const files = input.file ? await uploadPromptFile(input.file.name, input.file.type, input.file.bytes) : null;
-  const body = input.sections?.length
+  owner?: { userId: string; name: string } | undefined;
+  openFixes?: ResumeSuggestion[] | undefined;
+}): Promise<ResumeReview & { integrated: string[] }> {
+  const open = input.openFixes ?? [];
+  const textBody = input.sections?.length
     ? `RESUME (line ids in brackets — reuse them as-is in sections and lineId):\n${sectionsText(input.sections)}`
-    : files ? "RESUME: see the attached file." : `RESUME:\n${input.text ?? ""}`;
-  const ai = await askRaia<Record<string, unknown>>(ENV.resume, body,
-    `${RESUME_TASK}${RESUME_RUBRIC} ${RESUME_GUARDRAILS} ${RESUME_SCHEMA}`,
+    : (input.text ?? "").trim().length >= 80 ? `RESUME:\n${input.text}` : null;
+  const ctx = `${RESUME_TASK}${RESUME_RUBRIC} ${RESUME_GUARDRAILS} ${CHECK_TASK}${RESUME_SCHEMA}`;
+  let ai: Record<string, unknown> | null = null;
+  if (textBody) {
+    ai = await askResumeConversation<Record<string, unknown>>(input.owner,
+      `NEW RESUME VERSION — grade it fresh, using what you remember of earlier versions only to judge progress.\n${textBody}${openFixesText(open)}`, ctx);
+  }
+  if (!ai) {
+    const files = input.file ? await uploadPromptFile(input.file.name, input.file.type, input.file.bytes) : null;
+    const body = textBody ?? (files ? "RESUME: see the attached file." : `RESUME:\n${input.text ?? ""}`);
     // A full read of a real resume is the slowest of these calls; measured 18-28 s
     // on a warm endpoint and well over a minute when the org key is busy.
-    90_000, files ? [files] : undefined);
+    ai = await askRaia<Record<string, unknown>>(ENV.resume, `${body}${openFixesText(open)}`, ctx, 90_000, files ? [files] : undefined);
+    if (ai && input.owner) {
+      // Keep the grader conversation aware of this grade even though it was read via /prompts.
+      void askResumeConversation(input.owner,
+        `RECORD ONLY (no reply needed beyond {"ok":true}): a new version was graded ${String(ai["score"] ?? "?")}/100. Fixes given: ` +
+        JSON.stringify((Array.isArray(ai["suggestions"]) ? ai["suggestions"] : []).map((x: any) => x?.title)), "Acknowledge with {\"ok\":true}.").catch(() => {});
+    }
+  }
+  const openIds = new Set(open.map((s) => s.id));
+  const integrated = Array.isArray(ai?.["integrated"]) ? (ai!["integrated"] as unknown[]).map(String).filter((id) => openIds.has(id)) : [];
   const review = ai && normalizeReview(ai, "raia");
   if (review) {
     // Keep the editor's ids stable when re-grading an edited version.
     if (input.sections?.length && !review.sections?.length) review.sections = input.sections;
-    return review;
+    return { ...review, integrated: [...new Set(integrated)] };
   }
   const text = input.text || (input.sections ? input.sections.map((s) => `${s.heading}\n${s.lines.map((l) => `- ${l.text}`).join("\n")}`).join("\n\n") : "");
   const fb = fallbackReview(text);
   fb.sections = input.sections?.length ? input.sections : fallbackSections(text);
-  return fb;
+  return { ...fb, integrated: [] };
 }
 
 const MORE_TASK =
   "You are the Resume Grader for JobMaxxing. The candidate has already integrated every suggestion listed under ALREADY GIVEN, so the resume in front of " +
   `you has improved. Return the NEXT ${SUGGESTION_BATCH} highest-impact changes, ordered most important first, each genuinely new: not a repeat, rewording, ` +
-  "or restatement of anything in ALREADY GIVEN, and not a fix the current text already satisfies. Same rubric, honesty, placeholder and wording rules as the " +
+  "or restatement of anything in ALREADY GIVEN or any fix you gave earlier in this conversation, and not a fix the current text already satisfies. Same rubric, honesty, placeholder and wording rules as the " +
   "first grade, same suggestion types. " +
   'Reply with JSON only: {' + SUGGESTION_SCHEMA + '}';
 
 /**
- * The next batch of fixes, asked only once the current ones are integrated. Works
- * from the editor's current sections (the transcription the grade was built from),
- * so a scanned resume still works; returns [] when the agent is unreachable.
+ * The next batch of fixes, asked only once the current ones are integrated. Goes
+ * through the user's grader conversation (falls back to a one-off prompt); returns
+ * [] when the agent is unreachable.
  */
 export async function nextSuggestions(input: {
   sections?: ResumeSection[] | undefined;
   text?: string | undefined;
   already: ResumeSuggestion[];
+  owner?: { userId: string; name: string } | undefined;
 }): Promise<ResumeSuggestion[]> {
   const sections = input.sections ?? [];
   if (!sections.length && !(input.text ?? "").trim()) return [];
@@ -744,12 +812,10 @@ export async function nextSuggestions(input: {
     ? `RESUME (line ids in brackets — reuse them as-is in lineId):\n${sectionsText(sections)}`
     : `RESUME:\n${input.text ?? ""}`;
   const given = input.already.map((s, i) => `${i + 1}. ${s.title} — ${s.detail}`).join("\n") || "(none)";
-  const ai = await askRaia<{ suggestions?: unknown }>(
-    ENV.resume,
-    `${body}\n\nALREADY GIVEN (do not repeat these):\n${given}`,
-    `${MORE_TASK}${RESUME_RUBRIC} ${RESUME_GUARDRAILS}`,
-    60_000,
-  );
+  const message = `${body}\n\nALREADY GIVEN (do not repeat these):\n${given}`;
+  const ctx = `${MORE_TASK}${RESUME_RUBRIC} ${RESUME_GUARDRAILS}`;
+  const ai = (await askResumeConversation<{ suggestions?: unknown }>(input.owner, message, ctx))
+    ?? await askRaia<{ suggestions?: unknown }>(ENV.resume, message, ctx, 60_000);
   const lineIds = new Set(sections.flatMap((s) => s.lines.map((l) => l.id)));
   const taken = new Set(input.already.map((s) => s.id));
   return normalizeSuggestions(ai?.suggestions, lineIds, SUGGESTION_BATCH, taken);

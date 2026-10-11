@@ -513,9 +513,9 @@ function Interview() {
             <div className={cn("grid gap-4", metrics.length === 4 ? "md:grid-cols-4" : "md:grid-cols-3")}>
               {metrics.map(([l, m]) => <Metric key={l} label={l} m={m} />)}
             </div>
-            {ratings.length > 0 && (
+            {ratings.some((r) => r.after !== r.before) && (
               <div className="flex flex-wrap gap-2">
-                {ratings.map((r) => {
+                {ratings.filter((r) => r.after !== r.before).map((r) => {
                   const d = r.after - r.before;
                   return (
                     <span key={r.skill} className="rounded-full border bg-card px-3 py-1 text-xs">

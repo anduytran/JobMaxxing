@@ -65,6 +65,43 @@ async function milestone(userId: string, name: string, amount: number): Promise<
   return Number(rows[0]?.["awarded"] ?? 0);
 }
 
+/** Marks one fix integrated on a review and pays its XP once (the UPDATE guard makes repeats award nothing). */
+async function awardFix(userId: string, reviewId: string, suggestionId: string): Promise<{ awarded: number; xp: number }> {
+  const { rows } = await neonExecute(
+        `with u as (
+           update public.devup_resume_review
+              set details = jsonb_set(details, '{suggestions}',
+                    (select jsonb_agg(
+                              case when x.value->>'id' = $3
+                                   then jsonb_set(x.value, '{applied}', 'true')
+                                   else x.value end
+                              order by x.ord)
+                       from jsonb_array_elements(details->'suggestions') with ordinality as x(value, ord))),
+                  xp_awarded = xp_awarded + $4
+            where id = $1::bigint and user_id = $2
+              and exists (
+                select 1 from jsonb_array_elements(details->'suggestions') s
+                 where s->>'id' = $3
+                   and coalesce((s->>'applied')::boolean, false) = false)
+            returning $4::int as awarded
+         ),
+         e as (
+           insert into public.devup_xp_event (amount, reason, user_id)
+           select awarded, 'resume:' || $3, $2 from u
+         ),
+         p as (
+           update public.devup_profile
+              set xp = xp + (select coalesce(sum(awarded), 0) from u), updated_at = now()
+            where id = $2
+            returning xp
+         )
+         select (select coalesce(sum(awarded), 0) from u)::int as awarded,
+                coalesce((select xp from p), (select xp from public.devup_profile where id = $2))::int as xp`,
+        [reviewId, userId, suggestionId, XP_RULES.perFix],
+      );
+  return { awarded: Number(rows[0]?.["awarded"] ?? 0), xp: Number(rows[0]?.["xp"] ?? 0) };
+}
+
 async function currentXp(userId: string): Promise<number> {
   const { rows } = await neonQuery("select xp from public.devup_profile where id = $1", [userId]);
   return Number(rows[0]?.["xp"] ?? 0);
@@ -87,12 +124,22 @@ export const scanResume = createServerFn({ method: "POST" })
     return { fileName, contentType, fileBase64, text, sections, note: clean(i.note, 120) };
   })
   .handler(async ({ data }): Promise<Result<{
-    review: StoredReview; awarded: { firstScan: number; levelUp: number }; xp: number;
+    review: StoredReview; awarded: { firstScan: number; levelUp: number; fixes: number; integrated: number }; xp: number;
   }>> => {
     try {
       const user = await requireUser();
+      const prev = await neonQuery(
+        `select id::text as id, details from public.devup_resume_review where user_id = $1 order by created_at desc, public.devup_resume_review.id desc limit 1`,
+        [user.id],
+      );
+      const prevId = prev.rows[0] ? String(prev.rows[0]["id"]) : null;
+      const openFixes = prev.rows[0]
+        ? ((((prev.rows[0]["details"] ?? {}) as { suggestions?: StoredReview["suggestions"] }).suggestions) ?? []).filter((s) => !s.applied)
+        : [];
       const { reviewResume } = await import("./interview/agents.server");
       const review = await reviewResume({
+        owner: { userId: user.id, name: user.email.split("@")[0] ?? "Candidate" },
+        openFixes,
         text: data.text || undefined,
         sections: data.sections.length ? data.sections : undefined,
         file: data.fileBase64 && data.contentType
@@ -139,6 +186,9 @@ export const scanResume = createServerFn({ method: "POST" })
       const v = results[0]?.rows?.[0];
       const r = results[1]?.rows?.[0];
       if (!v || !r) throw new Error("The review could not be saved.");
+      // Goals are only attempted by uploading: fixes the grader confirmed in this version pay out on the previous review.
+      let fixXp = 0;
+      if (prevId) for (const id of review.integrated) fixXp += (await awardFix(user.id, prevId, id)).awarded;
       const firstScan = await milestone(user.id, "first_scan", XP_RULES.firstScan);
       const levelUp = review.score > XP_RULES.levelUpScore ? await milestone(user.id, "resume_80", XP_RULES.levelUp) : 0;
       const { bumpStreak } = await import("./career.functions");
@@ -149,7 +199,7 @@ export const scanResume = createServerFn({ method: "POST" })
           ...review, sections, id: String(r.id), fileName: data.fileName, xpAwarded: 0,
           createdAt: String(r.created_at_iso ?? ""), versionId: String(v.id), version: Number(v.version),
         },
-        awarded: { firstScan, levelUp },
+        awarded: { firstScan, levelUp, fixes: fixXp, integrated: review.integrated.length },
         xp: await currentXp(user.id),
       };
     } catch (err) {
@@ -158,70 +208,15 @@ export const scanResume = createServerFn({ method: "POST" })
   });
 
 /**
- * Accepts one suggestion: when `lineText` is given the matching line is replaced
- * and a new version is saved, then the fix pays its XP once. The guard in the
- * UPDATE (only flip suggestions not already applied) makes a double click award nothing.
+ * Fixes can't be self-marked: they are only confirmed by uploading/re-scanning an
+ * updated resume, where the grader checks them (see scanResume). Kept so old
+ * clients get a clear message instead of a missing endpoint.
  */
 export const applyResumeSuggestion = createServerFn({ method: "POST" })
-  .inputValidator((i: { reviewId: unknown; suggestionId: unknown; sections?: unknown }) => {
-    const reviewId = String(i.reviewId ?? "");
-    if (!/^\d{1,19}$/.test(reviewId)) throw new Error("Unknown review.");
-    const suggestionId = clean(i.suggestionId, 60);
-    if (!suggestionId) throw new Error("Unknown suggestion.");
-    return { reviewId, suggestionId, sections: cleanSections(i.sections) };
-  })
-  .handler(async ({ data }): Promise<Result<{ xp: number; awarded: number; version: number | null }>> => {
-    try {
-      const user = await requireUser();
-      const { rows } = await neonExecute(
-        `with u as (
-           update public.devup_resume_review
-              set details = jsonb_set(details, '{suggestions}',
-                    (select jsonb_agg(
-                              case when x.value->>'id' = $3
-                                   then jsonb_set(x.value, '{applied}', 'true')
-                                   else x.value end
-                              order by x.ord)
-                       from jsonb_array_elements(details->'suggestions') with ordinality as x(value, ord))),
-                  xp_awarded = xp_awarded + $4
-            where id = $1::bigint and user_id = $2
-              and exists (
-                select 1 from jsonb_array_elements(details->'suggestions') s
-                 where s->>'id' = $3
-                   and coalesce((s->>'applied')::boolean, false) = false)
-            returning $4::int as awarded
-         ),
-         e as (
-           insert into public.devup_xp_event (amount, reason, user_id)
-           select awarded, 'resume:' || $3, $2 from u
-         ),
-         p as (
-           update public.devup_profile
-              set xp = xp + (select coalesce(sum(awarded), 0) from u), updated_at = now()
-            where id = $2
-            returning xp
-         )
-         select (select coalesce(sum(awarded), 0) from u)::int as awarded,
-                coalesce((select xp from p), (select xp from public.devup_profile where id = $2))::int as xp`,
-        [data.reviewId, user.id, data.suggestionId, XP_RULES.perFix],
-      );
-      let version: number | null = null;
-      if (data.sections.length) {
-        const saved = await neonExecute(
-          `insert into public.devup_resume_version (user_id, version, file_name, sections, note)
-           select $1, coalesce(max(version), 0) + 1,
-                  coalesce((select file_name from public.devup_resume_version where user_id = $1 order by version desc limit 1), 'resume'),
-                  $2::jsonb, $3
-             from public.devup_resume_version where user_id = $1
-           returning version`,
-          [user.id, JSON.stringify(data.sections), `Accepted fix: ${data.suggestionId}`],
-        );
-        version = Number(saved.rows[0]?.["version"] ?? 0) || null;
-      }
-      return { ok: true, xp: Number(rows[0]?.["xp"] ?? 0), awarded: Number(rows[0]?.["awarded"] ?? 0), version };
-    } catch (err) {
-      return fail(err);
-    }
+  .inputValidator((i: { reviewId: unknown; suggestionId: unknown; sections?: unknown }) => i)
+  .handler(async (): Promise<Result<{ xp: number; awarded: number; version: number | null }>> => {
+    await requireUser();
+    return { ok: false, error: "Upload your updated resume to check this fix — the grader confirms it from the new version." };
   });
 
 /**
@@ -256,6 +251,7 @@ export const moreResumeSuggestions = createServerFn({ method: "POST" })
       const fresh = await nextSuggestions({
         sections: data.sections.length ? data.sections : undefined,
         already: stored.suggestions,
+        owner: { userId: user.id, name: user.email.split("@")[0] ?? "Candidate" },
       });
       if (!fresh.length) return { ok: false, error: "No new fixes came back — re-scan to grade the current version." };
       await neonExecute(
