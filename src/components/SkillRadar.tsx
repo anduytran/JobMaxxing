@@ -1,12 +1,18 @@
 import { useEffect, useState } from "react";
 import { PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart, ResponsiveContainer } from "recharts";
 import { Check, Pencil, Plus, RefreshCw } from "lucide-react";
-import { getSkillRatings, getTrackedSkills, refreshSkillRatings, saveTrackedSkills } from "@/lib/interview.functions";
+import { getSkillChanges, getSkillRatings, getTrackedSkills, refreshSkillRatings, saveTrackedSkills } from "@/lib/interview.functions";
 import { Button } from "@/components/ui/button";
 import { RATING_MIN, RATING_MAX, DEFAULT_RATING, SKILL_CATALOG, MAX_TRACKED } from "@/lib/mmr.shared";
 import { cn } from "@/lib/utils";
 
 type Rating = { skill: string; rating: number; answered: number; evidence?: string | null };
+type Change = { skill: string; from: number; to: number; delta: number; at: string };
+
+const formatDate = (iso: string) => {
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+};
 
 /** Spider-web chart of the skills the user chose to track (up to MAX_TRACKED).
  *  Tracked skills are what the Skill Expert grades; ratings never go down. */
