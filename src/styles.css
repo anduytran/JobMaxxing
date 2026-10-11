@@ -396,25 +396,24 @@ html.dyslexia-font em, html.dyslexia-font i { font-style: normal; }
   display: flex;
   flex-direction: column;
   background:
-    radial-gradient(120% 90% at 50% 0%, color-mix(in oklab, var(--color-primary) 14%, transparent), transparent 60%),
-    repeating-linear-gradient(90deg, transparent 0 120px, color-mix(in oklab, var(--color-foreground) 4%, transparent) 120px 122px),
+    radial-gradient(140% 100% at 50% 0%, color-mix(in oklab, var(--color-primary) 26%, transparent), transparent 65%),
     linear-gradient(180deg,
-      color-mix(in oklab, var(--color-primary) 22%, var(--color-card)),
-      color-mix(in oklab, var(--color-primary) 30%, var(--color-muted)));
+      color-mix(in oklab, var(--color-primary) 34%, var(--color-card)),
+      color-mix(in oklab, var(--color-primary) 48%, var(--color-muted)));
   border-top: 1px solid var(--color-border);
 }
 .desk-edge {
-  height: 22px;
+  height: 26px;
   background: linear-gradient(180deg,
-    color-mix(in oklab, var(--color-foreground) 22%, var(--color-muted)),
-    color-mix(in oklab, var(--color-foreground) 34%, var(--color-muted)));
-  border-top: 2px solid color-mix(in oklab, var(--color-foreground) 30%, transparent);
-  box-shadow: 0 6px 10px -4px color-mix(in oklab, var(--color-foreground) 35%, transparent);
+    color-mix(in oklab, var(--color-primary) 45%, var(--color-foreground)),
+    color-mix(in oklab, var(--color-primary) 25%, var(--color-foreground)));
+  border-top: 2px solid color-mix(in oklab, var(--color-card) 40%, transparent);
+  box-shadow: 0 8px 12px -4px color-mix(in oklab, var(--color-foreground) 40%, transparent);
 }
 .desk-ground {
-  height: 12vh;
+  height: 9vh;
   background: linear-gradient(180deg,
-    color-mix(in oklab, var(--color-foreground) 12%, var(--color-background)),
+    color-mix(in oklab, var(--color-foreground) 10%, var(--color-background)),
     var(--color-background));
 }
 

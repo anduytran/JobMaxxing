@@ -68,7 +68,7 @@ function LockIn() {
       {/* The desk: surface fills most of the screen, then the table edge, then the ground. */}
       <div className="desk-scene mt-8">
         <div className="desk-surface">
-          <div className="mx-auto grid h-full max-w-6xl content-end gap-10 px-4 pb-10 md:grid-cols-3 md:px-8">
+          <div className="mx-auto grid w-full max-w-6xl flex-1 content-end items-end gap-10 px-4 pb-14 md:grid-cols-3 md:px-8">
             {MODES.map((m, i) => {
               const folder = <ModeFolder m={m} recommended={i === 0} />;
               return m.to === "/interview" ? (
