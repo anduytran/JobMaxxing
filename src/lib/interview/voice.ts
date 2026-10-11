@@ -110,6 +110,8 @@ export function createBrowserVoice(onPlayback?: PlaybackObserver, onWord?: WordO
         rec.onend = () => {
           if (done) return;
           completed = transcript(); sessionText = "";
+          // After "Done speaking" the recognizer ends once final results arrive — settle with them.
+          if (finishing) { settle(); return; }
           restartTimer = setTimeout(() => { if (!done) { try { rec.start(); } catch { finish(); } } }, 250);
         };
         try { rec.start(); } catch { done = true; clear(); reject(new Error("Could not start microphone capture. Please try again.")); }
