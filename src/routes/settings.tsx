@@ -69,12 +69,22 @@ function SettingsPage() {
         <div className="text-sm text-muted-foreground">Current resume: {d.resume ? d.resume.fileName : "none uploaded yet"} · signed in as {g.email}</div>
         <Button disabled={!!saving} onClick={saveDetails}>{saving === "details" && <Loader2 className="animate-spin" />}{saving === "details" ? "Saving…" : "Save details"}</Button>
       </div>
-      <div className="panel flex items-center justify-between p-6">
-        <div>
-          <div className="font-semibold">Reduce motion</div>
-          <div className="text-sm text-muted-foreground">Tones down hover effects and ambient animations. Also follows your system setting.</div>
+      <div className="panel space-y-5 p-6">
+        <div className="font-semibold">Accessibility</div>
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <div className="font-medium">Reduce motion</div>
+            <div className="text-sm text-muted-foreground">Tones down hover effects and ambient animations. Also follows your system setting.</div>
+          </div>
+          <Switch checked={g.reducedMotion} onCheckedChange={g.setReducedMotion} />
         </div>
-        <Switch checked={g.reducedMotion} onCheckedChange={g.setReducedMotion} />
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <div className="font-medium">Larger text</div>
+            <div className="text-sm text-muted-foreground">Makes all text across the app about 12% bigger.</div>
+          </div>
+          <Switch checked={g.largeText} onCheckedChange={g.setLargeText} />
+        </div>
       </div>
     </div>
   );

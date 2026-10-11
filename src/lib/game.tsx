@@ -8,6 +8,7 @@ import {
   saveProfile as saveProfileFn,
   saveRoast as saveRoastFn,
   saveReducedMotion as saveReducedMotionFn,
+  saveLargeText as saveLargeTextFn,
   saveDetails as saveDetailsFn,
   type JobPrefs,
   type ResumeInfo,
@@ -41,7 +42,7 @@ export const ACHIEVEMENTS = [
 
 type Game = {
   name: string; title: string; xp: number; level: number; levelXp: number;
-  quests: Quest[]; roast: boolean; reducedMotion: boolean; lastGain: { amount: number; key: number } | null;
+  quests: Quest[]; roast: boolean; reducedMotion: boolean; largeText: boolean; lastGain: { amount: number; key: number } | null;
   activeTitle: string | null; activeTheme: string;
   setActiveTitle: (t: string | null) => void; setActiveTheme: (t: string) => void;
   setProfile: (n: string, t: string) => Promise<boolean>;
@@ -51,6 +52,7 @@ type Game = {
   gainXp: (n: number, reason?: string) => void;
   setRoast: (v: boolean) => void;
   setReducedMotion: (v: boolean) => void;
+  setLargeText: (v: boolean) => void;
   setXp: (n: number) => void;
   email: string;
   details: Details;
@@ -76,6 +78,7 @@ export function GameProvider({
   const [quests, setQuests] = useState<Quest[]>(loaded?.quests ?? FALLBACK_QUESTS);
   const [roast, setRoastState] = useState(false);
   const [reducedMotion, setReducedMotionState] = useState(loaded?.reducedMotion ?? false);
+  const [largeText, setLargeTextState] = useState(loaded?.largeText ?? false);
   const [activeTitle, setActiveTitle] = useState<string | null>(loaded?.activeTitle ?? null);
   const [activeTheme, setActiveTheme] = useState(loaded?.activeTheme ?? "default");
   const [details, setDetails] = useState<Details>({
@@ -92,6 +95,10 @@ export function GameProvider({
   useEffect(() => {
     document.documentElement.classList.toggle("reduce-motion", reducedMotion);
   }, [reducedMotion]);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("large-text", largeText);
+  }, [largeText]);
 
   // Store-bought dashboard theme.
   useEffect(() => {
@@ -120,7 +127,7 @@ export function GameProvider({
   };
 
   const value: Game = {
-    name, title, xp, quests, roast, reducedMotion, lastGain,
+    name, title, xp, quests, roast, reducedMotion, largeText, lastGain,
     activeTitle, activeTheme, setActiveTitle, setActiveTheme,
     level: Math.floor(xp / XP_PER_LEVEL) + 1,
     levelXp: xp % XP_PER_LEVEL,
@@ -177,6 +184,13 @@ export function GameProvider({
       setReducedMotionState(v);
       saveReducedMotionFn({ data: { reducedMotion: v } }).then((res) => {
         rejected(res, () => setReducedMotionState(prev));
+      });
+    },
+    setLargeText: (v) => {
+      const prev = largeText;
+      setLargeTextState(v);
+      saveLargeTextFn({ data: { largeText: v } }).then((res) => {
+        rejected(res, () => setLargeTextState(prev));
       });
     },
     setXp: (n) => setXpState(n),

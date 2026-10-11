@@ -8,6 +8,7 @@ import grouchoAsset from "@/assets/wearables/groucho.png.asset.json";
 import googlyAsset from "@/assets/wearables/googly.png.asset.json";
 import mcapAsset from "@/assets/wearables/mcap.png.asset.json";
 import afroAsset from "@/assets/wearables/afro.png.asset.json";
+import gemAsset from "@/assets/wearables/gem.png.asset.json";
 import machineAsset from "@/assets/wearables/machine.png.asset.json";
 import capsuleAsset from "@/assets/wearables/capsule.png.asset.json";
 
@@ -19,6 +20,7 @@ export const WEARABLE_ART: Record<string, string> = {
   wearable_googly: googlyAsset.url,
   wearable_mcap: mcapAsset.url,
   wearable_afro: afroAsset.url,
+  wearable_gem: gemAsset.url,
 };
 
 export const MACHINE_ART = machineAsset.url;

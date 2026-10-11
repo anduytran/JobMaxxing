@@ -32,6 +32,7 @@ export type GameState = {
   xp: number;
   roast: boolean;
   reducedMotion: boolean;
+  largeText: boolean;
   activeTitle: string | null;
   activeTheme: string;
   quests: Quest[];
@@ -105,7 +106,7 @@ export const loadGame = createServerFn({ method: "GET" }).handler(
         },
         {
           query:
-            "select name, title, xp, roast, reduced_motion, skills, student, job_prefs, resume, active_title, active_theme " +
+            "select name, title, xp, roast, reduced_motion, large_text, skills, student, job_prefs, resume, active_title, active_theme " +
             "from public.devup_profile where id = $1 limit 1",
           params: [PROFILE_ID],
         },
@@ -130,6 +131,7 @@ export const loadGame = createServerFn({ method: "GET" }).handler(
         xp: Number(profile?.xp ?? 0),
         roast: Boolean(profile?.roast ?? false),
         reducedMotion: Boolean(profile?.reduced_motion ?? false),
+        largeText: Boolean(profile?.large_text ?? false),
         activeTitle: profile?.active_title ? String(profile.active_title) : null,
         activeTheme: String(profile?.active_theme ?? "default"),
         quests: (results[3]?.rows ?? []).map((r: any) => ({
@@ -184,6 +186,24 @@ export const saveRoast = createServerFn({ method: "POST" })
       await neonExecute(
         "update public.devup_profile set roast = $1, updated_at = now() where id = $2",
         [data.roast, PROFILE_ID],
+      );
+      return { ok: true };
+    } catch (err) {
+      return fail(err);
+    }
+  });
+
+export const saveLargeText = createServerFn({ method: "POST" })
+  .inputValidator((input: { largeText: unknown }) => {
+    if (typeof input.largeText !== "boolean") throw new Error("Text size preference must be true or false.");
+    return { largeText: input.largeText };
+  })
+  .handler(async ({ data }): Promise<SaveResult> => {
+    try {
+      const PROFILE_ID = (await requireUser()).id;
+      await neonExecute(
+        "update public.devup_profile set large_text = $1, updated_at = now() where id = $2",
+        [data.largeText, PROFILE_ID],
       );
       return { ok: true };
     } catch (err) {
