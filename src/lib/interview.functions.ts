@@ -50,6 +50,24 @@ export const fetchJobPosting = createServerFn({ method: "POST" })
     return { text };
   });
 
+// URL mode: when the direct fetch can't read a posting (JS-heavy boards, bot
+// walls), the Job Parser agent itself web-searches the URL and parses what it
+// finds. Returns null when the agent can't find the posting either.
+export const parseJobUrl = createServerFn({ method: "POST" })
+  .inputValidator((i: { url: unknown }) => {
+    const url = typeof i.url === "string" ? i.url.trim() : "";
+    let parsed: URL;
+    try { parsed = new URL(url); } catch { throw new Error("That job link doesn't look valid."); }
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") throw new Error("That job link doesn't look valid.");
+    return { url: parsed.toString() };
+  })
+  .handler(async ({ data }) => {
+    const { parseJobFromUrl } = await import("./interview/agents.server");
+    const job = await parseJobFromUrl(data.url);
+    if (!job) throw new Error("Couldn't read that posting, even with a web search. Paste the description instead.");
+    return job;
+  });
+
 export const generateInterviewQuestions = createServerFn({ method: "POST" })
   .inputValidator((i: { job: ParsedJob; type: unknown; length: unknown; roast: unknown }) => ({
     job: i.job,
