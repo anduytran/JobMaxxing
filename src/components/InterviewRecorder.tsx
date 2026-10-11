@@ -11,6 +11,7 @@ import {
 import {
   addRecording, recordingFileName, removeRecording, type InterviewRecording, type RecordingKind,
 } from "@/lib/interview-recordings";
+import { beginRecorderMix, endRecorderMix } from "@/lib/interview/recorder-mix";
 
 const MIMES = ["video/mp4;codecs=avc1,mp4a", "video/mp4", "video/webm;codecs=vp9,opus", "video/webm"];
 
@@ -56,6 +57,7 @@ export function InterviewRecorder({ active, kind, title, onSaved }: {
     rec.current = null;
     setRecording(false);
     r.mr.onstop = () => {
+      endRecorderMix();
       r.stream.getTracks().forEach((t) => t.stop());
       if (!r.chunks.length) return;
       const mime = r.mr.mimeType || "video/webm";
@@ -81,8 +83,13 @@ export function InterviewRecorder({ active, kind, title, onSaved }: {
     setAsk(false);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 1280 }, height: { ideal: 720 } }, audio: true });
+      // Blend the interviewer's voice in alongside the mic so the video has both sides.
+      const mix = beginRecorderMix();
+      const recorded = mix
+        ? new MediaStream([...stream.getVideoTracks(), ...stream.getAudioTracks(), ...mix.getAudioTracks()])
+        : stream;
       const mimeType = MIMES.find((m) => typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported(m));
-      const mr = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+      const mr = new MediaRecorder(recorded, mimeType ? { mimeType } : undefined);
       const chunks: Blob[] = [];
       mr.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
       mr.start(1000);
