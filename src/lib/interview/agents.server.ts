@@ -34,6 +34,16 @@ export function agentStatus(): AgentStatus {
   };
 }
 
+/** Rough token estimate (chars/4) for one agent call, stored per user for the Settings usage panel. */
+export async function trackUsage(userId: string | undefined, agent: string, prompt: string, response: string): Promise<void> {
+  if (!userId) return;
+  const tokens = Math.max(1, Math.ceil((prompt.length + response.length) / 4));
+  try {
+    const { neonExecute } = await import("../neon.server");
+    await neonExecute("insert into public.devup_token_usage (user_id, agent, tokens) values ($1::uuid, $2, $3)", [userId, agent, tokens]);
+  } catch (err) { console.error("token usage track failed", err); }
+}
+
 /** Send one prompt to a Raia agent and parse its JSON reply. Returns null on any failure.
  *  Uses the stateless /external/prompts endpoint — no conversation user required.
  *  A slow agent must not hang the caller: the request is cut off at `timeoutMs`
@@ -41,19 +51,22 @@ export function agentStatus(): AgentStatus {
 async function askRaia<T>(
   secretEnv: string, message: string, context: string, timeoutMs = 45_000,
   files?: { fileName: string; storagePath: string }[],
+  track?: { userId?: string; agent: string },
 ): Promise<T | null> {
   const secret = key(secretEnv);
   if (!secret) return null;
+  const promptText = context ? `${context}\n\n${message}` : message;
   try {
     const res = await fetch(`${RAIA}/prompts`, {
       method: "POST",
       headers: { "Agent-Secret-Key": secret, "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt: context ? `${context}\n\n${message}` : message, ...(files?.length ? { files } : {}) }),
+      body: JSON.stringify({ prompt: promptText, ...(files?.length ? { files } : {}) }),
       signal: AbortSignal.timeout(timeoutMs),
     });
     if (!res.ok) { console.error("Raia prompt failed", res.status, await res.text()); return null; }
     const body = (await res.json()) as { response?: string };
     const text = body.response ?? "";
+    await trackUsage(track?.userId, track?.agent ?? "agent", promptText, text);
     return JSON.parse(text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1)) as T;
   } catch (err) {
     console.error("Raia agent error", err);
