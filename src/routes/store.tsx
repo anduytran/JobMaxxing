@@ -113,7 +113,7 @@ function CapsuleMachine({
       ];
       equipWearables({ data: { ids: next } }).then((r) => {
         if (!r.ok) toast.error(r.error);
-        else refreshWearables();
+        else refreshWearables(next);
       });
       toast.success(`Max is wearing the ${def.name.toLowerCase()}.`);
     }
@@ -237,7 +237,7 @@ function Wardrobe({ state, onChanged }: { state: StoreState; onChanged: () => vo
       toast.error(res.error);
       return;
     }
-    refreshWearables();
+    refreshWearables(next);
     onChanged();
   };
 

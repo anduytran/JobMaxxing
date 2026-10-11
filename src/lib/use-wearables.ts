@@ -27,8 +27,20 @@ function load() {
     });
 }
 
-export function refreshWearables() {
+/**
+ * Update the equipped-wearables cache. When the caller already knows the new
+ * ids (e.g. right after equipping), pass them so every Max updates instantly
+ * and no stale in-flight fetch can overwrite the fresh value.
+ */
+export function refreshWearables(ids?: string[]) {
+  if (ids) {
+    cached = ids;
+    inflight = null;
+    emit();
+    return;
+  }
   cached = null;
+  inflight = null;
   load();
 }
 
