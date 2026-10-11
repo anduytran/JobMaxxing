@@ -209,3 +209,60 @@ export const respondInvite = createServerFn({ method: "POST" })
     await neonQuery("update public.devup_interview_invite set status = $2 where id = $1::uuid", [data.inviteId, data.accept ? "accepted" : "declined"]);
     return { ok: true, code: data.accept ? String(inv["code"]) : null };
   });
+
+export type ScheduledInterview = { id: string; withName: string; withId: string; at: string; note: string | null; status: string; mine: boolean };
+
+async function areFriends(a: string, b: string) {
+  const { rows } = await neonQuery(
+    `select 1 from public.devup_friendship where status = 'accepted'
+     and ((user_id = $1 and friend_id = $2) or (user_id = $2 and friend_id = $1)) limit 1`, [a, b]);
+  return rows.length > 0;
+}
+
+export const scheduleInterview = createServerFn({ method: "POST" })
+  .inputValidator((i: { friendId: unknown; at: unknown; note?: unknown }) => ({
+    friendId: String(i.friendId ?? ""), at: String(i.at ?? ""), note: i.note ? String(i.note).slice(0, 200) : null,
+  }))
+  .handler(async ({ data }) => {
+    const me = await requireUser();
+    const when = new Date(data.at);
+    if (Number.isNaN(when.getTime()) || when.getTime() < Date.now() - 60_000) throw new Error("Pick a time in the future.");
+    if (!(await areFriends(me.id, data.friendId))) throw new Error("You can only schedule with friends.");
+    await neonQuery("insert into public.devup_interview_schedule (sender_id, receiver_id, scheduled_at, note) values ($1, $2, $3::timestamptz, $4)",
+      [me.id, data.friendId, when.toISOString(), data.note]);
+    return { ok: true };
+  });
+
+export const listScheduledInterviews = createServerFn({ method: "GET" }).handler(async () => {
+  const me = await requireUser();
+  const { rows } = await neonQuery(
+    `select s.id::text as sid, s.sender_id, s.receiver_id, s.scheduled_at, s.note, s.status, u.email, p.name
+     from public.devup_interview_schedule s
+     join public.devup_user u on u.id::text = case when s.sender_id = $1 then s.receiver_id else s.sender_id end
+     left join public.devup_profile p on p.id = u.id::text
+     where (s.sender_id = $1 or s.receiver_id = $1) and s.status <> 'cancelled' and s.scheduled_at > now() - interval '1 hour'
+     order by s.scheduled_at limit 20`, [me.id]);
+  return rows.map((r): ScheduledInterview => ({
+    id: String(r["sid"]),
+    withId: String(r["sender_id"]) === me.id ? String(r["receiver_id"]) : String(r["sender_id"]),
+    withName: displayName(String(r["email"]), r["name"] as string | null),
+    at: new Date(String(r["scheduled_at"])).toISOString(),
+    note: (r["note"] as string | null) ?? null,
+    status: String(r["status"]),
+    mine: String(r["sender_id"]) === me.id,
+  }));
+});
+
+export const respondScheduledInterview = createServerFn({ method: "POST" })
+  .inputValidator((i: { id: unknown; action: unknown }) => ({
+    id: String(i.id ?? ""), action: i.action === "accept" ? "accepted" : "cancelled",
+  }))
+  .handler(async ({ data }) => {
+    const me = await requireUser();
+    if (data.action === "accepted") {
+      await neonQuery("update public.devup_interview_schedule set status = 'accepted' where id = $1::uuid and receiver_id = $2", [data.id, me.id]);
+    } else {
+      await neonQuery("update public.devup_interview_schedule set status = 'cancelled' where id = $1::uuid and (receiver_id = $2 or sender_id = $2)", [data.id, me.id]);
+    }
+    return { ok: true };
+  });
