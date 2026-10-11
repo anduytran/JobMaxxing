@@ -281,23 +281,25 @@ function fallbackGrade(t: TranscriptTurn[], job: ParsedJob): InterviewGrade {
   else if (!substantive) overall = Math.min(overall, 25);
   const strengths: string[] = [];
   const improvements: string[] = [];
-  if (skillHits) strengths.push(`Referenced ${skillHits} skill(s) from the job description.`);
+  if (hostile) improvements.unshift("Keep it professional — hostile or vulgar answers score near zero in a real interview.");
+  if (skillHits && substantive) strengths.push(`Referenced ${skillHits} skill(s) from the job description.`);
   else improvements.push("Tie answers back to the skills listed in the job description.");
-  if (star >= 2) strengths.push("Gave concrete reasons and results."); else improvements.push("Use the STAR method — end with a measurable result.");
+  if (star >= 2 && substantive) strengths.push("Gave concrete reasons and results."); else improvements.push("Use the STAR method — end with a measurable result.");
   if (avg > 140) improvements.push("Answers ran long; aim for 60–120 words each.");
-  if (avg && avg < 15) improvements.push("Answers were very short; add one example per answer.");
+  if (avg && avg < 20) improvements.push("Answers were very short; add one example per answer.");
+  if (substantive < questionsAsked) improvements.push(`Only ${substantive} of ${questionsAsked} question(s) got a real answer.`);
   if (filler > 4) improvements.push("Cut filler words and buzzwords.");
-  if (!asked.length) improvements.push("Always ask the interviewer at least one thoughtful question.");
-  else if (goodQs) strengths.push("Asked thoughtful questions at the end.");
+  if (!realQs.length) improvements.push("Always ask the interviewer at least one thoughtful question.");
+  else if (goodQs && !hostile) strengths.push("Asked thoughtful questions at the end.");
 
   return {
     overall,
-    xp: Math.round(overall * 3) + goodQs * 25,
+    xp: hostile ? 0 : Math.round(overall * 3) + goodQs * 25,
     metrics: {
-      quality: { score: quality, feedback: `${answers.length} answers, ~${Math.round(avg)} words each.` },
-      conciseness: { score: concise, feedback: filler ? `${filler} filler/jargon hits detected.` : "Clean, direct delivery." },
-      candidateQuestions: { score: cq, feedback: asked.length ? `You asked ${asked.length} question(s).` : "No questions asked." },
-      tone: null,
+      quality: { score: quality, feedback: `${substantive} of ${questionsAsked} question(s) answered in depth, ~${Math.round(avg)} words each.` },
+      conciseness: { score: concise, feedback: filler ? `${filler} filler/jargon hits detected.` : avg < 20 ? "Too short to judge delivery." : "Clean, direct delivery." },
+      candidateQuestions: { score: cq, feedback: realQs.length ? `You asked ${realQs.length} real question(s).` : "No genuine questions asked." },
+      tone: hostile ? { score: 0, feedback: "Hostile or vulgar language." } : null,
     },
     strengths,
     improvements,
