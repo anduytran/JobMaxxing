@@ -99,6 +99,31 @@ export async function parseJob(jd: string): Promise<ParsedJob> {
 }
 
 /**
+ * URL mode: the Job Parser agent uses web search to open or find the posting
+ * itself (see its "URL MODE" instructions). Used when the app's direct fetch
+ * of the posting URL fails or returns unreadable text. Returns null when the
+ * agent can't find the posting, so the caller can ask the user to paste it.
+ */
+export async function parseJobFromUrl(url: string, hint?: string): Promise<ParsedJob | null> {
+  const ai = await askRaia<ParsedJob>(ENV.parser,
+    `JOB URL\n${url}${hint ? `\n\nHint: this link is for a role described as: ${hint.slice(0, 400)}` : ""}`,
+    "This is a URL MODE request per your instructions. Use web search to open or find this job posting — " +
+    "if the link itself is a redirect or not indexed, search for the company and role from the hint instead. " +
+    "Then parse it and reply with JSON only using your output schema: {title, summary, skills, qualifications, location, specialNotes}. " +
+    "If you cannot find readable content for it, reply with title null and empty lists.",
+    60_000);
+  if (!ai || !Array.isArray(ai.skills) || (!ai.title && !ai.skills.length)) return null;
+  return {
+    title: ai.title ?? null,
+    summary: ai.summary ?? "",
+    skills: ai.skills,
+    qualifications: Array.isArray(ai.qualifications) ? ai.qualifications : [],
+    location: ai.location ?? null,
+    specialNotes: Array.isArray(ai.specialNotes) ? ai.specialNotes : [],
+  };
+}
+
+/**
  * Job Radar title gate: the Raia Job Parser agent (its "TITLE SCREENING MODE"
  * instructions) judges which job titles are relevant to the target roles —
  * relevance, not strict matching. One batched call per refresh.
