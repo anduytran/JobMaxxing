@@ -1,10 +1,11 @@
 # Roadmap
 
 ## Interview flow audit
-- [ ] Delay Job Radar parsing until Analyze job and preserve editable context.
-- [ ] Full-width live interview with bounded questions and speech-word highlighting.
-- [ ] Remove roast controls and global palette overrides without changing server contracts.
-- [ ] Verify browser layout, playback lifecycle and delayed parsing; real microphone/account checks require available access.
+- [x] Delay Job Radar parsing until Analyze job and preserve editable context; remove handoff truncation.
+- [x] Full-width live interview with bounded questions and speech-word highlighting.
+- [x] Remove roast controls and global palette overrides without changing server contracts.
+- [x] Playback alignment, boundary and cancellation tests pass; preview build clean.
+- [ ] Signed-in layout and real audible interview verification — requires account access and real microphone; isolated screen fixture did not render.
 
 ## Interview voice presence
 - [x] Add manual Done speaking / Send answer, live candidate captions, a five-word correction budget and default microphone test.

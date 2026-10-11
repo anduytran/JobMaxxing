@@ -72,7 +72,7 @@ export function GameProvider({
   const [title, setTitle] = useState(loaded?.title ?? "Junior Full-Stack Developer");
   const [xp, setXpState] = useState(loaded?.xp ?? 2350);
   const [quests, setQuests] = useState<Quest[]>(loaded?.quests ?? FALLBACK_QUESTS);
-  const [roast, setRoastState] = useState(loaded?.roast ?? false);
+  const [roast, setRoastState] = useState(false);
   const [reducedMotion, setReducedMotionState] = useState(loaded?.reducedMotion ?? false);
   const [details, setDetails] = useState<Details>({
     skills: loaded?.skills ?? [], student: loaded?.student ?? {}, jobPrefs: loaded?.jobPrefs ?? {}, resume: loaded?.resume ?? null,

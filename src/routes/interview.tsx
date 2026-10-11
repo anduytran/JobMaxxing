@@ -360,7 +360,7 @@ function Interview() {
 
           {currentCaption && stage !== "grading" && (
             <div className="mx-auto w-full max-w-4xl px-6 py-6 md:py-8">
-              <p className="break-words text-center text-2xl font-medium leading-relaxed text-foreground md:text-3xl" aria-label="Current question">
+              <p className="max-h-48 overflow-y-auto break-words text-center text-2xl font-medium leading-relaxed text-foreground md:text-3xl" aria-label="Current question">
                 <SpokenQuestion text={currentCaption} activeWord={spokenWord} />
               </p>
             </div>
@@ -400,7 +400,7 @@ function Interview() {
           </div>
 
           {/* Caption bubble */}
-          {captionsOn && (listening ? liveCaption : currentCaption) && stage !== "grading" && (
+          {captionsOn && listening && liveCaption && stage !== "grading" && (
             <div className="mx-auto mb-6 w-full max-w-xl px-6">
               <p className="rounded-lg border bg-background px-5 py-3 text-center text-sm shadow-sm" aria-live="off">
                 {listening ? (liveCaption || "…") : <SpokenQuestion text={currentCaption ?? ""} activeWord={spokenWord} />}
