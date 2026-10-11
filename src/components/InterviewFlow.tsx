@@ -2,7 +2,6 @@ import { Link } from "@tanstack/react-router";
 import { Captions, Keyboard, Loader2, Mic, RotateCcw, Send, Square, Volume2, VolumeX } from "lucide-react";
 import { InterviewVoicePresence, type InterviewVoiceState } from "@/components/InterviewVoicePresence";
 import { InterviewMicrophoneCheck } from "@/components/InterviewMicrophoneCheck";
-import { WornMax } from "@/components/Wearables";
 import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import { toast } from "sonner";
 import { AcknowledgeDisclosure, InterviewDisclosure } from "@/components/InterviewDisclosure";
@@ -17,7 +16,7 @@ import {
 import { createBrowserVoice, createElevenLabsVoice, withScribeListening, type VoiceAgent, type VoicePlaybackState } from "@/lib/interview/voice";
 import { cn } from "@/lib/utils";
 
-type Stage = "intro" | "setup" | "review" | "options" | "live" | "your_questions" | "grading" | "report";
+type Stage = "setup" | "review" | "options" | "live" | "your_questions" | "grading" | "report";
 
 /** Server calls the flow needs. The signed-in page and the public demo supply
  *  their own implementations; the screens and voice handling are shared. */
@@ -50,7 +49,7 @@ export function InterviewFlow({ agents, api, radar, profileSkills = [], captions
 }) {
   const search = { radar };
   const details = { skills: profileSkills };
-  const [stage, setStage] = useState<Stage>(demo ? "setup" : "intro");
+  const [stage, setStage] = useState<Stage>("setup");
   const [jd, setJd] = useState("");
   const radarJobId = useRef<string | null>(null);
   const radarBootstrapped = useRef(false);
@@ -288,7 +287,7 @@ export function InterviewFlow({ agents, api, radar, profileSkills = [], captions
     return () => clearTimeout(t);
   }, [thinking, playback, stage, turns, voiceOn]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const reset = () => { stopVoice(); setTyping(false); setConvId(null); setStage(demo ? "setup" : "intro"); setGrade(null); setTurns([]); setJob(null); setAck(false); radarJobId.current = null; autoFinish.current = false; };
+  const reset = () => { stopVoice(); setTyping(false); setConvId(null); setStage("setup"); setGrade(null); setTurns([]); setJob(null); setAck(false); radarJobId.current = null; autoFinish.current = false; };
 
   return (
     <div className={cn(immersive ? "w-full" : "mx-auto max-w-[1500px] space-y-4 px-4 py-6 md:px-10 md:py-10")}>
@@ -302,16 +301,6 @@ export function InterviewFlow({ agents, api, radar, profileSkills = [], captions
 
 
 
-      {stage === "intro" && (
-        <section className="panel">
-          <div className="flex flex-col items-center px-6 py-24 text-center">
-            <WornMax pose="interview" className="mascot-float h-28 w-28" />
-            <h2 className="mt-8 text-3xl font-bold md:text-4xl">Confidence comes with practice.</h2>
-            <p className="mt-4 max-w-lg text-muted-foreground">Practice personalized technical or behavioral questions and get a sample feedback report.</p>
-            <Button size="lg" className="mt-8 px-7 py-6 text-base" onClick={() => setStage("setup")}>Start practicing</Button>
-          </div>
-        </section>
-      )}
 
       {stage === "setup" && (
         <section className="panel space-y-4 p-6">
