@@ -4,7 +4,6 @@ import { Mascot, PanelHead } from "@/components/AppShell";
 import { useGame } from "@/lib/game";
 import { useEffect, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
-import { Button } from "@/components/ui/button";
 import { ResumeScoreCard } from "@/components/ResumeScoreCard";
 import { XpCareerCard } from "@/components/DashboardProgressCards";
 import { getLatestResumeReview } from "@/lib/resume.functions";
@@ -53,7 +52,13 @@ function Page() {
           <div>
             <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">Let's make your next move count</p>
             <h1 className="mt-2 text-4xl font-bold md:text-5xl">Looking good, {first} <span className="text-accent">✦</span></h1>
-            <p className="mt-2 text-lg text-muted-foreground">{done > 0 ? `${done} quests behind you. Take a moment to appreciate that.` : "Glad you're here. Let's start with one small win."}</p>
+            <button type="button" onClick={() => setTip((t) => (t + 1) % tips.length)} aria-label="Another note from Max" title="Another note from Max" className="mt-4 flex max-w-xl items-start gap-3 rounded-2xl border bg-hero/60 px-4 py-3 text-left transition-shadow hover:shadow-md">
+              <Mascot className="h-11 w-11 shrink-0" />
+              <span className="min-w-0">
+                <span className="block text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Notes from Max</span>
+                <motion.span key={tip} initial={reducedMotion ? false : { opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="block text-base text-muted-foreground" aria-live="polite">{tips[tip]}</motion.span>
+              </span>
+            </button>
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <div className="panel flex items-center gap-3 px-5 py-3 text-sm transition-shadow hover:shadow-md">
@@ -84,10 +89,6 @@ function Page() {
         <SkillRadar />
         {career && <CareerStats data={career} onGoalSaved={reload} />}
 
-        <div className="flex items-center gap-5 rounded-2xl border bg-hero/60 p-6">
-          <Button variant="ghost" aria-label="Another thought from Max" title="Another thought from Max" className="h-20 w-20 shrink-0 p-0 hover:bg-transparent" onClick={() => setTip((t) => (t + 1) % tips.length)}><Mascot className="h-20 w-20" /></Button>
-          <div className="min-w-0"><div className="font-semibold">Max says</div><motion.p key={tip} initial={reducedMotion ? false : { opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="min-h-12 text-muted-foreground" aria-live="polite">{tips[tip]}</motion.p></div>
-        </div>
       </div>
       <div className="panel">
         <PanelHead title="Look how far you've come" level={level} />
