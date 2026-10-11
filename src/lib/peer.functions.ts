@@ -46,7 +46,7 @@ export type PeerSession = {
 };
 
 const TYPES = ["technical", "behavioral", "mixed"] as const;
-const LENS = ["short", "standard", "long"] as const;
+const LENS = ["quick", "short", "standard", "long"] as const;
 const CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 
 const makeCode = () =>

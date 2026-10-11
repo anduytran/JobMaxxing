@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import type { InterviewLength, InterviewQuestion, InterviewType, ParsedJob, TranscriptTurn } from "./interview/types";
 
 const TYPES = ["technical", "behavioral", "mixed"] as const;
-const LENS = ["short", "standard", "long"] as const;
+const LENS = ["quick", "short", "standard", "long"] as const;
 
 export const getInterviewAgents = createServerFn({ method: "GET" }).handler(async () => {
   const { agentStatus } = await import("./interview/agents.server");
