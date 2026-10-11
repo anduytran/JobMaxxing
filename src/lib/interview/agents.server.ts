@@ -227,6 +227,28 @@ async function raiaPost<T>(secret: string, path: string, body: unknown): Promise
   return (await res.json()) as T;
 }
 
+async function raiaGet<T>(secret: string, path: string): Promise<T> {
+  const res = await fetch(`${RAIA}${path}`, { headers: { "Agent-Secret-Key": secret } });
+  if (!res.ok) throw new Error(`Raia ${path} failed [${res.status}]: ${(await res.text()).slice(0, 300)}`);
+  return (await res.json()) as T;
+}
+
+/** Create the conversation user, or reuse the existing one for this app user (Raia 400s on duplicate fkId). */
+async function ensureConversationUser(secret: string, opts: { userId: string; name: string }): Promise<{ id: string }> {
+  const [first = "Candidate", ...rest] = opts.name.trim().split(/\s+/);
+  try {
+    return await raiaPost<{ id: string }>(secret, "/users", {
+      firstName: first, lastName: rest.join(" ") || "Candidate", fkId: opts.userId, source: "devup",
+    });
+  } catch (err) {
+    if (!String(err).includes("USER_ALREADY_EXISTS")) throw err;
+    const found = await raiaGet<{ user?: { id: string } }>(secret, `/users/search?fkId=${encodeURIComponent(opts.userId)}`);
+    const user = found.user;
+    if (!user?.id) throw err;
+    return user;
+  }
+}
+
 /** The Question agent answers in its JSON schema; pull out the line to speak. */
 function spokenLine(raw: string): string {
   try {
@@ -263,10 +285,7 @@ export async function startInterviewConversation(opts: {
   const secret = key(ENV.questions);
   if (!secret) return null;
   try {
-    const [first = "Candidate", ...rest] = opts.name.trim().split(/\s+/);
-    const user = await raiaPost<{ id: string }>(secret, "/users", {
-      firstName: first, lastName: rest.join(" ") || "Candidate", fkId: opts.userId, source: "devup",
-    });
+    const user = await ensureConversationUser(secret, { userId: opts.userId, name: opts.name });
     const context =
       `${TURN_RULES}\nTone: ${opts.roast ? "tough and blunt" : "friendly and professional"}. Interview type: ${opts.type}. ${typeFocus(opts.type)} ` +
       `Budget: about ${LENGTHS[opts.length].questions} questions in ~${Math.round(LENGTHS[opts.length].seconds / 60)} minutes.\n` +
