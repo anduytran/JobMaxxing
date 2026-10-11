@@ -193,6 +193,14 @@ export function InterviewFlow({ agents, api, radar, profileSkills = [], captions
     } catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
   };
 
+  // Consent answered: kick off the first question and let the countdown run.
+  const onConsent = () => {
+    setConsented(true);
+    const first = pendingFirst.current;
+    pendingFirst.current = null;
+    if (first) say(first.text, "interview", first.questionId);
+  };
+
   const toTail = (lead: string) => {
     stopVoice();
     setStage("your_questions");
@@ -261,7 +269,7 @@ export function InterviewFlow({ agents, api, radar, profileSkills = [], captions
 
   // Click to answer, click again to send — mirrors the toggle button (Space or click).
   useEffect(() => {
-    if (stage !== "live" && stage !== "your_questions") return;
+    if ((stage !== "live" && stage !== "your_questions") || !consented) return;
     const down = (e: KeyboardEvent) => {
       if (e.code !== "Space" || e.repeat) return;
       const target = e.target as HTMLElement | null;
@@ -302,11 +310,12 @@ export function InterviewFlow({ agents, api, radar, profileSkills = [], captions
     return () => clearTimeout(t);
   }, [thinking, playback, stage, turns, voiceOn]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const reset = () => { stopVoice(); setTyping(false); setConvId(null); setStage("setup"); setGrade(null); setTurns([]); setJob(null); setAck(false); setRecId(null); radarJobId.current = null; autoFinish.current = false; };
+  const reset = () => { stopVoice(); setTyping(false); setConvId(null); setStage("setup"); setGrade(null); setTurns([]); setJob(null); setAck(false); setRecId(null); setConsented(false); pendingFirst.current = null; radarJobId.current = null; autoFinish.current = false; };
 
   return (
     <div className={cn("interview-fonts", immersive ? "w-full" : "mx-auto max-w-[1500px] space-y-4 px-4 py-6 md:px-10 md:py-10")}>
       <InterviewRecorder active={stage === "live" || stage === "your_questions"} kind={demo ? "demo" : "solo"} title={job?.title ?? "Mock interview"}
+        onDecision={onConsent}
         onSaved={(id) => { setRecId(id); if (savedRef.current) linkRecording(id, savedRef.current); }} />
       {!immersive && stage !== "report" && <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
