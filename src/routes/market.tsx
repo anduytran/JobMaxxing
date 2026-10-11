@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Bookmark, Check, ExternalLink, Loader2, Mic, RefreshCw, Trash2, Undo2 } from "lucide-react";
+import { Bookmark, BookmarkCheck, Check, Clock, ExternalLink, Loader2, Mic, RefreshCw, Trash2, Undo2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/AppShell";
@@ -35,6 +35,13 @@ const STATUS_STYLE: Record<RadarStatus, string> = {
   applied: "bg-accent/15 text-accent",
   interviewing: "bg-success/15 text-success",
   dismissed: "bg-muted text-muted-foreground line-through",
+};
+const STATUS_ICON: Record<RadarStatus, typeof Bookmark> = {
+  new: Bookmark,
+  saved: BookmarkCheck,
+  applied: Check,
+  interviewing: Clock,
+  dismissed: X,
 };
 
 const fmtSalary = (j: RadarJob) => {
@@ -224,13 +231,14 @@ function Market() {
                     <StatusMenu status={j.status} busy={busyId.current === j.id} onPick={(s) => applyStatus(j.id, s)} />
                     <Button
                       variant="ghost"
-                      size="sm"
-                      className="text-muted-foreground hover:text-destructive"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
                       disabled={busyId.current === j.id}
                       onClick={() => removeMatch(j.id)}
                       aria-label="Remove from radar"
+                      title="Remove from radar"
                     >
-                      <Trash2 className="h-4 w-4" /> Remove
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                 </div>
               </div>
@@ -284,11 +292,20 @@ function Market() {
 function StatusMenu({ status, busy, onPick }: { status: RadarStatus; busy: boolean; onPick: (s: RadarStatus) => void }) {
   const [open, setOpen] = useState(false);
   const options: RadarStatus[] = ["saved", "applied", "interviewing", "dismissed"];
+  const Icon = STATUS_ICON[status];
   return (
     <div className="relative">
-      <Button variant="ghost" size="sm" onClick={() => setOpen(!open)} disabled={busy} aria-expanded={open}>
-        {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : status === "new" ? <Bookmark className="h-4 w-4" /> : <Check className="h-4 w-4" />}
-        {status === "new" ? "Track" : STATUS_LABEL[status]}
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8"
+        onClick={() => setOpen(!open)}
+        disabled={busy}
+        aria-expanded={open}
+        aria-label={`Set status — currently ${STATUS_LABEL[status]}`}
+        title={STATUS_LABEL[status]}
+      >
+        {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Icon className="h-4 w-4" />}
       </Button>
       {open && (
         <div className="absolute right-0 z-10 mt-1 w-40 rounded-xl border bg-background p-1 shadow-lg">
