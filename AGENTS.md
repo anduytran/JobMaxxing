@@ -29,6 +29,6 @@
 - Quest reset countdowns derive from `src/lib/reset-times.ts` (next daily reset = 00:00 UTC, weekly = Monday 00:00 UTC) and render only after hydration. Why: match server `date_trunc`; avoid hydration mismatch.
 
 - Peer interviews share one `devup_peer_session` row via `src/lib/peer.functions.ts`: WebRTC audio signalled through its `signal` column (atomic jsonb, STUN only); the clock starts only when both sides mark ready via peerReady; lines go through `peerSay` + `src/lib/moderation.ts`; `peerGrade` grades both sides once. Why: no signalling server; one grade
-- Skill ratings never decrease: MMR (`src/lib/mmr.server.ts`) and Raia Skill Expert (`src/lib/skills.server.ts`) write with `greatest()`, rises capped per refresh. Why: unfakeable
+- Skill ratings never decrease: MMR (`src/lib/mmr.server.ts`) and Raia Skill Expert (`src/lib/skills.server.ts`) write with `greatest()`, rises capped. Why: unfakeable
 - Interview entry points open the Solo/Peer picker (`src/components/InterviewModePicker.tsx`) instead of navigating; Job Radar "Practice Interview for this Role" still goes straight to solo with its role context. Why: one place to choose who interviews you, tailored practice keeps its job context
 - Career dashboard (/progress) reads one aggregate, `getCareerDashboard` in `src/lib/career.functions.ts` (streaks, goals, Elo history in `devup_skill_rating_log`, saved radar roles with skill gaps, peer sessions). Graded interviews and resume scans call `bumpStreak`. Why: one dashboard source
