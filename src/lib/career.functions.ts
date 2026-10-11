@@ -105,9 +105,9 @@ export const getStreak = createServerFn({ method: "GET" }).handler(async (): Pro
 export const getCareerDashboard = createServerFn({ method: "GET" }).handler(async (): Promise<CareerDashboard> => {
   const { currentUser } = await import("./auth.server");
   const user = await currentUser();
-  if (!user) return { streak: EMPTY_STREAK, goal: null, elo: [], radar: [], peerActive: [], peerRecent: [], solo: [] };
+  if (!user) return { streak: EMPTY_STREAK, goal: null, elo: [], radar: [], peerActive: [], peerRecent: [], solo: [], xpEvents: [], interviewCount: 0 };
   try {
-    const [streak, goal, log, ratings, profile, radar, peers, solos] = await Promise.all([
+    const [streak, goal, log, ratings, profile, radar, peers, solos, xpEvents, interviewCount] = await Promise.all([
       neonQuery(
         `select current_streak, longest_streak, to_json(last_activity_date) as last, streak_freeze_count
            from public.devup_activity_streak where user_id = $1`,
@@ -142,6 +142,17 @@ export const getCareerDashboard = createServerFn({ method: "GET" }).handler(asyn
       neonQuery(
         `select id::text as id, job, type, overall, grade, transcript, to_json(created_at) as at
            from public.devup_interview where user_id = $1 and deleted_at is null order by created_at desc limit 20`,
+        [user.id],
+      ),
+      neonQuery(
+        `select e.amount, e.reason, to_json(e.created_at) as at, q.title as quest_title
+           from public.devup_xp_event e
+           left join public.devup_quest q on q.user_id = e.user_id and q.id = substring(e.reason from 7)
+          where e.user_id = $1 order by e.created_at desc limit 8`,
+        [user.id],
+      ),
+      neonQuery(
+        `select count(*)::int as n from public.devup_interview where user_id = $1 and deleted_at is null`,
         [user.id],
       ),
     ]);
