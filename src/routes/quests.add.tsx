@@ -29,10 +29,10 @@ const BASE_PACKS: Pack[] = [
   {
     key: "leetcode", name: "LeetCode Problems", blurb: "Keep your problem-solving sharp.", icon: Code2,
     quests: [
-      { id: "lc-easy", title: "Solve 2 LeetCode Easy problems", xp: 150, category: "Skills", period: "daily" },
-      { id: "lc-medium", title: "Solve 1 LeetCode Medium problem", xp: 250, category: "Skills", period: "daily" },
-      { id: "lc-hard", title: "Attempt 1 LeetCode Hard problem", xp: 400, category: "Skills", period: "weekly" },
-      { id: "lc-review", title: "Re-solve a problem you missed last week", xp: 200, category: "Skills", period: "weekly" },
+      { id: "lc-easy", title: "Solve 2 LeetCode Easy problems", xp: 75, category: "Skills", period: "daily" },
+      { id: "lc-medium", title: "Solve 1 LeetCode Medium problem", xp: 125, category: "Skills", period: "daily" },
+      { id: "lc-hard", title: "Attempt 1 LeetCode Hard problem", xp: 200, category: "Skills", period: "weekly" },
+      { id: "lc-review", title: "Re-solve a problem you missed last week", xp: 100, category: "Skills", period: "weekly" },
     ],
   },
   {
@@ -47,23 +47,23 @@ const BASE_PACKS: Pack[] = [
     key: "resume", name: "Resume & Branding", blurb: "Look as good on paper as you are.", icon: FileText,
     quests: [
       { id: "rb-bullet", title: "Rewrite one resume bullet with a metric", xp: 150, category: "Setup", period: "weekly" },
-      { id: "rb-linkedin", title: "Update your LinkedIn About section", xp: 150, category: "Branding", period: "once" },
-      { id: "rb-portfolio", title: "Add a project to your portfolio", xp: 300, category: "Branding", period: "once" },
+      { id: "rb-linkedin", title: "Update your LinkedIn About section", xp: 75, category: "Branding", period: "once" },
+      { id: "rb-portfolio", title: "Add a project to your portfolio", xp: 150, category: "Branding", period: "once" },
     ],
   },
   {
     key: "hunt", name: "Job Hunt", blurb: "Steady applications, steady momentum.", icon: Briefcase,
     quests: [
-      { id: "jh-apply3", title: "Apply to 3 roles", xp: 250, category: "Hunt", period: "weekly" },
-      { id: "jh-research", title: "Research one target company", xp: 100, category: "Hunt", period: "daily" },
-      { id: "jh-followup", title: "Follow up on an application", xp: 100, category: "Hunt", period: "weekly" },
+      { id: "jh-apply3", title: "Apply to 3 roles", xp: 125, category: "Hunt", period: "weekly" },
+      { id: "jh-research", title: "Research one target company", xp: 50, category: "Hunt", period: "daily" },
+      { id: "jh-followup", title: "Follow up on an application", xp: 50, category: "Hunt", period: "weekly" },
     ],
   },
   {
     key: "network", name: "Networking", blurb: "Your next job is probably a person.", icon: Users,
     quests: [
-      { id: "nw-message", title: "Message someone in your target field", xp: 150, category: "Social", period: "weekly" },
-      { id: "nw-coffee", title: "Book a coffee chat", xp: 250, category: "Social", period: "once" },
+      { id: "nw-message", title: "Message someone in your target field", xp: 75, category: "Social", period: "weekly" },
+      { id: "nw-coffee", title: "Book a coffee chat", xp: 125, category: "Social", period: "once" },
     ],
   },
 ];

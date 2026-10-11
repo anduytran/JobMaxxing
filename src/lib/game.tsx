@@ -32,7 +32,7 @@ export type Details = { skills: string[]; student: StudentInfo; jobPrefs: JobPre
 const FALLBACK_QUESTS: Quest[] = [
   { id: "resume", title: "Upload Resume", xp: 500, done: false, category: "Setup", period: "once" },
   { id: "mock1", title: "Complete 1 Mock Interview", xp: 200, done: false, category: "Interview", period: "daily" },
-  { id: "linkedin", title: "Polish LinkedIn headline", xp: 150, done: false, category: "Branding", period: "once" },
+  { id: "linkedin", title: "Polish LinkedIn headline", xp: 75, done: false, category: "Branding", period: "once" },
   { id: "leet", title: "Solve 3 algorithm problems", xp: 300, done: false, category: "Skills", period: "daily" },
   { id: "apply", title: "Apply to 5 target roles", xp: 400, done: true, category: "Hunt", period: "weekly" },
 ];
