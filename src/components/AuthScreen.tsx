@@ -111,8 +111,8 @@ function DraggableMax({ bounds }: { bounds: React.RefObject<HTMLElement | null> 
         }}
       >
         <motion.img
-          src={dizzy ? MAX_POSES.dap : MAX_POSES.wave}
-          alt={dizzy ? "Max, the JobMaxxing briefcase, being dragged around" : "Max, the JobMaxxing briefcase, waving"}
+          src={dizzy ? MAX_POSES.dizzy : MAX_POSES.wave}
+          alt={dizzy ? "Max, the JobMaxxing briefcase, being shaken around" : "Max, the JobMaxxing briefcase, waving"}
           draggable={false}
           className="mascot-personality w-56 md:w-72"
           animate={dizzy && !reduce ? { rotate: [0, -4, 4, 0] } : {}}
