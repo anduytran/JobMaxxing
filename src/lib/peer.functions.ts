@@ -45,7 +45,7 @@ export type PeerSession = {
   meIsHost: boolean;
 };
 
-const TYPES = ["technical", "behavioral", "mixed"] as const;
+const TYPES = ["technical", "behavioral", "mixed", "resume"] as const;
 const LENS = ["quick", "short", "standard", "long"] as const;
 const CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 

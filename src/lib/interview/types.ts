@@ -1,5 +1,5 @@
 // Shared, browser-safe types for the mock interview pipeline.
-export type InterviewType = "technical" | "behavioral" | "mixed";
+export type InterviewType = "technical" | "behavioral" | "mixed" | "resume";
 export type InterviewLength = "quick" | "short" | "standard" | "long";
 
 export const LENGTHS: Record<InterviewLength, { label: string; seconds: number; questions: number }> = {
