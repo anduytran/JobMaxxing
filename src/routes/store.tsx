@@ -231,7 +231,10 @@ function Wardrobe({ state, onChanged }: { state: StoreState; onChanged: () => vo
     setBusy(true);
     const res = await equipWearables({ data: { ids: next } });
     setBusy(false);
-    if (!res.ok) return toast.error(res.error);
+    if (!res.ok) {
+      toast.error(res.error);
+      return;
+    }
     onChanged();
   };
 

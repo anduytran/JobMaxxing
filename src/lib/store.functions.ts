@@ -276,7 +276,7 @@ export const rollCapsule = createServerFn({ method: "POST" }).handler(
       const owned = new Set((results[1]?.rows ?? []).map((r: any) => String(r.item_id)));
       const remaining = WEARABLES.filter((w) => !owned.has(w.id));
       if (!remaining.length) return { ok: false, error: "Collection complete — Max has every wearable." };
-      const won = remaining[Math.floor(Math.random() * remaining.length)];
+      const won = remaining[Math.floor(Math.random() * remaining.length)]!;
       const done = await neonExecute<{ results: any[] }>([
         {
           query: "insert into public.devup_purchase (user_id, item_id, cost) values ($1, $2, $3)",
