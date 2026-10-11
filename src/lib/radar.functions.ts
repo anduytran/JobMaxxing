@@ -106,7 +106,6 @@ function scoreJob(job: { title: string; description: string; location: string; s
   if (overlap.length) { score += Math.min(45, overlap.length * 9); why.push(`${overlap.length} of your skills`); }
 
   const roleTokens = tokens(profile.prefs.roles);
-  const titleLower = job.title.toLowerCase();
   const descLower = job.description.toLowerCase();
   const fit = Math.max(0, ...roleTokens.map((t) => titleFit(job.title, t)));
   if (fit >= 0.75) { score += fit === 1 ? 35 : 28; why.push("Matches your target role"); }
