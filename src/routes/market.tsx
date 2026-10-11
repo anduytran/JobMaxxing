@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Bookmark, Check, ExternalLink, Loader2, Mic, RefreshCw, Undo2 } from "lucide-react";
+import { Bookmark, Check, ExternalLink, Loader2, Mic, RefreshCw, Trash2, Undo2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/AppShell";
@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useGame } from "@/lib/game";
 import {
-  getRadar, markRadarViewed, setRadarStatus, awardRadarPracticeXp,
+  getRadar, markRadarViewed, setRadarStatus, removeRadarMatch, awardRadarPracticeXp,
   type RadarJob, type RadarStatus,
 } from "@/lib/radar.functions";
 import { cn } from "@/lib/utils";
@@ -93,6 +93,16 @@ function Market() {
         if (typeof res.xp === "number") setXp(res.xp);
         toast.success("Role saved", { description: `+${res.awarded} XP for saving a matched role.` });
       }
+    }).catch(() => { busyId.current = null; });
+  };
+
+  const removeMatch = (jobId: string) => {
+    setJobs((js) => js?.filter((j) => j.id !== jobId) ?? null);
+    busyId.current = jobId;
+    removeRadarMatch({ data: { jobId } }).then((res) => {
+      busyId.current = null;
+      if (res && !res.ok) { toast.error(res.error); void load(false); return; }
+      toast.success("Removed from your radar");
     }).catch(() => { busyId.current = null; });
   };
 
@@ -211,7 +221,7 @@ function Market() {
                   <Button size="sm" onClick={() => practice(j)}>
                     <Mic className="h-4 w-4" /> Practice interview
                   </Button>
-                  <StatusMenu status={j.status} busy={busyId.current === j.id} onPick={(s) => applyStatus(j.id, s)} />
+                    <StatusMenu status={j.status} busy={busyId.current === j.id} onPick={(s) => applyStatus(j.id, s)} onRemove={() => removeMatch(j.id)} />
                 </div>
               </div>
             ))}
@@ -261,7 +271,7 @@ function Market() {
   );
 }
 
-function StatusMenu({ status, busy, onPick }: { status: RadarStatus; busy: boolean; onPick: (s: RadarStatus) => void }) {
+function StatusMenu({ status, busy, onPick, onRemove }: { status: RadarStatus; busy: boolean; onPick: (s: RadarStatus) => void; onRemove: () => void }) {
   const [open, setOpen] = useState(false);
   const options: RadarStatus[] = ["saved", "applied", "interviewing", "dismissed"];
   return (
@@ -277,6 +287,10 @@ function StatusMenu({ status, busy, onPick }: { status: RadarStatus; busy: boole
               {STATUS_LABEL[s]}
             </button>
           ))}
+          <div className="my-1 border-t" />
+          <button className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-destructive hover:bg-muted" onClick={() => { setOpen(false); onRemove(); }}>
+            <Trash2 className="h-4 w-4" /> Remove from radar
+          </button>
         </div>
       )}
     </div>
