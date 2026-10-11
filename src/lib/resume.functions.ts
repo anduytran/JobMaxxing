@@ -141,6 +141,8 @@ export const scanResume = createServerFn({ method: "POST" })
       if (!v || !r) throw new Error("The review could not be saved.");
       const firstScan = await milestone(user.id, "first_scan", XP_RULES.firstScan);
       const levelUp = review.score > XP_RULES.levelUpScore ? await milestone(user.id, "resume_80", XP_RULES.levelUp) : 0;
+      const { bumpStreak } = await import("./career.functions");
+      await bumpStreak(user.id).catch((e) => console.error("streak update failed", e));
       return {
         ok: true,
         review: {

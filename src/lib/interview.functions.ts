@@ -63,6 +63,8 @@ export const gradeInterviewTranscript = createServerFn({ method: "POST" })
           overall: grade.overall, metrics: Object.fromEntries(Object.entries(grade.metrics).map(([k, v]) => [k, v ? v.score : null])),
           strengths: grade.strengths, improvements: grade.improvements,
         });
+        const { bumpStreak } = await import("./career.functions");
+        await bumpStreak(user.id).catch((e) => console.error("streak update failed", e));
         const { listRatings } = await import("./mmr.server");
         const now = await listRatings(user.id);
         const before = new Map(ratings.map((r) => [r.skill, r]));

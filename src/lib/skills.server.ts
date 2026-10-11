@@ -107,6 +107,9 @@ export async function refreshSkills(userId: string, latest?: unknown): Promise<v
     const base = old?.rating ?? DEFAULT_RATING;
     const want = clamp(Math.round(Number(p.rating) || base), RATING_MIN, RATING_MAX);
     const next = Math.max(base, Math.min(want, base + MAX_RISE)); // monotonic + capped rise
+    const logRow = { query: `insert into public.devup_skill_rating_log (user_id, skill_name, rating) values ($1::text, $2, $3)`, params: [userId, old?.skill ?? name, next] };
+    if (!old) writes.push(logRow); // first rating for this skill: chart origin
+    else if (next > base) writes.push(logRow); // rating rose: log the new point
     writes.push({
       query: `insert into public.devup_skill_rating (user_id, skill_name, rating, questions_answered, last_updated, evidence)
               values ($1::uuid, $2, $3, 0, now(), $4)
