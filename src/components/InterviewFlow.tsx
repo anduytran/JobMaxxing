@@ -400,64 +400,57 @@ export function InterviewFlow({ agents, api, radar, profileSkills = [], captions
 
       {(stage === "live" || stage === "your_questions" || stage === "grading") && (
         <section aria-label="Live interview" className="flex min-h-[calc(100svh-4rem)] w-full flex-col bg-background">
-          {/* Compact header: role, progress, time */}
-          <header className="flex flex-wrap items-center gap-x-6 gap-y-2 border-b px-5 py-3">
-            <div className="min-w-0 flex-1">
-              <div className="truncate text-sm font-semibold">{job?.title || "Mock interview"}</div>
-              <div className="text-xs text-muted-foreground">{LENGTHS[length].label} {type} · with Ava</div>
-            </div>
-            <div className="order-last w-full sm:order-none sm:w-auto" aria-label="Interview progress">
-              <div className="mb-1 text-center text-xs font-medium text-muted-foreground">
-                {stage === "live" ? `Question ${Math.min(qi + 1, questions.length)} of ${questions.length}` : stage === "grading" ? "Wrapping up" : "Your questions"}
+          {/* Header */}
+          <div className="flex items-center justify-between gap-4 p-5">
+            <div>
+              <div className="text-sm font-semibold">Ava, Friendly Recruiter</div>
+              <div className="text-xs text-muted-foreground">
+                {job?.title ? `${job.title}. ` : ""}{LENGTHS[length].label} {type} interview.
               </div>
-              <ol className="flex gap-1">
-                {questions.map((_, i) => {
-                  const done = stage !== "live" || i < qi;
-                  return <li key={i} aria-current={stage === "live" && i === qi ? "step" : undefined}
-                    className={cn("h-1.5 w-full rounded-full sm:w-10", done ? "bg-primary" : stage === "live" && i === qi ? "bg-primary/45" : "bg-muted")} />;
-                })}
-              </ol>
             </div>
             <div className="flex items-center gap-3">
-              <span className={cn("font-mono text-sm tabular-nums", left < 30 && stage === "live" && "text-destructive")}>{fmt(Math.max(0, left))}</span>
-              <Button variant="ghost" size="sm" disabled={stage === "grading" || thinking} onClick={finish}>End</Button>
+              <span className={cn("font-mono text-sm", left < 30 && stage === "live" && "text-destructive")}>{fmt(Math.max(0, left))} left</span>
+              <Button variant="outline" size="sm" disabled={stage === "grading" || thinking} onClick={finish}>End interview</Button>
             </div>
-          </header>
-
-          {/* Question */}
-          <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col justify-center px-6 py-8">
-            <div className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              {stage === "grading" ? "Interview complete" : stage === "your_questions" ? "Your turn to ask" : questions[qi]?.kind === "technical" ? "Technical question" : "Behavioral question"}
-            </div>
-            {currentCaption && stage !== "grading" ? (
-              <p ref={captionBox} className="max-h-[40svh] overflow-hidden scroll-smooth break-words text-2xl font-medium leading-relaxed text-foreground md:text-4xl md:leading-snug" aria-label="Current question">
-                <SpokenQuestion text={currentCaption} activeWord={spokenWord} />
-              </p>
-            ) : (
-              <p className="text-2xl font-medium text-muted-foreground">{stage === "grading" ? "Reviewing your answers…" : "Getting the next question ready…"}</p>
-            )}
           </div>
 
-          {/* Answer area */}
-          <div className="mx-auto mb-6 flex w-full max-w-4xl flex-col items-center gap-4 border-t px-6 pt-6 text-center">
-            <div className="shrink-0 scale-75 sm:scale-90"><InterviewVoicePresence state={voiceState} /></div>
-            <div>
-              <div className="text-sm font-semibold">
-                {voiceState === "speaking" || voiceState === "preparing" ? "Ava is asking…" : listening ? "Listening — take your time" : thinking ? "Thinking it over" : "Your turn to answer"}
-              </div>
-              <p className="mt-1 text-xs text-muted-foreground">Click the mic or press Space to start, and again when you're done.</p>
+          {currentCaption && stage !== "grading" && (
+            <div className="mx-auto w-full max-w-4xl px-6 py-6 md:py-8">
+              <p ref={captionBox} className="max-h-48 overflow-hidden scroll-smooth break-words text-center text-2xl font-medium leading-relaxed text-foreground md:text-3xl" aria-label="Current question">
+                <SpokenQuestion text={currentCaption} activeWord={spokenWord} />
+              </p>
             </div>
-            <button
-              type="button"
-              aria-label={listening ? "Click to end your answer" : "Click to answer"}
-              disabled={thinking || stage === "grading" || playback !== "ready"}
-              onClick={() => { if (listening) voice.current?.finishListening(); else void speak(); }}
-              className={cn("grid h-14 w-14 shrink-0 place-items-center rounded-full border-2 transition",
-                listening ? "border-primary bg-primary text-primary-foreground" : "border-foreground/60 hover:border-primary hover:text-primary",
-                (thinking || stage === "grading" || playback !== "ready") && "opacity-40")}
-            >
-              {listening ? <Square className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
-            </button>
+          )}
+
+          {/* Orb stage */}
+          <div className="relative grid min-h-72 flex-1 grid-cols-1 items-center justify-items-center gap-8 px-6 py-8 md:grid-cols-[1fr_240px_1fr]">
+            <div className="hidden w-full max-w-64 justify-self-start md:block">
+              <div className="mb-2 h-px w-6 bg-foreground/40" />
+              <div className="text-sm font-semibold">
+                {stage === "live" ? `Question ${qi + 1} of ${questions.length}` : stage === "grading" ? "Interview complete" : "Your questions"}
+              </div>
+              <div className="mt-1 text-xs text-muted-foreground">
+                {stage === "grading" ? "Reviewing your interview."
+                  : stage === "your_questions" ? "Ask the interviewer anything."
+                  : `${questions[qi]?.kind === "technical" ? "Technical" : "Behavioral"}. ${voiceState === "speaking" || voiceState === "preparing" ? "The interviewer is speaking." : voiceState === "listening" ? "Listening to you." : voiceState === "thinking" ? "Thinking." : "Your turn to answer."}`}
+              </div>
+            </div>
+            <InterviewVoicePresence state={voiceState} />
+            <div className="hidden w-full max-w-64 flex-col items-center gap-3 text-center md:flex">
+              <button
+                type="button"
+                aria-label={listening ? "Click to end your answer" : "Click to answer"}
+                disabled={thinking || stage === "grading" || playback !== "ready"}
+                onClick={() => { if (listening) voice.current?.finishListening(); else void speak(); }}
+                className={cn("grid h-14 w-14 place-items-center rounded-full border-2 transition",
+                  listening ? "border-primary bg-primary text-primary-foreground" : "border-foreground/60 hover:border-primary hover:text-primary",
+                  (thinking || stage === "grading" || playback !== "ready") && "opacity-40")}
+              >
+                {listening ? <Square className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+              </button>
+              <div className="text-sm font-semibold">{listening ? "Click to end" : "Click to answer"}</div>
+              <p className="text-xs text-muted-foreground">Click the mic or press Space to start talking, then click again (or press Space) when you're done.</p>
+            </div>
           </div>
 
           {/* Caption bubble */}
@@ -500,6 +493,7 @@ export function InterviewFlow({ agents, api, radar, profileSkills = [], captions
                 </Button>
               </span>
             </div>
+            <span>{stage === "live" ? `Question ${qi + 1} of ${questions.length}` : stage === "grading" ? "Reviewing interview" : "Your questions"}</span>
           </div>
         </section>
       )}
@@ -513,50 +507,63 @@ export function InterviewFlow({ agents, api, radar, profileSkills = [], captions
           ["Your questions", grade.metrics.candidateQuestions],
           ...(grade.metrics.tone ? [["Tone", grade.metrics.tone] as [string, { score: number; feedback: string }]] : []),
         ];
-        const answers = pairAnswers(turns);
-        const well = grade.strengths.slice(0, 3).map((n) => ({ n, a: matchAnswer(n, answers) }));
-        const next = grade.improvements.slice(0, 3).map((n) => ({ n, a: matchAnswer(n, answers) }));
-        const changed = ratings.filter((r) => r.after !== r.before);
+        const work = grade.improvements.slice(0, 3);
         return (
-          <section className="space-y-8">
-            <header>
-              <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                {job?.title ?? "Mock interview"} · {Math.min(asked, questions.length)} questions · {Math.floor(used / 60)}m {used % 60}s
-              </div>
-              <h1 className="mt-3 font-display text-3xl font-bold leading-tight tracking-tight sm:text-4xl">{summaryLine(grade)}</h1>
-              {grade.metrics.quality.feedback && <p className="mt-3 max-w-2xl text-muted-foreground">{grade.metrics.quality.feedback}</p>}
-            </header>
-
-            <div className="grid gap-8 rounded-2xl border bg-card p-6 md:grid-cols-2 md:gap-0 md:divide-x">
-              <CoachNotes title="What went well" tone="good" notes={well} empty="Finishing the session is a win. Next round, we'll find a specific strength." />
-              <CoachNotes title="Try next time" tone="next" notes={next} empty="Nothing major — keep doing what you did." className="md:pl-6" />
-            </div>
-
-            <div className="grid gap-6 md:grid-cols-[1fr_auto]">
+          <section className="space-y-6">
+            <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
-                <div className="mb-3 flex items-baseline justify-between">
-                  <h2 className="text-sm font-semibold">Scores</h2>
-                  <span className="text-xs text-muted-foreground">Overall {grade.overall}%{!demo && ` · +${grade.xp} XP`}</span>
-                </div>
-                <dl className="divide-y border-y">
-                  {metrics.map(([l, m]) => (
-                    <div key={l} className="grid grid-cols-[8rem_1fr_3rem] items-center gap-3 py-2.5 text-sm">
-                      <dt className="text-muted-foreground">{l}</dt>
-                      <div className="h-1 overflow-hidden rounded-full bg-muted"><div className={cn("h-full", m.score >= 80 ? "bg-success" : "bg-primary")} style={{ width: `${m.score}%` }} /></div>
-                      <dd className="text-right font-mono tabular-nums">{m.score}</dd>
-                    </div>
+                <h1 className="font-display text-4xl font-bold tracking-tight sm:text-5xl">Interview complete. {grade.overall}%.</h1>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  {job?.title ?? "Mock interview"}. {Math.min(asked, questions.length)} questions in {Math.floor(used / 60)} minutes {used % 60} seconds.
+                </p>
+              </div>
+              {!demo && <span className="inline-flex items-center gap-1.5 rounded-full bg-accent px-3 py-1 text-xs font-semibold text-accent-foreground">
+                <span className="text-primary">◆</span> +{grade.xp} XP earned
+              </span>}
+            </div>
+            <div className={cn("grid gap-4", metrics.length === 4 ? "md:grid-cols-4" : "md:grid-cols-3")}>
+              {metrics.map(([l, m]) => <Metric key={l} label={l} m={m} />)}
+            </div>
+            {!demo && ratings.some((r) => r.after !== r.before) && (
+              <div className="flex flex-wrap gap-2">
+                {ratings.filter((r) => r.after !== r.before).map((r) => {
+                  const d = r.after - r.before;
+                  return (
+                    <span key={r.skill} className="rounded-full border bg-card px-3 py-1 text-xs">
+                      <b>{r.skill}</b> {r.after} <span className={d >= 0 ? "text-success" : "text-primary"}>{d >= 0 ? "+" : ""}{d}</span>
+                    </span>
+                  );
+                })}
+              </div>
+            )}
+            <div className="grid gap-4 md:grid-cols-[1.6fr_1fr]">
+              <div className="rounded-2xl border bg-card p-6">
+                <h2 className="font-display text-2xl font-bold">What to work on</h2>
+                <ol className="mt-4 space-y-3">
+                  {work.map((s, i) => (
+                    <li key={s} className="flex gap-3 rounded-xl bg-muted p-4">
+                      <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-primary/15 text-xs font-semibold text-primary">{i + 1}</span>
+                      <span className="text-sm">{s}</span>
+                    </li>
                   ))}
-                </dl>
-                {!demo && changed.length > 0 && (
-                  <p className="mt-3 text-xs text-muted-foreground">
-                    Skills moved: {changed.map((r, i) => <span key={r.skill}>{i > 0 && ", "}<b className="text-foreground">{r.skill}</b> {r.after} (+{r.after - r.before})</span>)}
-                  </p>
+                  {!work.length && <li className="text-sm text-muted-foreground">Nothing major — keep it up.</li>}
+                </ol>
+                {grade.strengths.length > 0 && (
+                  <>
+                    <h3 className="mt-6 text-sm font-semibold">What went well</h3>
+                    <ul className="mt-2 space-y-1 text-sm text-muted-foreground">{grade.strengths.map((s) => <li key={s}>✓ {s}</li>)}</ul>
+                  </>
                 )}
               </div>
-              <div className="flex flex-col items-start gap-2 md:w-56">
-                <Button onClick={reset} className="w-full">{demo ? "Try another round" : "Practice again"}</Button>
-                {!demo && <Button asChild variant="ghost" className="w-full"><Link to="/">Back to Home</Link></Button>}
-                <p className="text-xs text-muted-foreground">Another round on the same role is the fastest way to lift your weakest score.</p>
+              <div className="flex flex-col items-start gap-3 rounded-2xl border bg-card p-6">
+                <h2 className="font-display text-2xl font-bold">{demo ? "Try another round" : "Keep the streak going"}</h2>
+                <p className="text-sm text-muted-foreground">Another session on the same role is the fastest way to lift your weakest score.</p>
+                <Button onClick={reset} className="mt-1">New interview</Button>
+                <details className="w-full text-sm">
+                  <summary className="inline-flex cursor-pointer list-none rounded-md border bg-background px-4 py-2 font-medium">Read full transcript</summary>
+                  <div className="mt-3 max-h-80 space-y-2 overflow-y-auto">{turns.map((t, i) => <p key={i}><b>{t.speaker === "interviewer" ? "Interviewer" : "You"}:</b> {t.text}</p>)}</div>
+                </details>
+                {!demo && <Link to="/" className="px-4 py-2 text-sm font-medium">Back to Home</Link>}
               </div>
             </div>
 
@@ -566,11 +573,6 @@ export function InterviewFlow({ agents, api, radar, profileSkills = [], captions
                 <RecordingPlayer r={myRecording} />
               </div>
             )}
-
-            <details className="text-sm">
-              <summary className="cursor-pointer font-medium text-muted-foreground hover:text-foreground">Read full transcript</summary>
-              <div className="mt-3 max-h-80 space-y-2 overflow-y-auto border-l pl-4">{turns.map((t, i) => <p key={i}><b>{t.speaker === "interviewer" ? "Interviewer" : "You"}:</b> {t.text}</p>)}</div>
-            </details>
             {reportExtra?.(grade)}
           </section>
         );
@@ -629,56 +631,3 @@ function SpokenQuestion({ text, activeWord }: { text: string; activeWord: number
   return <>{(text.match(/\S+/g) ?? []).map((word, index) => <span key={index} className={index === activeWord ? "rounded-sm bg-primary/15 text-primary" : undefined}>{word}{" "}</span>)}</>;
 }
 
-type AnswerRef = { q: number; question: string; answer: string };
-
-/** Pairs each candidate answer with the interviewer line before it. */
-function pairAnswers(turns: { speaker: string; text: string }[]): AnswerRef[] {
-  const out: AnswerRef[] = [];
-  let last = "";
-  for (const t of turns) {
-    if (t.speaker === "interviewer") last = t.text;
-    else if (t.text.trim()) out.push({ q: out.length + 1, question: last, answer: t.text });
-  }
-  return out;
-}
-
-const words = (s: string) => new Set(s.toLowerCase().match(/[a-z]{5,}/g) ?? []);
-
-/** Ties a coach note to the answer it most likely refers to (word overlap); null when unclear. */
-function matchAnswer(note: string, answers: AnswerRef[]): AnswerRef | null {
-  const nw = words(note);
-  let best: AnswerRef | null = null, score = 1;
-  for (const a of answers) {
-    const aw = words(`${a.question} ${a.answer}`);
-    let s = 0; nw.forEach((w) => { if (aw.has(w)) s++; });
-    if (s > score) { score = s; best = a; }
-  }
-  return best;
-}
-
-function summaryLine(g: InterviewGrade): string {
-  const top = g.strengths[0]?.replace(/\.$/, "");
-  if (g.overall >= 80) return `Strong session.${top ? ` ${top}.` : ""}`;
-  if (g.overall >= 60) return `A solid round with clear room to sharpen.${top ? ` ${top}.` : ""}`;
-  if (g.overall >= 35) return "You've got the start of good answers — the next step is more detail and structure.";
-  return "This one was a warm-up. Short answers made it hard to show what you know.";
-}
-
-function CoachNotes({ title, tone, notes, empty, className }: { title: string; tone: "good" | "next"; notes: { n: string; a: AnswerRef | null }[]; empty: string; className?: string }) {
-  return (
-    <div className={className}>
-      <h2 className="flex items-center gap-2 font-display text-xl font-bold">
-        <span className={cn("h-2 w-2 rounded-full", tone === "good" ? "bg-success" : "bg-primary")} />{title}
-      </h2>
-      <ul className="mt-3 divide-y">
-        {notes.map(({ n, a }) => (
-          <li key={n} className="py-3 text-sm">
-            <p>{n}</p>
-            {a && <p className="mt-1 text-xs text-muted-foreground">On Q{a.q}: “{a.answer.length > 90 ? `${a.answer.slice(0, 90)}…` : a.answer}”</p>}
-          </li>
-        ))}
-        {!notes.length && <li className="py-3 text-sm text-muted-foreground">{empty}</li>}
-      </ul>
-    </div>
-  );
-}
