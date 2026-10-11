@@ -7,6 +7,8 @@ export interface VoiceAgent {
   stop(): void;
 }
 
+import { mixElementIntoRecording } from "./recorder-mix";
+
 type SR = { new (): any };
 export type VoicePlaybackState = "ready" | "preparing" | "speaking";
 type PlaybackObserver = (state: VoicePlaybackState) => void;
@@ -149,6 +151,7 @@ export function createElevenLabsVoice(synth: (text: string) => Promise<string | 
       if (!b64) return browser.speak(text);
       await new Promise<void>((resolve) => {
         audio = new Audio(`data:audio/mpeg;base64,${b64}`);
+        mixElementIntoRecording(audio);
         const lineAudio = audio;
         const finish = () => { clearWord(); onPlayback?.("ready"); resolve(); };
         settlePlayback = finish;
