@@ -73,7 +73,7 @@ export function FriendsPanel({ inviteCode, roleTitle, social, onChange }: { invi
     <section className={cn("space-y-4", social ? "p-1" : "panel p-5")}>
       <div className="flex items-center gap-2">
         <Users className="h-4 w-4 text-primary" />
-        <h3 className="font-display text-lg">Your crew</h3>
+        <h3 className="font-display text-lg">Fellow Maxxers</h3>
       </div>
 
       <div className="relative">
@@ -115,7 +115,7 @@ export function FriendsPanel({ inviteCode, roleTitle, social, onChange }: { invi
                   <div className="truncate text-xs text-muted-foreground">{r.email}</div>
                 </div>
                 <Button size="icon" variant="outline" aria-label={`Accept ${r.name}`} disabled={busy === r.id}
-                  onClick={() => void act(r.id, () => respondFriendRequest({ data: { requestId: r.id, accept: true } }), `${r.name} added to your crew`)}>
+                  onClick={() => void act(r.id, () => respondFriendRequest({ data: { requestId: r.id, accept: true } }), `${r.name} added to your Fellow Maxxers`)}>
                   <Check className="h-4 w-4 text-success" />
                 </Button>
                 <Button size="icon" variant="ghost" aria-label={`Decline ${r.name}`} disabled={busy === r.id}
@@ -129,7 +129,7 @@ export function FriendsPanel({ inviteCode, roleTitle, social, onChange }: { invi
       )}
 
       {friends.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No friends yet — search above to add your crew, then invite them straight into a session.</p>
+        <p className="text-sm text-muted-foreground">No friends yet — search above to add Fellow Maxxers, then invite them straight into a session.</p>
       ) : (
         <ul className="space-y-1.5">
           {friends.map((f) => (

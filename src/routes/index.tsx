@@ -75,13 +75,13 @@ const SCENES: Record<string, Scene> = {
   branding: {
     icon: Users, bg: "bg-primary/15", ring: "border-primary/30", chip: "text-primary",
     props: [["Coffee chat", "right-72 top-40 -rotate-6"], ["LinkedIn", "right-52 bottom-28 rotate-3"], ["Dap!", "right-80 bottom-44 -rotate-3"]],
-    phrase: "Grow your crew.",
+    phrase: "Grow your Fellow Maxxers.",
     blurb: "Opportunities show up more when people know your name. Start one conversation today.",
   },
   social: {
     icon: Users, bg: "bg-primary/15", ring: "border-primary/30", chip: "text-primary",
     props: [["Coffee chat", "right-72 top-40 -rotate-6"], ["LinkedIn", "right-52 bottom-28 rotate-3"], ["Dap!", "right-80 bottom-44 -rotate-3"]],
-    phrase: "Grow your crew.",
+    phrase: "Grow your Fellow Maxxers.",
     blurb: "Opportunities show up more when people know your name. Start one conversation today.",
   },
 };
