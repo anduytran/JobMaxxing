@@ -424,8 +424,8 @@ html.dyslexia-font em, html.dyslexia-font i { font-style: normal; }
 .desk-edge {
   height: 26px;
   background: linear-gradient(180deg,
-    color-mix(in oklab, var(--color-primary) 55%, var(--color-foreground)),
-    color-mix(in oklab, var(--color-primary) 30%, var(--color-foreground)));
+    color-mix(in oklab, oklch(0.4 0.08 55) 85%, var(--color-foreground)),
+    color-mix(in oklab, oklch(0.3 0.07 55) 85%, var(--color-foreground)));
   border-top: 2px solid color-mix(in oklab, var(--color-card) 35%, transparent);
   box-shadow: 0 8px 12px -4px color-mix(in oklab, var(--color-foreground) 40%, transparent);
 }
