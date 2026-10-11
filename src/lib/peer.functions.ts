@@ -345,7 +345,6 @@ export const peerGrade = createServerFn({ method: "POST" })
         [s.id, JSON.stringify(candidate), JSON.stringify(interviewer)],
       );
       // Candidate's skill ratings move with the graded answer quality.
-      const candidateId = s.hostRole === "candidate" ? s.hostId : s.guestId;
       if (candidateId) {
         const { applySessionRatings, scoredItems } = await import("./mmr.server");
         await applySessionRatings(candidateId, scoredItems(s.questions, asked, candidate.metrics.quality.score))
