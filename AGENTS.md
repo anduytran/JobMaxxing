@@ -23,7 +23,7 @@
 - Never `order by id` after `id::text as id`; qualify it. Why: text sort
 - Store economy (`src/lib/store.functions.ts`): points = sum(devup_xp_event) − sum(devup_purchase.cost); boosters multiply XP at award time in devup.functions; themes apply via `data-theme` on <html>. Why: points track XP with no extra writes
 
-- Home's featured quest card fills the viewport; greeting, shortcuts, resume score, career progress and Max tips live on `/progress`. Uploaded CDN scenes render as full-inset covers, portrait variants on phones; interview-category quests get no slide; each slide shows its real quest XP and a `Start` link. Why: art fills screen, words clear of Max
+- Home's featured card fills the viewport (full-inset CDN scenes, portrait on phones; real quest XP + `Start`); everything else lives on `/progress`. Why: art fills screen
 - Quest reset countdowns derive from `src/lib/reset-times.ts` (next daily reset = 00:00 UTC, weekly = Monday 00:00 UTC) and render only after hydration. Why: match server `date_trunc`; avoid hydration mismatch.
 
 - Peer interviews share one `devup_peer_session` row via `src/lib/peer.functions.ts`: WebRTC audio signalled through its `signal` column (atomic jsonb, STUN only); the clock starts only when both sides mark ready via peerReady; lines go through `peerSay` + `src/lib/moderation.ts`; `peerGrade` grades both sides once. Why: no signalling server; one grade
@@ -35,3 +35,4 @@
 - New Max pose art is trimmed to the shared framing (figure fills its square, feet on the bottom) before getting a `MAX_SCALE`. Why: wide margins float out of the mobile card
 - Interview XP is paid only by `claimInterviewXp` from the stored grade, once per `iv:` reason; no endpoint takes a client XP amount. Why: no XP minting
 - User-supplied URLs are fetched only signed-in, through `assertPublicUrl` per redirect hop. Why: no private-network fetches
+- `/demo/$token` runs `InterviewFlow` signed out via `demo.functions` only: secret links, per-run call budget, no user writes. Why: public demo, bounded cost
