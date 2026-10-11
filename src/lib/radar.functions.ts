@@ -334,6 +334,19 @@ const clean = (v: unknown, max: number): string | null => {
   return s && s.length <= max ? s : null;
 };
 
+/** One generation keeps only this many best-scoring roles; the rest are never saved. */
+const MATCHES_PER_GENERATION = 5;
+
+/** Keeps listings inside the user's areas; remote roles count when they want remote. */
+function inArea(id: string, location: string, description: string, locTokens: string[], wantRemote: boolean) {
+  if (!locTokens.length) return true;
+  if (locTokens.some((t) => location.toLowerCase().includes(t))) return true;
+  // Adzuna, The Muse and Jooble were queried with the user's location, so their
+  // metro-area results (e.g. "Edgewood, Orange County" for Orlando) count as local.
+  if (/^(adz|muse|joo)_/.test(id)) return true;
+  return wantRemote && /remote|work from home|anywhere/i.test(`${location} ${description}`);
+}
+
 // ---------------- server functions ----------------
 
 /** Loads the radar: refreshes listings from Adzuna when asked, scores everything
@@ -353,33 +366,65 @@ export const getRadar = createServerFn({ method: "POST" })
       const resumeText = typeof (profile.resume as any)?.text === "string" ? (profile.resume as any).text : "";
       const userSkills = [...new Set([...profileSkills, ...(await extractSkills(resumeText))] )];
 
+      // Area rules and a per-listing skills cache are shared by the refresh below and
+      // the read-time scoring further down, so each listing's skills are read once.
+      const locTokens = tokens(prefs.locations).filter((t) => !/^remote/.test(t));
+      const wantRemote = /remote/i.test(prefs.workMode ?? "") || /remote/i.test(prefs.locations ?? "");
+      const skillsCache = new Map<string, string[]>();
+      const skillsOf = async (id: string, text: string) => {
+        let s = skillsCache.get(id);
+        if (!s) { s = await extractSkills(text); skillsCache.set(id, s); }
+        return s;
+      };
       let fetchError: string | undefined;
       if (data.refresh) {
         const { listings, error } = await fetchJobs(prefs);
         fetchError = error;
         if (listings.length) {
-          const statements = listings.slice(0, 40).map((l) => ({
-            query:
-              "insert into public.devup_job_radar (user_id, job_id, data) values ($1, $2, $3::jsonb) " +
-              "on conflict (user_id, job_id) do update set data = excluded.data, updated_at = now()",
-            params: [uid, l.id, JSON.stringify({
-              title: clean(l.title, 200) ?? "Untitled role",
-              company: clean(l.company, 120) ?? "Unknown company",
-              location: clean(l.location, 160) ?? "",
-              description: l.description.replace(/\s+/g, " ").slice(0, 6000),
-              url: clean(l.url, 600) ?? "",
-              salaryMin: l.salaryMin,
-              salaryMax: l.salaryMax,
-              postedAt: clean(l.postedAt, 40) ?? "",
-              contractTime: clean(l.contractTime, 40) ?? null,
-            })],
-          }));
-          // Drop untouched listings from earlier searches so old titles stop crowding the radar.
-          statements.push({
-            query: "delete from public.devup_job_radar where user_id = $1 and status = 'new' and not (job_id = any($2::text[]))",
-            params: [uid, listings.slice(0, 40).map((l) => l.id)],
-          } as never);
-          await neonExecute(statements);
+          // Score every candidate that is in the user's areas, then keep only the best
+          // few: a generation is five matches, not a wall of listings.
+          const pool = listings.filter((l) => inArea(l.id, l.location, l.description, locTokens, wantRemote));
+          const scored = await Promise.all(
+            pool.map(async (l) => ({
+              l,
+              match: scoreJob(
+                {
+                  title: l.title,
+                  description: l.description,
+                  location: l.location,
+                  salaryMin: l.salaryMin,
+                  salaryMax: l.salaryMax,
+                  skills: await skillsOf(l.id, `${l.title} ${l.description}`),
+                },
+                { skills: userSkills, prefs },
+              ).match,
+            })),
+          );
+          const top = scored.sort((a, b) => b.match - a.match).slice(0, MATCHES_PER_GENERATION).map(({ l }) => l);
+          if (top.length) {
+            const statements = top.map((l) => ({
+              query:
+                "insert into public.devup_job_radar (user_id, job_id, data) values ($1, $2, $3::jsonb) " +
+                "on conflict (user_id, job_id) do update set data = excluded.data, updated_at = now()",
+              params: [uid, l.id, JSON.stringify({
+                title: clean(l.title, 200) ?? "Untitled role",
+                company: clean(l.company, 120) ?? "Unknown company",
+                location: clean(l.location, 160) ?? "",
+                description: l.description.replace(/\s+/g, " ").slice(0, 6000),
+                url: clean(l.url, 600) ?? "",
+                salaryMin: l.salaryMin,
+                salaryMax: l.salaryMax,
+                postedAt: clean(l.postedAt, 40) ?? "",
+                contractTime: clean(l.contractTime, 40) ?? null,
+              })],
+            }));
+            // Drop untouched listings from earlier searches so old titles stop crowding the radar.
+            statements.push({
+              query: "delete from public.devup_job_radar where user_id = $1 and status = 'new' and not (job_id = any($2::text[]))",
+              params: [uid, top.map((l) => l.id)],
+            } as never);
+            await neonExecute(statements);
+          }
         }
       }
 
@@ -387,25 +432,15 @@ export const getRadar = createServerFn({ method: "POST" })
         "select job_id, data, status, viewed from public.devup_job_radar where user_id = $1",
         [uid],
       );
-      // Hide listings outside the user's areas (unless they want remote and the job is
-      // remote). Runs at read time, so stale rows from older searches drop out too.
-      const locTokens = tokens(prefs.locations).filter((t) => !/^remote/.test(t));
-      const wantRemote = /remote/i.test(prefs.workMode ?? "") || /remote/i.test(prefs.locations ?? "");
-      const inArea = (id: string, location: string, description: string) => {
-        if (!locTokens.length) return true;
-        if (locTokens.some((t) => location.toLowerCase().includes(t))) return true;
-        // Adzuna, The Muse and Jooble were queried with the user's location, so their
-        // metro-area results (e.g. "Edgewood, Orange County" for Orlando) count as local.
-        if (/^(adz|muse|joo)_/.test(id)) return true;
-        return wantRemote && /remote|work from home|anywhere/i.test(`${location} ${description}`);
-      };
+      // Area rules were already applied to the listings saved above; re-check here so
+      // stale rows from older searches drop out too.
       const jobs: RadarJob[] = [];
       for (const r of rows) {
         const d = (r["data"] ?? {}) as any; // Adzuna snapshot: free-form keys, validated field by field below
-        if (!inArea(String(r["job_id"]), String(d.location ?? ""), String(d.description ?? ""))) continue;
+        if (!inArea(String(r["job_id"]), String(d.location ?? ""), String(d.description ?? ""), locTokens, wantRemote)) continue;
         const title = String(d.title ?? "Untitled role");
         const description = String(d.description ?? "");
-        const jdSkills = await extractSkills(`${title} ${description}`);
+        const jdSkills = await skillsOf(String(r["job_id"]), `${title} ${description}`);
         const s = scoreJob(
           { title, description, location: String(d.location ?? ""), salaryMin: d.salaryMin ?? null, salaryMax: d.salaryMax ?? null, skills: jdSkills },
           { skills: userSkills, prefs },
