@@ -49,7 +49,7 @@ export const STREAK_BONUS_XP = 250;
 /** One row per active day. Yesterday continues the streak; one missed day burns a
  *  streak freeze; anything longer restarts at 1. Crossing a 7-day mark pays a bonus
  *  once — the partial unique index on `streak:%` reasons makes a replay a no-op. */
-export async function bumpStreak(userId: string): Promise<number> {
+export async function bumpStreak(userId: string): Promise<{ streak: number; bonus: number }> {
   const next = `case
     when public.devup_activity_streak.last_activity_date = current_date then public.devup_activity_streak.current_streak
     when public.devup_activity_streak.last_activity_date = current_date - 1 then public.devup_activity_streak.current_streak + 1
@@ -89,9 +89,9 @@ export async function bumpStreak(userId: string): Promise<number> {
             coalesce((select sum(amount) from e), 0)::int as bonus`,
     [userId, STREAK_BONUS_XP],
   );
+  const streak = Number(rows[0]?.streak ?? 0);
   const bonus = Number(rows[0]?.bonus ?? 0);
-  if (bonus > 0) console.log(`streak bonus paid`, userId, bonus);
-  return Number(rows[0]?.streak ?? 0);
+  return { streak, bonus };
 }
 
 /** A stored streak only counts if activity was today, yesterday, or one missed
@@ -292,6 +292,7 @@ export const getCareerDashboard = createServerFn({ method: "GET" }).handler(asyn
           : reason.startsWith("radar:practice:") ? "Practiced for a saved role"
           : reason.startsWith("resume:") ? "Accepted a resume fix"
           : reason.startsWith("milestone:") ? "Milestone reached"
+          : reason.startsWith("streak:") ? `${substring(reason, 8)}-day streak bonus`
           : reason || "XP earned";
         return { label, amount: Number(r["amount"] ?? 0), at: String(r["at"] ?? "") };
       }),
