@@ -130,6 +130,8 @@ export const loadGame = createServerFn({ method: "GET" }).handler(
         xp: Number(profile?.xp ?? 0),
         roast: Boolean(profile?.roast ?? false),
         reducedMotion: Boolean(profile?.reduced_motion ?? false),
+        activeTitle: profile?.active_title ? String(profile.active_title) : null,
+        activeTheme: String(profile?.active_theme ?? "default"),
         quests: (results[3]?.rows ?? []).map((r: any) => ({
           id: String(r.id),
           title: String(r.title),
