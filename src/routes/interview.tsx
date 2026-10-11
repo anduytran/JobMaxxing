@@ -229,7 +229,7 @@ function Interview() {
     if (!job) return;
     setStage("grading");
     try {
-      const g = await gradeInterviewTranscript({ data: { transcript: turns, job } });
+      const g = await gradeInterviewTranscript({ data: { transcript: turns, job, plan: questions } });
       setGrade(g);
       setStage("report");
       completeQuest("mock1");
