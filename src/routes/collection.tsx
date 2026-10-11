@@ -5,7 +5,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { Backpack, Check, Snowflake, Zap, Package, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MaxFigure, WearableArt } from "@/components/Wearables";
-import { Max } from "@/components/Max";
+import { Max, MAX_POSES } from "@/components/Max";
 import {
   equipItem,
   equipWearables,
