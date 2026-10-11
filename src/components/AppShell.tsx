@@ -16,6 +16,7 @@ import { WornMax } from "@/components/Wearables";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { QuestMenu } from "@/components/QuestMenu";
+import { SocialMenu } from "@/components/SocialMenu";
 import { InviteListener } from "@/components/InviteListener";
 
 type Item = { to: string; label: string; icon: typeof LayoutGrid; badge?: string };
@@ -111,6 +112,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </nav>
 
           <div className="ml-auto flex items-center gap-3 lg:ml-0">
+            <SocialMenu />
             <QuestMenu />
             <div className="relative hidden items-center gap-2 rounded-full border bg-card px-3.5 py-1.5 text-sm transition-shadow hover:shadow-md md:flex">
               <Flame className="animate-flame h-4 w-4 text-primary" />

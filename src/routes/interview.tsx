@@ -3,7 +3,7 @@ import { Captions, Keyboard, Loader2, Mic, RotateCcw, Send, Square, Volume2, Vol
 import { InterviewVoicePresence, type InterviewVoiceState } from "@/components/InterviewVoicePresence";
 import { InterviewMicrophoneCheck } from "@/components/InterviewMicrophoneCheck";
 import { WornMax } from "@/components/Wearables";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 import { toast } from "sonner";
 import { AcknowledgeDisclosure, InterviewDisclosure } from "@/components/InterviewDisclosure";
 import { SkillText } from "@/components/skill-text";
@@ -102,6 +102,8 @@ function Interview() {
   // Set when the Question agent concludes the interview: the closing line
   // plays out, then the interview ends itself — no End press needed.
   const autoFinish = useRef(false);
+  const captionBox = useRef<HTMLParagraphElement>(null);
+  useFollowWord(captionBox, spokenWord, currentCaption ?? "");
 
   const say = (t: string, phase: TranscriptTurn["phase"], questionId?: string) => {
     setTurns((x) => [...x, { speaker: "interviewer", phase, text: t, questionId }]);
@@ -403,7 +405,7 @@ function Interview() {
 
           {currentCaption && stage !== "grading" && (
             <div className="mx-auto w-full max-w-4xl px-6 py-6 md:py-8">
-              <p className="max-h-48 overflow-y-auto break-words text-center text-2xl font-medium leading-relaxed text-foreground md:text-3xl" aria-label="Current question">
+              <p ref={captionBox} className="max-h-48 overflow-hidden scroll-smooth break-words text-center text-2xl font-medium leading-relaxed text-foreground md:text-3xl" aria-label="Current question">
                 <SpokenQuestion text={currentCaption} activeWord={spokenWord} />
               </p>
             </div>
@@ -593,6 +595,18 @@ function Metric({ label, m }: { label: string; m: { score: number; feedback: str
   );
 }
 
+
+function useFollowWord(box: RefObject<HTMLElement | null>, word: number, text: string) {
+  useEffect(() => {
+    const el = box.current;
+    if (!el) return;
+    if (word < 0) { el.scrollTop = 0; return; }
+    const span = el.children[word] as HTMLElement | undefined;
+    if (!span) return;
+    // Keep the spoken word around the upper third of the box.
+    el.scrollTo({ top: Math.max(0, span.offsetTop - el.offsetTop - el.clientHeight / 3), behavior: "smooth" });
+  }, [box, word, text]);
+}
 
 function SpokenQuestion({ text, activeWord }: { text: string; activeWord: number }) {
   return <>{(text.match(/\S+/g) ?? []).map((word, index) => <span key={index} className={index === activeWord ? "rounded-sm bg-primary/15 text-primary" : undefined}>{word}{" "}</span>)}</>;

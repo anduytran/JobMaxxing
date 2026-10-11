@@ -1,10 +1,11 @@
-import { Check, Loader2, Search, Send, UserPlus, Users, X } from "lucide-react";
+import { CalendarClock, Check, Loader2, Search, Send, UserPlus, Users, X } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  listFriends, removeFriend, respondFriendRequest, searchUsers, sendFriendRequest, sendInterviewInvite,
+  listFriends, removeFriend, respondFriendRequest, searchUsers, sendFriendRequest, sendInterviewInvite, scheduleInterview,
   type FriendRow,
 } from "@/lib/friends.functions";
 import { cn } from "@/lib/utils";
@@ -22,7 +23,9 @@ const STATUS_LABEL: Record<FriendRow["status"], string> = {
 
 /** Friends list + requests + search. When `inviteCode` is set (host waiting in
  *  the lobby), each friend gets an Invite button that pings them in-app. */
-export function FriendsPanel({ inviteCode, roleTitle }: { inviteCode?: string | undefined; roleTitle?: string | null }) {
+export function FriendsPanel({ inviteCode, roleTitle, social, onChange }: { inviteCode?: string | undefined; roleTitle?: string | null; social?: boolean; onChange?: () => void }) {
+  const [scheduling, setScheduling] = useState<string | null>(null);
+  const [when, setWhen] = useState("");
   const [friends, setFriends] = useState<FriendRow[]>([]);
   const [requests, setRequests] = useState<{ id: string; name: string; email: string }[]>([]);
   const [query, setQuery] = useState("");
@@ -67,7 +70,7 @@ export function FriendsPanel({ inviteCode, roleTitle }: { inviteCode?: string | 
   const known = new Set(friends.map((f) => f.id));
 
   return (
-    <section className="panel space-y-4 p-5">
+    <section className={cn("space-y-4", social ? "p-1" : "panel p-5")}>
       <div className="flex items-center gap-2">
         <Users className="h-4 w-4 text-primary" />
         <h3 className="font-display text-lg">Your crew</h3>
@@ -145,6 +148,16 @@ export function FriendsPanel({ inviteCode, roleTitle }: { inviteCode?: string | 
                   </Button>
                 )
               )}
+              {social && !inviteCode && (
+                <>
+                  <Button asChild size="sm" variant="outline" disabled={f.status === "in_interview"}>
+                    <Link to="/peers" search={{ join: undefined }}><Send className="mr-1 h-3.5 w-3.5" /> Invite</Link>
+                  </Button>
+                  <Button size="icon" variant="ghost" aria-label={`Schedule with ${f.name}`} onClick={() => { setScheduling(scheduling === f.id ? null : f.id); setWhen(""); }}>
+                    <CalendarClock className="h-4 w-4" />
+                  </Button>
+                </>
+              )}
               {!inviteCode && (
                 <Button size="icon" variant="ghost" aria-label={`Remove ${f.name}`} disabled={busy === `rm-${f.id}`}
                   onClick={() => void act(`rm-${f.id}`, () => removeFriend({ data: { friendId: f.id } }))}>
@@ -152,7 +165,15 @@ export function FriendsPanel({ inviteCode, roleTitle }: { inviteCode?: string | 
                 </Button>
               )}
             </li>
-          ))}
+          )).flatMap((li, i) => scheduling === friends[i]!.id ? [li, (
+            <li key={`s-${friends[i]!.id}`} className="flex items-center gap-2 px-2 pb-2">
+              <Input type="datetime-local" value={when} onChange={(e) => setWhen(e.target.value)} aria-label="Interview time" className="h-8 text-xs" />
+              <Button size="sm" disabled={!when || busy === "sched"} onClick={() => void act("sched", async () => {
+                await scheduleInterview({ data: { friendId: friends[i]!.id, at: new Date(when).toISOString() } });
+                setScheduling(null); onChange?.();
+              }, `Interview scheduled with ${friends[i]!.name}`)}>Save</Button>
+            </li>
+          )] : [li])}
         </ul>
       )}
     </section>
