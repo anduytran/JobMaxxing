@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useGame } from "@/lib/game";
 import {
-  fetchJobPosting, generateInterviewQuestions, getInterviewAgents, gradeInterviewTranscript, parseJobDescription, saveSoloSession, sendInterviewTurn, speakInterviewLine, getScribeToken, startLiveInterview,
+  fetchJobPosting, generateInterviewQuestions, getInterviewAgents, gradeInterviewTranscript, parseJobDescription, parseJobUrl, saveSoloSession, sendInterviewTurn, speakInterviewLine, getScribeToken, startLiveInterview,
 } from "@/lib/interview.functions";
 import { awardRadarPracticeXp, setRadarStatus } from "@/lib/radar.functions";
 import {
@@ -129,12 +129,21 @@ function Interview() {
     } catch { /* The user can paste the full description if storage is unavailable. */ }
     setJd(stored);
     // Prefer the live posting: fetch the role's URL and hand its text to the
-    // Job Parser. Falls back to the radar summary when the page can't be read.
+    // Job Parser. When the page can't be read directly, the Job Parser itself
+    // web-searches the URL (its URL mode). Last resort: the radar summary
+    // stays in the box for Analyze job.
     if (url) {
       setBusy(true);
       fetchJobPosting({ data: { url } })
         .then(({ text }) => { setJd(text); return analyze(text); })
-        .catch(() => { /* Stored summary stays in the box for Analyze job. */ })
+        .catch(async () => {
+          const job = await parseJobUrl({ data: { url } }).catch(() => null);
+          if (job) {
+            setJob(job);
+            setMine(job.skills.filter((s) => details.skills.some((u) => u.toLowerCase() === s.toLowerCase())));
+            setStage("review");
+          }
+        })
         .finally(() => setBusy(false));
     }
   }, [search.radar]); // eslint-disable-line react-hooks/exhaustive-deps
