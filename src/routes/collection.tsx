@@ -4,6 +4,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { Backpack, Check, Snowflake, Zap, Package, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MaxFigure, WearableArt } from "@/components/Wearables";
+import { WearableFitEditor } from "@/components/WearableFitEditor";
 import { Max, MAX_POSES } from "@/components/Max";
 import loadingVideo from "../assets/max/max-loading.mp4.asset.json";
 import {
@@ -186,6 +187,7 @@ function Collection() {
               })}
             </div>
           </div>
+          {state.activeWearables.length > 0 && <WearableFitEditor worn={state.activeWearables} />}
         </section>
       )}
 
