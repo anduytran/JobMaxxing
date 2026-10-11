@@ -82,11 +82,11 @@ export const generateInterviewQuestions = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data }) => {
     const { generateQuestions } = await import("./interview/agents.server");
+    const { currentUser } = await import("./auth.server");
+    const user = await currentUser();
     let resumeText: string | undefined;
     if (data.type === "resume") {
       try {
-        const { currentUser } = await import("./auth.server");
-        const user = await currentUser();
         if (user) {
           const { neonExecute } = await import("./neon.server");
           const r = await neonExecute(
