@@ -20,7 +20,7 @@ export const Route = createFileRoute("/interview")({
     ],
   }),
   validateSearch: (s: Record<string, unknown>) => ({
-    radar: typeof s["radar"] === "string" && /^[0-9]{1,20}$/.test(s["radar"]) ? s["radar"] : undefined,
+    radar: typeof s["radar"] === "string" && /^[A-Za-z0-9_-]{3,48}$/.test(s["radar"]) ? s["radar"] : undefined,
   }),
   loader: () => getInterviewAgents(),
   staleTime: 5 * 60_000, // agent status rarely changes; skip the refetch on every visit
