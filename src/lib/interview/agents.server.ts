@@ -766,7 +766,7 @@ export async function reviewResume(input: {
   owner?: { userId: string; name: string } | undefined;
   openFixes?: ResumeSuggestion[] | undefined;
   openQuests?: { id: string; title: string; description?: string | undefined }[] | undefined;
-}): Promise<ResumeReview & { integrated: string[]; questsDone: string[] }> {
+}): Promise<ResumeReview & { integrated: string[]; questsDone: string[]; questsNew: { title: string; description: string }[] }> {
   const open = input.openFixes ?? [];
   const quests = input.openQuests ?? [];
   const questText = quests.length ? `\n\nOPEN QUESTS:\n${quests.map((q) => `[${q.id}] ${q.title}${q.description ? ` — ${q.description}` : ""}`).join("\n")}` : "\n\nOPEN QUESTS: (none)";
