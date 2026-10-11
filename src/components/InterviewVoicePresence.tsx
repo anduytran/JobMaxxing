@@ -12,7 +12,7 @@ const STATES = {
   grading: { label: "Reviewing your interview", icon: Brain },
 };
 
-export function InterviewVoicePresence({ state, caption }: { state: InterviewVoiceState; caption?: string }) {
+export function InterviewVoicePresence({ state, caption }: { state: InterviewVoiceState; caption?: string | undefined }) {
   const { label, icon: Icon } = STATES[state];
   return (
     <div className="flex w-full flex-col items-center gap-7 px-4 py-10 text-center sm:px-8" data-voice-state={state}>
