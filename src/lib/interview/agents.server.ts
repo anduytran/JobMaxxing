@@ -797,16 +797,24 @@ export async function reviewResume(input: {
   const integrated = Array.isArray(ai?.["integrated"]) ? (ai!["integrated"] as unknown[]).map(String).filter((id) => openIds.has(id)) : [];
   const questIds = new Set(quests.map((q) => q.id));
   const questsDone = [...new Set(Array.isArray(ai?.["questsDone"]) ? (ai!["questsDone"] as unknown[]).map(String).filter((id) => questIds.has(id)) : [])];
+  const openTitles = new Set(quests.map((q) => q.title.trim().toLowerCase()));
+  const questsNew = (Array.isArray(ai?.["questsNew"]) ? (ai!["questsNew"] as unknown[]) : [])
+    .flatMap((q: any) => {
+      const title = String(q?.title ?? "").trim().slice(0, 120);
+      const description = String(q?.description ?? "").trim().slice(0, 300);
+      return title && !openTitles.has(title.toLowerCase()) ? [{ title, description }] : [];
+    })
+    .slice(0, 3);
   const review = ai && normalizeReview(ai, "raia");
   if (review) {
     // Keep the editor's ids stable when re-grading an edited version.
     if (input.sections?.length && !review.sections?.length) review.sections = input.sections;
-    return { ...review, integrated: [...new Set(integrated)], questsDone };
+    return { ...review, integrated: [...new Set(integrated)], questsDone, questsNew };
   }
   const text = input.text || (input.sections ? input.sections.map((s) => `${s.heading}\n${s.lines.map((l) => `- ${l.text}`).join("\n")}`).join("\n\n") : "");
   const fb = fallbackReview(text);
   fb.sections = input.sections?.length ? input.sections : fallbackSections(text);
-  return { ...fb, integrated: [], questsDone: [] };
+  return { ...fb, integrated: [], questsDone: [], questsNew: [] };
 }
 
 const MORE_TASK =
