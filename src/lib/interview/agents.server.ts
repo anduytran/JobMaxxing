@@ -98,6 +98,29 @@ export async function parseJob(jd: string): Promise<ParsedJob> {
   return fallbackParse(jd);
 }
 
+/**
+ * Job Radar title gate: the parser agent judges, strictly, which candidate job titles
+ * are a genuine fit for the user's target roles. One batched call per refresh — skill
+ * extraction stays regex-only, so this is the radar's only agent call.
+ * Returns the indices to keep; on any failure the caller keeps its regex survivors.
+ */
+export async function filterRadarTitles(titles: string[], roles: string[]): Promise<number[] | null> {
+  if (!titles.length || !roles.length) return titles.map((_, i) => i);
+  const list = titles.map((t, i) => `${i}: ${t}`).join("\n");
+  const ai = await askRaia<{ keep: number[] }>(
+    ENV.parser,
+    `Target roles: ${roles.join(", ")}\n\nJob titles:\n${list}`,
+    "You are screening job-board search results. For each numbered job title, decide strictly whether someone " +
+      "searching for the target roles would consider it a real match: the title must be the same kind of role " +
+      "(same function and seniority band), not merely a posting that mentions the words. Reject sales, warehouse, " +
+      "program-manager, consultant and other adjacent roles unless the title itself is the target role. " +
+      'Reply with JSON only: {"keep": [indices of titles to keep]}.',
+    20_000,
+  );
+  if (!ai || !Array.isArray(ai.keep)) return null;
+  return ai.keep.filter((i) => Number.isInteger(i) && i >= 0 && i < titles.length);
+}
+
 // ---------- Question generation ----------
 // Fallback draws from the built-in question bank (the same bank the Raia agent
 // retrieves from its knowledge base), matching stacks to the job's skills.
