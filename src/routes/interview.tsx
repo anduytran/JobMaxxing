@@ -219,7 +219,7 @@ function Interview() {
     finally { if (generation === captureGeneration.current) setListening(false); }
   };
 
-  // Hold Space to answer, release to send — mirrors the hold-to-answer button.
+  // Click to answer, click again to send — mirrors the toggle button (Space or click).
   useEffect(() => {
     if (stage !== "live" && stage !== "your_questions") return;
     const down = (e: KeyboardEvent) => {
@@ -227,15 +227,11 @@ function Interview() {
       const target = e.target as HTMLElement | null;
       if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA")) return;
       e.preventDefault();
-      if (!listening && !thinking && playback === "ready") void speak();
-    };
-    const up = (e: KeyboardEvent) => {
-      if (e.code !== "Space") return;
       if (listening) voice.current?.finishListening();
+      else if (!thinking && playback === "ready") void speak();
     };
     window.addEventListener("keydown", down);
-    window.addEventListener("keyup", up);
-    return () => { window.removeEventListener("keydown", down); window.removeEventListener("keyup", up); };
+    return () => { window.removeEventListener("keydown", down); };
   }); // no deps: always reads the latest state via closure refresh each render
 
   const finish = async () => {
@@ -395,19 +391,17 @@ function Interview() {
             <div className="hidden w-full max-w-64 flex-col items-center gap-3 text-center md:flex">
               <button
                 type="button"
-                aria-label="Hold to answer"
+                aria-label={listening ? "Click to end your answer" : "Click to answer"}
                 disabled={thinking || stage === "grading" || playback !== "ready"}
-                onPointerDown={(e) => { e.preventDefault(); if (!listening) void speak(); }}
-                onPointerUp={() => { if (listening) voice.current?.finishListening(); }}
-                onPointerLeave={() => { if (listening) voice.current?.finishListening(); }}
+                onClick={() => { if (listening) voice.current?.finishListening(); else void speak(); }}
                 className={cn("grid h-14 w-14 place-items-center rounded-full border-2 transition",
                   listening ? "border-primary bg-primary text-primary-foreground" : "border-foreground/60 hover:border-primary hover:text-primary",
                   (thinking || stage === "grading" || playback !== "ready") && "opacity-40")}
               >
-                <Mic className="h-5 w-5" />
+                {listening ? <Square className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
               </button>
-              <div className="text-sm font-semibold">{listening ? "Release to send" : "Hold to answer"}</div>
-              <p className="text-xs text-muted-foreground">The room stays quiet while you talk. Hold Space or press and hold the button, then let go when you're done.</p>
+              <div className="text-sm font-semibold">{listening ? "Click to end" : "Click to answer"}</div>
+              <p className="text-xs text-muted-foreground">Click the mic or press Space to start talking, then click again (or press Space) when you're done.</p>
             </div>
           </div>
 
