@@ -323,9 +323,6 @@ function GradeHeader({ review }: { review: StoredReview }) {
         <div className="mt-3 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 text-sm">
           <span className="font-semibold text-primary">Final outcome: </span>{review.outcome || outcomeLabel(review.score)}
         </div>
-        <p className="mt-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-          {review.source === "raia" ? "graded by: JobMaxxing Resume Agent" : "graded by: JobMaxxing offline checker"}
-        </p>
       </div>
     </div>
   );
