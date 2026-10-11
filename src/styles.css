@@ -263,6 +263,9 @@
 .reward-particle:nth-child(4) { animation-delay: 60ms; }
 
 /* The in-app "reduce motion" switch mirrors the OS preference above. */
+/* Accessibility: larger text scales every rem-based size up ~12%. */
+html.large-text { font-size: 112.5%; }
+
 html.reduce-motion *, html.reduce-motion *::before, html.reduce-motion *::after {
   animation-duration: 0.01ms !important;
   animation-iteration-count: 1 !important;
