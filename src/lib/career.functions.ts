@@ -102,7 +102,7 @@ export const getCareerDashboard = createServerFn({ method: "GET" }).handler(asyn
       ),
       neonQuery(
         `select id::text as id, job, type, overall, grade, transcript, to_json(created_at) as at
-           from public.devup_interview where user_id = $1 order by created_at desc limit 20`,
+           from public.devup_interview where user_id = $1 and deleted_at is null order by created_at desc limit 20`,
         [user.id],
       ),
     ]);
