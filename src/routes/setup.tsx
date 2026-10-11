@@ -104,7 +104,13 @@ function Setup() {
         res.awarded.integrated > 0 && `${res.awarded.integrated} fix${res.awarded.integrated === 1 ? "" : "es"} confirmed · +${res.awarded.fixes} XP`,
       ].filter(Boolean).join(" · ");
       toast.success(`Resume graded ${res.review.grade} · ${res.review.score}/100`, { description: extra || `${res.review.suggestions.length} fixes ready below.` });
-      if (!quests.find((q) => q.id === "resume")?.done) completeQuest("resume");
+      // Auto-verify any open resume quest: the exact built-in id, custom ids
+      // starting with "resume", or anything filed under the Setup/Resume category.
+      for (const q of quests) {
+        if (q.done) continue;
+        const resumeQuest = q.id === "resume" || q.id.startsWith("resume") || /resume/i.test(q.category) || /resume/i.test(q.title);
+        if (resumeQuest) completeQuest(q.id);
+      }
       setPaste(false);
       setText("");
       await refresh();
