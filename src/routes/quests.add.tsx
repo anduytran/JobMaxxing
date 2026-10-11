@@ -117,8 +117,8 @@ function AddQuests() {
         <Link to="/" className="mb-2 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4" /> Back to Home
         </Link>
-        <h1 className="text-4xl font-bold md:text-5xl">Build your quest pool</h1>
-        <p className="text-muted-foreground">Pick the kinds of quests you want. Tap a quest to add or remove it.</p>
+        <h1 className="text-4xl font-bold md:text-5xl">Your quest organizer</h1>
+        <p className="text-muted-foreground">Pin the slips you want in your pool. Tap again to unpin.</p>
         {!details.jobPrefs.roles && (
           <p className="mt-2 text-sm text-muted-foreground">
             Tip: add a desired role in <Link to="/settings" className="text-primary underline">Settings</Link> to unlock role-specific quests.
@@ -196,4 +196,21 @@ function AddQuests() {
       </section>
     </div>
   );
+}
+
+/** Re-files the quest packs into the organizer's four drawers. */
+function drawers(packs: Pack[]): Pack[] {
+  const all = packs.flatMap((p) => p.quests);
+  const seen = new Set<string>();
+  const take = (f: (q: Template) => boolean) => all.filter((q) => !seen.has(q.id) && f(q)).map((q) => (seen.add(q.id), q));
+  const today = take((q) => q.period === "daily");
+  const resume = take((q) => q.category === "Setup" || q.category === "Branding");
+  const radar = take((q) => q.category === "Hunt" || q.category === "Social");
+  const interviews = take(() => true);
+  return [
+    { key: "today", name: "Today", blurb: "Small daily wins", icon: Target, quests: today },
+    { key: "resume", name: "Resume", blurb: "Look good on paper", icon: FileText, quests: resume },
+    { key: "interviews", name: "Interviews", blurb: "Reps and problem-solving", icon: Mic, quests: interviews },
+    { key: "radar", name: "Job Radar", blurb: "Applications and people", icon: Briefcase, quests: radar },
+  ].filter((d) => d.quests.length);
 }
