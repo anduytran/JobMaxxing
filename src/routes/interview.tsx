@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Bot, Flame, Keyboard, Loader2, Mic, Send, Square, Timer, Volume2, VolumeX } from "lucide-react";
+import { Captions, Flame, Keyboard, Loader2, Mic, RotateCcw, Send, Square, Volume2, VolumeX } from "lucide-react";
 import { InterviewVoicePresence, type InterviewVoiceState } from "@/components/InterviewVoicePresence";
 import { InterviewMicrophoneCheck } from "@/components/InterviewMicrophoneCheck";
 import { Max } from "@/components/Max";
@@ -73,6 +73,7 @@ function Interview() {
   const [playback, setPlayback] = useState<VoicePlaybackState>("ready");
   const [typing, setTyping] = useState(false);
   const [liveCaption, setLiveCaption] = useState("");
+  const [captionsOn, setCaptionsOn] = useState(true);
   const captureGeneration = useRef(0);
 
   const [convId, setConvId] = useState<string | null>(null);
