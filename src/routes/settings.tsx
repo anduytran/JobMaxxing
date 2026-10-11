@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { AvatarPicker } from "@/components/AvatarPicker";
 import { useGame } from "@/lib/game";
 
 export const Route = createFileRoute("/settings")({
@@ -46,6 +47,10 @@ function SettingsPage() {
   return (
     <div className="mx-auto max-w-xl space-y-6">
       <h1 className="text-4xl font-bold md:text-5xl">Settings</h1>
+      <div className="panel space-y-4 p-6">
+        <div className="font-semibold">Profile photo</div>
+        <AvatarPicker />
+      </div>
       <div className="panel space-y-4 p-6">
         <div className="space-y-2"><Label htmlFor="n">Name</Label><Input id="n" value={name} onChange={(e) => setName(e.target.value)} /></div>
         <div className="space-y-2"><Label htmlFor="t">Current title</Label><Input id="t" value={title} onChange={(e) => setTitle(e.target.value)} /></div>

@@ -2,7 +2,7 @@ import { Link, useLocation, useRouter, useRouterState } from "@tanstack/react-ro
 import { signOut } from "@/lib/auth.functions";
 import { AnimatePresence, motion, MotionConfig, useReducedMotion } from "framer-motion";
 import {
-  LayoutGrid, FileText, Mic, Radar, LineChart, Network, UsersRound, Swords, Settings, Menu, LogOut, Zap, Flame, CircleHelp, X, Store, ArrowRight, ImagePlus, ImageOff,
+  LayoutGrid, FileText, Mic, Radar, LineChart, Network, UsersRound, Swords, Settings, Menu, LogOut, Zap, Flame, CircleHelp, X, Store, ArrowRight,
 } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
