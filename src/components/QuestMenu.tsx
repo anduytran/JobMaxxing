@@ -20,7 +20,7 @@ export function QuestMenu() {
   const shown = groups.flatMap(g => quests.filter(q => q.period === g.period).sort((a, b) => Number(a.done) - Number(b.done)).slice(0, g.limit));
   const doneCount = shown.filter(q => q.done).length;
   return <Popover open={open} onOpenChange={setOpen}>
-    <PopoverTrigger asChild><Button variant="outline" aria-label={`Daily and weekly quests: ${doneCount} of ${tracked.length} done`} onPointerEnter={e => { if (e.pointerType === "mouse") show(); }} onPointerLeave={hide} className="gap-2 rounded-md"><Swords className="h-4 w-4" /><span className="text-sm font-semibold tabular-nums" title={`${doneCount} of ${tracked.length} quests done`}>{doneCount}<span className="text-muted-foreground">/{tracked.length}</span></span></Button></PopoverTrigger>
+    <PopoverTrigger asChild><Button variant="outline" aria-label={`Daily and weekly quests: ${doneCount} of ${shown.length} done`} onPointerEnter={e => { if (e.pointerType === "mouse") show(); }} onPointerLeave={hide} className="gap-2 rounded-md"><Swords className="h-4 w-4" /><span className="text-sm font-semibold tabular-nums" title={`${doneCount} of ${shown.length} quests done`}>{doneCount}<span className="text-muted-foreground">/{shown.length}</span></span></Button></PopoverTrigger>
     <PopoverContent align="end" sideOffset={10} onPointerEnter={cancel} onPointerLeave={hide} onOpenAutoFocus={e => e.preventDefault()} className="w-[min(380px,calc(100vw-24px))] overflow-hidden p-0">
       <div className="flex items-center justify-between border-b bg-muted/40 px-5 py-4"><h2 className="text-sm font-bold uppercase tracking-wider">Mission briefing</h2><Swords className="h-4 w-4 text-primary" /></div>
       {groups.map(group => {
