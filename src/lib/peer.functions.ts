@@ -36,21 +36,21 @@ const makeCode = () =>
 
 type Row = Record<string, unknown>;
 const toSession = (r: Row): PeerSession => ({
-  id: String(r.id),
-  code: String(r.code),
-  hostId: String(r.host_id),
-  hostName: String(r.host_name),
-  guestId: r.guest_id ? String(r.guest_id) : null,
-  guestName: r.guest_name ? String(r.guest_name) : null,
-  hostRole: r.host_role === "interviewer" ? "interviewer" : "candidate",
-  job: r.job as ParsedJob,
-  questions: (r.questions as InterviewQuestion[]) ?? [],
-  type: (TYPES.includes(r.type as InterviewType) ? r.type : "mixed") as InterviewType,
-  length: (LENS.includes(r.length as InterviewLength) ? r.length : "standard") as InterviewLength,
-  status: (["waiting", "live", "done"].includes(String(r.status)) ? r.status : "waiting") as PeerSession["status"],
-  current: Number(r.current) || 0,
-  transcript: (r.transcript as TranscriptTurn[]) ?? [],
-  grade: (r.grade as InterviewGrade | null) ?? null,
+  id: String(r["id"]),
+  code: String(r["code"]),
+  hostId: String(r["host_id"]),
+  hostName: String(r["host_name"]),
+  guestId: r["guest_id"] ? String(r["guest_id"]) : null,
+  guestName: r["guest_name"] ? String(r["guest_name"]) : null,
+  hostRole: r["host_role"] === "interviewer" ? "interviewer" : "candidate",
+  job: r["job"] as ParsedJob,
+  questions: (r["questions"] as InterviewQuestion[]) ?? [],
+  type: (TYPES.includes(r["type"] as InterviewType) ? r["type"] : "mixed") as InterviewType,
+  length: (LENS.includes(r["length"] as InterviewLength) ? r["length"] : "standard") as InterviewLength,
+  status: (["waiting", "live", "done"].includes(String(r["status"])) ? r["status"] : "waiting") as PeerSession["status"],
+  current: Number(r["current"]) || 0,
+  transcript: (r["transcript"] as TranscriptTurn[]) ?? [],
+  grade: (r["grade"] as InterviewGrade | null) ?? null,
 });
 
 async function loadForUser(id: string, userId: string): Promise<PeerSession> {
@@ -60,7 +60,7 @@ async function loadForUser(id: string, userId: string): Promise<PeerSession> {
     [id, userId],
   );
   if (!rows.length) throw new Error("Session not found.");
-  return toSession(rows[0]);
+  return toSession(rows[0]!);
 }
 
 export const createPeerSession = createServerFn({ method: "POST" })
@@ -85,7 +85,7 @@ export const createPeerSession = createServerFn({ method: "POST" })
            values ($1, $2::uuid, $3, $4, $5::jsonb, $6::jsonb, $7, $8) returning id`,
           [code, user.id, name, data.role, JSON.stringify(data.job), JSON.stringify(data.questions), data.type, data.length],
         );
-        return { id: String(rows[0].id), code };
+        return { id: String(rows[0]!["id"]), code };
       } catch (e) {
         if (attempt === 2 || !String((e as Error).message).includes("unique")) throw e;
       }
@@ -105,7 +105,7 @@ export const joinPeerSession = createServerFn({ method: "POST" })
     const { neonExecute, neonQuery } = await import("./neon.server");
     const { rows } = await neonQuery("select * from public.devup_peer_session where code = $1", [data.code]);
     if (!rows.length) throw new Error("No session with that code.");
-    const s = toSession(rows[0]);
+    const s = toSession(rows[0]!);
     if (s.hostId === user.id) return { id: s.id };
     if (s.guestId && s.guestId !== user.id) throw new Error("That session already has two people.");
     if (s.status === "done") throw new Error("That session is already finished.");
