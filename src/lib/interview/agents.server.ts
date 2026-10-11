@@ -6,6 +6,7 @@ import type {
 } from "./types";
 import { LENGTHS } from "./types";
 import { QUESTION_BANK } from "./question-bank";
+import {
   GRADES, gradeFromScore, SUGGESTION_BATCH, XP_RULES, type AtsCheck, type Grade, type ResumeFields, type ResumeLine, type ResumeReview,
   type ResumeSection, type ResumeSuggestion, type SuggestionType,
 } from "../resume";
