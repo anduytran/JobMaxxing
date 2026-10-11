@@ -85,6 +85,8 @@ export type ResumeReview = {
   grade: Grade;
   score: number;
   summary: string;
+  /** Final verdict: is it ready to send, and the next step. */
+  outcome?: string;
   suggestions: ResumeSuggestion[];
   fields: ResumeFields;
   /** "raia" when the real Resume Agent graded it, "fallback" when the offline checker did. */
