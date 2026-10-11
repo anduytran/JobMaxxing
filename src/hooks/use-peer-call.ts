@@ -99,7 +99,8 @@ export function usePeerCall(opts: {
     stream.getTracks().forEach((t) => pc.addTrack(t, stream!));
     // Always ask to receive audio + video so the other side's camera can arrive
     // even when our own camera is off.
-    if (!stream.getVideoTracks().length) pc.addTransceiver("video", { direction: "recvonly" });
+    // (Host only: the answerer's m-lines come from the offer.)
+    if (isHost && !stream.getVideoTracks().length) pc.addTransceiver("video", { direction: "recvonly" });
     const remote = new MediaStream();
     pc.ontrack = (e) => {
       if (pcRef.current !== pc) return;
@@ -127,7 +128,7 @@ export function usePeerCall(opts: {
     };
     pcRef.current = pc;
     return pc;
-  }, []);
+  }, [isHost]);
 
   // Host posts a fresh offer; guest prepares a connection and waits for one.
   const start = useCallback(async () => {
@@ -163,6 +164,7 @@ export function usePeerCall(opts: {
 
   // Apply the other side's SDP when it arrives.
   const busy = useRef(false);
+  const [recheck, setRecheck] = useState(0);
   useEffect(() => {
     if (!live || !sessionId || state === "idle" || state === "failed" || busy.current) return;
     const pc = pcRef.current;
@@ -192,9 +194,10 @@ export function usePeerCall(opts: {
         setError((e as Error).message);
       } finally {
         busy.current = false;
+        setRecheck((n) => n + 1); // re-evaluate signals that arrived while busy
       }
     })();
-  }, [live, sessionId, isHost, signal.offer, signal.answer, state, makePc, start]);
+  }, [live, sessionId, isHost, signal.offer, signal.answer, state, makePc, start, recheck]);
 
   // Mutual video consent changed mid-call: the host re-offers so camera tracks are added/removed.
   const lastVideo = useRef(video);
@@ -207,10 +210,7 @@ export function usePeerCall(opts: {
     if (userLeft.current || !live) return;
     if (state === "idle" || state === "failed") void start();
     else if (isHost) void start();
-    else {
-      // Guest grabs the camera now; the host's fresh offer will carry it over.
-      answeredOffer.current = answeredOffer.current; // no-op, waits for re-offer
-    }
+    // Guest waits: the host's fresh offer triggers a new connection with the camera.
   }, [video, state, isHost, live, start]);
 
   useEffect(() => {
@@ -218,7 +218,7 @@ export function usePeerCall(opts: {
   }, [muted]);
 
   useEffect(() => { if (!live) hangUp(); }, [live, hangUp]);
-  useEffect(() => hangUp, [hangUp]);
+  useEffect(() => () => { autoStarted.current = false; hangUp(); }, [hangUp]);
 
   return { state, error, muted, setMuted, start, hangUp, audioRef, localVideoRef, remoteVideoRef };
 }

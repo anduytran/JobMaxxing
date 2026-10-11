@@ -289,7 +289,7 @@ function Page() {
       {stage === "live" && session && (
         <div className="grid gap-4 lg:grid-cols-[1fr_20rem]">
           <section className="flex min-h-[36rem] flex-col border-y bg-card">
-            <audio ref={call.audioRef} autoPlay className="hidden" />
+            <audio ref={call.audioRef} autoPlay playsInline className="hidden" />
             <div className="flex flex-wrap items-center gap-3 border-b p-4">
               <div className="grid h-9 w-9 place-items-center rounded bg-primary text-primary-foreground"><Users className="h-4 w-4" /></div>
               <div className="flex-1">
@@ -341,7 +341,7 @@ function Page() {
             {bothVideoConsent && (
               <div className="grid grid-cols-2 gap-2 border-b bg-muted/30 p-2">
                 <div className="relative overflow-hidden rounded-lg border bg-black/80">
-                  <video ref={call.remoteVideoRef} autoPlay playsInline className="aspect-[4/3] w-full object-cover" aria-label={`${partner ?? "Partner"}'s camera`} />
+                  <video ref={call.remoteVideoRef} autoPlay playsInline muted className="aspect-[4/3] w-full object-cover" aria-label={`${partner ?? "Partner"}'s camera`} />
                   <span className="absolute bottom-1 left-1 rounded bg-black/60 px-1.5 py-0.5 font-mono text-[10px] text-white">{partner ?? "Partner"}</span>
                 </div>
                 <div className="relative overflow-hidden rounded-lg border bg-black/80">
