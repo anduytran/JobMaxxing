@@ -93,6 +93,12 @@ export const gradeInterviewTranscript = createServerFn({ method: "POST" })
           overall: grade.overall, metrics: Object.fromEntries(Object.entries(grade.metrics).map(([k, v]) => [k, v ? v.score : null])),
           strengths: grade.strengths, improvements: grade.improvements,
         });
+        const { neonExecute } = await import("./neon.server");
+        await neonExecute(
+          `insert into public.devup_interview (user_id, job, type, overall, grade, transcript) values ($1, $2, $3, $4, $5::jsonb, $6::jsonb)`,
+          [user.id, data.job?.title ?? null, data.plan.some((q) => q.kind === "technical") ? (data.plan.every((q) => q.kind === "technical") ? "technical" : "mixed") : "behavioral",
+            Math.round(Number(grade.overall) || 0), JSON.stringify(grade), JSON.stringify(data.transcript)],
+        ).catch((e) => console.error("interview save failed", e));
         const { bumpStreak } = await import("./career.functions");
         await bumpStreak(user.id).catch((e) => console.error("streak update failed", e));
         const { listRatings } = await import("./mmr.server");

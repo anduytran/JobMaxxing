@@ -228,6 +228,51 @@ function PeerHub({ active, recent }: { active: CareerDashboard["peerActive"]; re
   );
 }
 
+function SavedInterviews({ items }: { items: CareerDashboard["solo"] }) {
+  const [open, setOpen] = useState<string | null>(null);
+  const [full, setFull] = useState<string | null>(null);
+  return (
+    <div className="panel p-6 lg:col-span-2">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <div className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Saved interviews</div>
+        <Button asChild size="sm" variant="outline"><Link to="/interview">New interview</Link></Button>
+      </div>
+      {items.length === 0 ? (
+        <p className="mt-4 text-sm text-muted-foreground">Finish a solo interview and its score, feedback and transcript are saved here.</p>
+      ) : (
+        <ul className="mt-3 divide-y">
+          {items.map((s) => (
+            <li key={s.id} className="py-3">
+              <button type="button" className="flex w-full flex-wrap items-baseline justify-between gap-2 text-left" onClick={() => setOpen(open === s.id ? null : s.id)}>
+                <span className="min-w-0 font-medium">{s.job ? <b>{s.job}</b> : "Practice interview"}{s.type && <span className="ml-2 text-xs capitalize text-muted-foreground">{s.type}</span>}</span>
+                <span className="flex items-center gap-2 text-xs text-muted-foreground">
+                  {s.overall != null && <b className="text-success">{s.overall}%</b>}
+                  {s.at && <span>{new Date(s.at).toLocaleDateString()}</span>}
+                  <span className="underline">{open === s.id ? "Hide" : "Details"}</span>
+                </span>
+              </button>
+              {open === s.id && (
+                <div className="mt-2 space-y-1.5 text-sm text-muted-foreground">
+                  {s.strengths.map((x, i) => <p key={`s${i}`}>+ {x}</p>)}
+                  {s.improvements.map((x, i) => <p key={`i${i}`}>→ {x}</p>)}
+                  {s.transcript.length > 0 && (
+                    <button type="button" className="text-xs underline" onClick={() => setFull(full === s.id ? null : s.id)}>{full === s.id ? "Hide transcript" : "Show transcript"}</button>
+                  )}
+                  {full === s.id && (
+                    <div className="max-h-72 space-y-1 overflow-y-auto rounded-xl bg-muted/50 p-3 text-xs">
+                      {s.transcript.map((t, i) => <p key={i}><b className="capitalize text-foreground">{t.speaker === "candidate" ? "You" : "Interviewer"}:</b> {t.text}</p>)}
+                    </div>
+                  )}
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 export function StreakBadge({ streak }: { streak: CareerDashboard["streak"] }) {
   if (!streak) return null;
   return (
@@ -250,6 +295,7 @@ export function CareerStats({ data, onGoalSaved }: { data: CareerDashboard; onGo
       <EloProgressCard series={data.elo} />
       <GoalsCard goal={data.goal} onSaved={onGoalSaved} />
       <AtsTracker rows={data.radar} />
+      <SavedInterviews items={data.solo ?? []} />
       <PeerHub active={data.peerActive} recent={data.peerRecent} />
     </div>
   );
