@@ -118,8 +118,19 @@ export async function filterRadarTitles(titles: string[], roles: string[]): Prom
       'Reply with JSON only: {"keep": [indices of titles to keep]}.',
     20_000,
   );
-  if (!ai || !Array.isArray(ai.keep)) return null;
-  return ai.keep.filter((i) => Number.isInteger(i) && i >= 0 && i < titles.length);
+  // The parser agent answers in its own schema and tucks free-form answers into
+  // specialNotes, so look for the keep list there too.
+  let keep = ai && Array.isArray(ai.keep) ? ai.keep : null;
+  if (!keep && ai && Array.isArray((ai as any).specialNotes)) {
+    for (const note of (ai as any).specialNotes as string[]) {
+      try {
+        const parsed = JSON.parse(String(note));
+        if (Array.isArray(parsed?.keep)) { keep = parsed.keep; break; }
+      } catch { /* not JSON — skip */ }
+    }
+  }
+  if (!keep) return null;
+  return keep.filter((i) => Number.isInteger(i) && i >= 0 && i < titles.length);
 }
 
 // ---------- Question generation ----------
