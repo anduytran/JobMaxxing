@@ -1,8 +1,9 @@
 // Shared, browser-safe types for the mock interview pipeline.
 export type InterviewType = "technical" | "behavioral" | "mixed";
-export type InterviewLength = "short" | "standard" | "long";
+export type InterviewLength = "quick" | "short" | "standard" | "long";
 
 export const LENGTHS: Record<InterviewLength, { label: string; seconds: number; questions: number }> = {
+  quick: { label: "Quick · ~1 min", seconds: 60, questions: 1 },
   short: { label: "Short · ~3 min", seconds: 180, questions: 3 },
   standard: { label: "Standard · ~6 min", seconds: 360, questions: 5 },
   long: { label: "Long · ~10 min", seconds: 600, questions: 8 },
