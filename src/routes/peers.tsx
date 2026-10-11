@@ -183,9 +183,9 @@ function Page() {
     gradedRef.current = null; xpPaidRef.current = null;
   };
 
-  const askedCount = session?.transcript.filter((t) => t.speaker === "interviewer" && t.phase === "interview").length ?? 0;
-  const allAsked = session ? session.current >= session.questions.length : false;
-  const awaitingAnswer = session ? session.transcript[session.transcript.length - 1]?.speaker === "interviewer" : false;
+  const askedCount = session?.transcript?.filter((t) => t.speaker === "interviewer" && t.phase === "interview").length ?? 0;
+  const allAsked = session?.questions ? session.current >= session.questions.length : false;
+  const awaitingAnswer = session?.transcript?.length ? session.transcript[session.transcript.length - 1]?.speaker === "interviewer" : false;
 
   return (
     <div className="mx-auto max-w-6xl space-y-4">
