@@ -38,6 +38,15 @@ export type GameState = {
 export type SaveResult = { ok: true; xp?: number } | { ok: false; error: string };
 
 
+/** Active 1.5x store booster, if any — multiplies XP (and therefore points). */
+async function xpBoost(userId: string): Promise<number> {
+  const { rows } = await neonExecute(
+    "select multiplier from public.devup_booster where user_id = $1 and expires_at > now() order by expires_at desc limit 1",
+    [userId],
+  );
+  return Number(rows[0]?.multiplier ?? 1) || 1;
+}
+
 function fail(err: unknown): SaveResult {
   if (err instanceof Error && err.message === "Please sign in.") return { ok: false, error: err.message };
   const { message } = neonUserError(err);
