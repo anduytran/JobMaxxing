@@ -63,6 +63,41 @@ export async function bumpStreak(userId: string): Promise<void> {
   );
 }
 
+/** A stored streak only counts if activity was today, yesterday, or one missed
+ *  day covered by a freeze. Anything older shows as 0, not the stale number. */
+export function effectiveStreak(s: { current: number; lastActivity: string | null; freezes: number }): number {
+  if (!s.lastActivity || s.current <= 0) return 0;
+  const days = Math.floor((Date.now() - new Date(s.lastActivity + "T00:00:00Z").getTime()) / 86400000);
+  if (days <= 1) return s.current;
+  if (days === 2 && s.freezes > 0) return s.current;
+  return 0;
+}
+
+/** Lightweight streak read for the top-nav chip. */
+export const getStreak = createServerFn({ method: "GET" }).handler(async (): Promise<StreakInfo> => {
+  const { currentUser } = await import("./auth.server");
+  const user = await currentUser();
+  if (!user) return EMPTY_STREAK;
+  try {
+    const rows = await neonQuery<{ current_streak: number; longest_streak: number; last: string | null; streak_freeze_count: number }>(
+      `select current_streak, longest_streak, to_json(last_activity_date) as last, streak_freeze_count
+         from public.devup_activity_streak where user_id = $1`,
+      [user.id],
+    );
+    const s = rows[0];
+    if (!s) return EMPTY_STREAK;
+    const info: StreakInfo = {
+      current: Number(s.current_streak),
+      longest: Number(s.longest_streak),
+      lastActivity: s.last ? String(s.last) : null,
+      freezes: Number(s.streak_freeze_count),
+    };
+    return { ...info, current: effectiveStreak(info) };
+  } catch {
+    return EMPTY_STREAK;
+  }
+});
+
 export const getCareerDashboard = createServerFn({ method: "GET" }).handler(async (): Promise<CareerDashboard> => {
   const { currentUser } = await import("./auth.server");
   const user = await currentUser();
