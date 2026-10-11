@@ -25,13 +25,6 @@ import { ResumeScoreCard } from "@/components/ResumeScoreCard";
 import { XpCareerCard } from "@/components/DashboardProgressCards";
 
 const MAX_ART: Record<string, MaxPose> = { setup: "resume", resume: "resume", interview: "interview", skills: "skills", hunt: "hunt", branding: "dap", social: "dap" };
-const QUEST_LINK: Record<string, "/setup" | "/interview" | "/quests" | "/skills" | "/market"> = { setup: "/setup", resume: "/setup", interview: "/interview", skills: "/skills", hunt: "/market" };
-
-// The featured card's one call to action: a hard-edged tab hanging from the card's
-// top-left corner — square corners, a heavier bottom edge, and it dips a little when
-// pressed, like a metal tag on a hinge. The global reduced-motion rule still applies.
-const LOCK_IN_TAB =
-  "group absolute left-6 top-0 z-20 inline-flex items-center gap-3 border-b-4 border-b-primary/45 bg-primary px-7 py-3 text-xs font-bold uppercase tracking-[0.22em] text-primary-foreground shadow-xl transition-transform duration-150 hover:translate-y-1 active:translate-y-1.5 md:left-20";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -159,7 +152,6 @@ function Dashboard() {
   }, [sceneKey]);
   useEffect(() => { [gymDesktop.url, gymMobile.url, stageDesktop.url, stageMobile.url, meadowDesktop.url, meadowMobile.url, billboardDesktop.url, billboardMobile.url, openToWork.url, ...Object.values(MAX_POSES)].forEach((s) => { const i = new Image(); i.src = s; }); }, []);
   const sceneReady = readyKey === sceneKey;
-  const featLink = QUEST_LINK[featKey] ?? "/quests";
   const scene = SCENES[featKey] ?? (featKey === "setup" ? SCENES["resume"] : undefined) ?? DEFAULT_SCENE;
   const featLines = featured ? questTitleLines(featured.title) : ["", ""];
   const reducedMotion = useReducedMotion();
@@ -192,22 +184,11 @@ function Dashboard() {
       {/* Phase 1 — the featured quest fills the whole screen, edge to edge, under the top bar. */}
       <div className="relative">
         <section
-          className={cn("featured-screen relative flex min-h-[calc(100svh_-_4rem)] items-stretch overflow-hidden border-b bg-hero px-6 pb-24 pt-16 md:px-20 md:pb-28 md:pt-16", (featKey === "interview" || featKey === "social") && "featured-stage")}
+          className={cn("featured-screen relative flex min-h-[calc(100svh_-_4rem)] items-stretch overflow-hidden border-b bg-hero px-6 pb-24 pt-8 md:px-20 md:pb-28 md:pt-14", (featKey === "interview" || featKey === "social") && "featured-stage")}
           aria-label="Featured quest"
         >
           <SceneBackdrop kind={featKey} />
           <div className="featured-scrim pointer-events-none absolute inset-0" />
-          {/* Lock In hangs from the card's top-left corner and always leads to the
-              place where the featured quest actually gets done. */}
-          {featured ? (
-            <Link to={featLink} className={LOCK_IN_TAB}>
-              Lock In <ArrowRight className="h-4 w-4 transition-transform duration-150 group-hover:translate-x-1" />
-            </Link>
-          ) : (
-            <Link to="/interview" search={{ radar: undefined }} className={LOCK_IN_TAB}>
-              Lock In <ArrowRight className="h-4 w-4 transition-transform duration-150 group-hover:translate-x-1" />
-            </Link>
-          )}
           {/* The column stretches to the card so the eyebrow, the pitch and the dots
               anchor the top, middle and bottom of the screen. */}
           <div className="relative z-10 flex w-full max-w-2xl flex-col justify-start md:max-w-[calc(50%_-_13svh_-_1.5rem)] md:justify-between">

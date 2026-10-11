@@ -13,6 +13,7 @@ import { QuestMenu } from "@/components/QuestMenu";
 
 type Item = { to: string; label: string; icon: typeof LayoutGrid; badge?: string };
 // Flat nav, no sections — Interview leads because it's the core product.
+// Lock In sits at the far left, right after the brand, as the one loud button.
 const LEFT: Item[] = [
   { to: "/", label: "Home", icon: LayoutGrid },
   { to: "/quests", label: "Collection", icon: Swords },
@@ -22,7 +23,7 @@ const RIGHT: Item[] = [
   { to: "/progress", label: "Career", icon: LineChart },
   { to: "/store", label: "Store", icon: Store },
 ];
-const ITEMS: Item[] = [...LEFT, LOCKIN, ...RIGHT];
+const ITEMS: Item[] = [LOCKIN, ...LEFT, ...RIGHT];
 
 export function Mascot({ className }: { className?: string }) {
   return <Max className={className} />;
@@ -55,14 +56,16 @@ export function AppShell({ children }: { children: ReactNode }) {
             <span className="font-display text-xl font-bold">JobMaxxing<span className="text-primary">.</span></span>
           </Link>
 
+          {/* Lock In is the one loud button and it sits at the far left, right after the brand. */}
+          <Link to={LOCKIN.to}
+            className={cn("relative my-2 flex shrink-0 items-center gap-2 bg-primary px-6 text-[13px] font-bold uppercase tracking-[0.14em] text-primary-foreground transition-colors hover:bg-primary/90",
+              loc.pathname === LOCKIN.to && "ring-1 ring-primary-foreground/40")}>
+            <LOCKIN.icon className="h-4 w-4" />
+            {LOCKIN.label}
+          </Link>
+
           <nav className="hidden flex-1 items-stretch justify-center gap-1 self-stretch lg:flex" aria-label="Main">
             {LEFT.map((it) => <TopTab key={it.to} item={it} active={loc.pathname === it.to} />)}
-            <Link to={LOCKIN.to}
-              className={cn("relative my-2 flex items-center gap-2 bg-primary px-6 text-[13px] font-bold uppercase tracking-[0.14em] text-primary-foreground transition-colors hover:bg-primary/90",
-                loc.pathname === LOCKIN.to && "ring-1 ring-primary-foreground/40")}>
-              <LOCKIN.icon className="h-4 w-4" />
-              {LOCKIN.label}
-            </Link>
             {RIGHT.map((it) => <TopTab key={it.to} item={it} active={loc.pathname === it.to} />)}
           </nav>
 
