@@ -21,7 +21,7 @@
 - Featured-quest card layouts (Max/backdrop offsets and sizes per quest type) live in Neon `devup_featured_layout` via `src/lib/layout.functions.ts`; only the editor email set there may save. Why: one tuner
 - Resume grading uploads the original file to the Raia Resume Agent via `/external/prompts/upload-url` (pdfjs text is only a fallback); Raia's output must match `normalizeReview` in `src/lib/interview/agents.server.ts`. Every scan/editor save is a `devup_resume_version` row, each grade a `devup_resume_review` linked by `version_id`, and one-time XP milestones use `milestone:*` reasons on `devup_xp_event` (unique index). Why: stable ids for history and XP.
 - Resume fixes ship in batches of `SUGGESTION_BATCH` (`src/lib/resume.ts`), clamped in the grader prompt, `normalizeReview` and the fallback; only `moreResumeSuggestions` issues the next batch and refuses while any current fix is unapplied. Why: no skipping
-- Never `order by id` after aliasing `id::text as id`; qualify the column. Why: text sort
+- Never `order by id` after aliasing `id::text as id`; qualify it. Why: text sort
 
 - Home's featured quest card fills the viewport; greeting, shortcuts, resume score, career progress and Max tips live on `/progress`. Uploaded CDN scenes render as full-inset covers, portrait variants on phones; interview-category quests get no slide; each slide shows its real quest XP and a `Start` link. Why: art fills screen, words clear of Max.
 - Quest reset countdowns derive from `src/lib/reset-times.ts` (next daily reset = 00:00 UTC, weekly = Monday 00:00 UTC) and render only after hydration. Why: match server `date_trunc`; avoid hydration mismatch.
