@@ -149,13 +149,54 @@ function fallbackQuestions(job: ParsedJob, type: InterviewType, count: number, r
 const probeFor = (text: string): string | null =>
   QUESTION_BANK.find((q) => q.text === text)?.probe ?? null;
 
+/** The kind each plan position must have: mixed = two behavioral per technical, opening behavioral. */
+const wantedKind = (type: InterviewType, i: number): "technical" | "behavioral" =>
+  type === "technical" ? "technical" : type === "behavioral" ? "behavioral" : i % 3 === 2 ? "technical" : "behavioral";
+
+const stacksFor = (job: ParsedJob) =>
+  [...new Set((job.skills ?? []).flatMap((s) => STACK_MAP.filter(([re]) => re.test(s)).map(([, tags]) => tags).flat()))];
+
+/**
+ * The Question agent does not always honor the requested behavioral/technical mixture, so enforce it:
+ * misplaced questions are swapped with a later misplaced one of the needed kind, else replaced from the bank.
+ * Technical interviews may keep a single behavioral question ("if time allows").
+ */
+function enforceMix(qs: InterviewQuestion[], type: InterviewType, job: ParsedJob): InterviewQuestion[] {
+  const out = qs.map((q, i) => ({ ...q, id: q.id || `q${i + 1}`, kind: q.kind === "technical" ? ("technical" as const) : ("behavioral" as const) }));
+  const stacks = stacksFor(job);
+  let behavioralAllowed = type === "technical" ? 1 : Infinity;
+  for (let i = 0; i < out.length; i++) {
+    const want = wantedKind(type, i);
+    if (out[i]!.kind === want) {
+      if (type === "technical" && want === "technical") continue;
+      if (out[i]!.kind === "behavioral") behavioralAllowed--;
+      continue;
+    }
+    if (type === "technical" && out[i]!.kind === "behavioral" && behavioralAllowed-- > 0) continue;
+    // Prefer swapping with a later question that is itself misplaced.
+    const j = out.findIndex((q, k) => k > i && q.kind === want && wantedKind(type, k) !== want);
+    if (j > i) {
+      [out[i], out[j]] = [out[j]!, out[i]!];
+      continue;
+    }
+    // Otherwise replace the text with an unused bank question of the right kind.
+    const pool = bankFor(want, stacks).filter((q) => !out.some((o) => o.text === q.text));
+    if (pool.length) {
+      out[i] = { ...out[i]!, kind: want, text: pool[i % pool.length]!.text, skill: want === "technical" ? out[i]!.skill : null };
+    } else {
+      out[i] = { ...out[i]!, kind: want };
+    }
+  }
+  return out;
+}
+
 export async function generateQuestions(job: ParsedJob, type: InterviewType, length: InterviewLength, roast: boolean) {
   const count = LENGTHS[length].questions;
   const ai = await askRaia<{ questions: InterviewQuestion[] }>(ENV.questions, JSON.stringify(job),
     `You are the recruiter for this role. Generate ${count} ${type} interview questions for this job. ${typeFocus(type)} Tone: ${roast ? "tough, blunt" : "friendly"}. ` +
     `Draw your questions from your question bank knowledge base where records fit the role's skills and track; use each record's Probe as the follow-up when an answer is thin. ${GUARDRAILS} ` +
     `Reply JSON {questions:[{id,kind:"technical"|"behavioral",text,skill}]}.`);
-  return ai?.questions?.length ? ai.questions.slice(0, count) : fallbackQuestions(job, type, count, roast);
+  return ai?.questions?.length ? enforceMix(ai.questions.slice(0, count), type, job) : fallbackQuestions(job, type, count, roast);
 }
 
 // ---------- Grading ----------
