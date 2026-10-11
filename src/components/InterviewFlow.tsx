@@ -416,7 +416,7 @@ export function InterviewFlow({ agents, api, radar, profileSkills = [], captions
 
           {currentCaption && stage !== "grading" && (
             <div className="mx-auto w-full max-w-4xl px-6 py-6 md:py-8">
-              <p ref={captionBox} className="max-h-48 overflow-hidden scroll-smooth break-words text-center text-2xl font-medium leading-relaxed text-foreground md:text-3xl" aria-label="Current question">
+              <p ref={captionBox} className="max-h-[38svh] min-h-24 overflow-y-auto scroll-smooth break-words text-center text-lg font-medium leading-relaxed text-foreground md:text-xl" aria-label="Current question">
                 <SpokenQuestion text={currentCaption} activeWord={spokenWord} />
               </p>
             </div>
