@@ -16,6 +16,7 @@ import {
 import { createBrowserVoice, createElevenLabsVoice, withScribeListening, type VoiceAgent, type VoicePlaybackState } from "@/lib/interview/voice";
 import { cn } from "@/lib/utils";
 import { InterviewRecorder, RecordingPlayer } from "@/components/InterviewRecorder";
+import loadingVideo from "@/assets/max/max-loading.mp4.asset.json";
 import { linkRecording, useRecordings } from "@/lib/interview-recordings";
 
 type Stage = "setup" | "review" | "options" | "live" | "your_questions" | "grading" | "report";
