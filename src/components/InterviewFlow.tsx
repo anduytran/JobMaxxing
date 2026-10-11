@@ -16,6 +16,7 @@ import {
 import { createBrowserVoice, createElevenLabsVoice, withScribeListening, type VoiceAgent, type VoicePlaybackState } from "@/lib/interview/voice";
 import { cn } from "@/lib/utils";
 import { InterviewRecorder, RecordingPlayer } from "@/components/InterviewRecorder";
+import loadingVideo from "@/assets/max/max-loading.mp4.asset.json";
 import { linkRecording, useRecordings } from "@/lib/interview-recordings";
 
 type Stage = "setup" | "review" | "options" | "live" | "your_questions" | "grading" | "report";
@@ -324,6 +325,13 @@ export function InterviewFlow({ agents, api, radar, profileSkills = [], captions
           <Button onClick={() => analyze()} disabled={busy || jd.trim().length < 40}>
             {busy && <Loader2 className="animate-spin" />} Analyze job
           </Button>
+          {busy && (
+            <div className="flex flex-col items-center gap-3 rounded-2xl border border-border bg-card/60 p-6 text-center" role="status" aria-live="polite">
+              <video src={loadingVideo.url} autoPlay loop muted playsInline className="h-40 w-40 rounded-2xl object-contain" aria-label="Max is reading the job posting" />
+              <p className="text-sm font-medium">Max is reading the posting…</p>
+              <p className="text-xs text-muted-foreground">Pulling out the role, skills and what to practice. Usually takes a few seconds.</p>
+            </div>
+          )}
         </section>
       )}
 
