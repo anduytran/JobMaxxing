@@ -298,7 +298,7 @@ async function fetchJooble(roles: string[], where: string | undefined): Promise<
   return out;
 }
 
-async function fetchJobs(prefs: JobPrefs): Promise<{ listings: RawListing[]; error?: string }> {
+async function fetchJobs(prefs: JobPrefs, userId?: string): Promise<{ listings: RawListing[]; error?: string }> {
   const roles = tokens(prefs.roles).slice(0, 3);
   if (!roles.length) roles.push("software developer");
   const where = tokens(prefs.locations).filter((t) => !/^remote/.test(t))[0];
@@ -324,7 +324,7 @@ async function fetchJobs(prefs: JobPrefs): Promise<{ listings: RawListing[]; err
   // survivors; if the agent is unreachable, the regex survivors stand.
   const filtered = jobs.filter((l) => roles.some((r) => titleFit(l.title, r) > 0));
   const { filterRadarTitles } = await import("./interview/agents.server");
-  const keep = await filterRadarTitles(filtered.map((l) => l.title), roles);
+  const keep = await filterRadarTitles(filtered.map((l) => l.title), roles, userId);
   return { listings: keep ? keep.map((i) => filtered[i]!) : filtered, ...(error ? { error } : {}) };
 }
 
@@ -378,7 +378,7 @@ export const getRadar = createServerFn({ method: "POST" })
       };
       let fetchError: string | undefined;
       if (data.refresh) {
-        const { listings, error } = await fetchJobs(prefs);
+        const { listings, error } = await fetchJobs(prefs, uid);
         fetchError = error;
         if (listings.length) {
           // Score every candidate that is in the user's areas, then keep only the best
