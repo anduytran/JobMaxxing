@@ -221,6 +221,16 @@ export const getTrackedSkills = createServerFn({ method: "GET" }).handler(async 
   return getTracked(user.id);
 });
 
+/** Custom skill: the Skill Expert decides whether the phrase is a real skill before it can be tracked. */
+export const checkCustomSkill = createServerFn({ method: "POST" })
+  .inputValidator((i: { phrase: unknown }) => ({ phrase: String(i.phrase ?? "").slice(0, 80) }))
+  .handler(async ({ data }) => {
+    const { requireUser } = await import("./auth.server");
+    await requireUser();
+    const { vetSkill } = await import("./skills.server");
+    return vetSkill(data.phrase);
+  });
+
 export const saveTrackedSkills = createServerFn({ method: "POST" })
   .inputValidator((i: { skills: unknown }) => ({ skills: Array.isArray(i.skills) ? i.skills.map(String) : [] }))
   .handler(async ({ data }) => {
