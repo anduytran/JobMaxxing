@@ -427,7 +427,8 @@ export async function continueInterviewConversation(opts: {
       message: opts.text,
       context: `${TURN_RULES} ${steer}`,
     });
-    return parseTurn(msg.message);
+    const { line, done } = parseTurn(msg.message);
+    return { reply: line, done };
   } catch (err) {
     console.error("Raia conversation turn failed", err);
     return null;
