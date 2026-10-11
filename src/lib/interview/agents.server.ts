@@ -99,54 +99,21 @@ export async function parseJob(jd: string): Promise<ParsedJob> {
 }
 
 /**
- * Job Radar title gate: an AI call judges which candidate job titles are relevant
- * to the user's target roles — relevance, not strict matching. One batched call per
- * refresh — skill extraction stays regex-only, so this is the radar's only AI call.
- * Uses the Lovable AI Gateway (the Raia parser agent only accepts full job postings).
+ * Job Radar title gate: the Raia Job Parser agent (its "TITLE SCREENING MODE"
+ * instructions) judges which job titles are relevant to the target roles —
+ * relevance, not strict matching. One batched call per refresh.
  * Returns the indices to keep; on any failure the caller keeps its regex survivors.
  */
 export async function filterRadarTitles(titles: string[], roles: string[]): Promise<number[] | null> {
   if (!titles.length || !roles.length) return titles.map((_, i) => i);
-  const apiKey = process.env["LOVABLE_API_KEY"]?.trim();
-  if (!apiKey) return null;
-  try {
-    const { createOpenAI } = await import("@ai-sdk/openai");
-    const { streamText } = await import("ai");
-    const provider = createOpenAI({
-      baseURL: "https://ai.gateway.lovable.dev/v1",
-      apiKey,
-      headers: { "Lovable-API-Key": apiKey, "X-Lovable-AIG-SDK": "vercel-ai-sdk" },
-    });
-    const list = titles.map((t, i) => `${i}: ${t}`).join("\n");
-    const result = streamText({
-      model: provider.responses("openai/gpt-6-astra"),
-      system:
-        "You are screening job-board search results. For each numbered job title, decide whether it is relevant " +
-        "to someone searching for the target roles. Keep titles that are the same role, a close variant, or a " +
-        "genuinely adjacent role a candidate for the target would plausibly apply to (including a level up or down). " +
-        "Drop titles from unrelated functions (sales, warehouse, operations, recruiting, nursing) that merely share " +
-        "a word with the target. Use your judgment on the gray area — relevance, not exact wording. " +
-        'Reply with JSON only: {"keep": [indices of titles to keep]}.',
-      messages: [{ role: "user", content: `Target roles: ${roles.join(", ")}\n\nJob titles:\n${list}` }],
-      providerOptions: {
-        openai: {
-          store: false,
-          forceReasoning: true,
-          reasoningEffort: "low",
-          reasoningSummary: "auto",
-          include: ["reasoning.encrypted_content"],
-        },
-      },
-    });
-    const text = await result.text;
-    const parsed = JSON.parse(text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1)) as { keep?: number[] };
-    if (!Array.isArray(parsed.keep)) return null;
-    return parsed.keep.filter((i) => Number.isInteger(i) && i >= 0 && i < titles.length);
-  } catch (err) {
-    console.error("filterRadarTitles failed", err);
-    return null;
-  }
+  const list = titles.map((t, i) => `${i}: ${t}`).join("\n");
+  const ai = await askRaia<{ keep?: unknown }>(ENV.parser,
+    `TITLE SCREENING\nTarget roles: ${roles.join(", ")}\n\nJob titles:\n${list}`,
+    "", 25_000);
+  if (!ai || !Array.isArray(ai.keep)) return null;
+  return ai.keep.filter((i): i is number => Number.isInteger(i) && (i as number) >= 0 && (i as number) < titles.length);
 }
+
 
 // ---------- Question generation ----------
 // Fallback draws from the built-in question bank (the same bank the Raia agent
