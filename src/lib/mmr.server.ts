@@ -2,9 +2,8 @@
 import { neonExecute, neonQuery } from "./neon.server";
 import type { InterviewQuestion } from "./interview/types";
 
-export const RATING_MIN = 800;
-export const RATING_MAX = 1600;
-export const DEFAULT_RATING = 1000;
+import { RATING_MIN, RATING_MAX, DEFAULT_RATING } from "./mmr.shared";
+export { RATING_MIN, RATING_MAX, DEFAULT_RATING };
 const PLACEMENT_QUESTIONS = 10;
 const K_PLACEMENT = 40;
 const K_STANDARD = 16;
