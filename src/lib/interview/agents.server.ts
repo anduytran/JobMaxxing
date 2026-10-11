@@ -341,20 +341,24 @@ const RESUME_RUBRIC =
   "EDGE CASES: if the content is unreadable, blank, or an image you cannot read, return score 0 with summary \"unreadable\"; if there is too little content to " +
   "grade, return score 0 with summary explaining what is missing.";
 
-const RESUME_SCHEMA =
-  'Reply with JSON only: {"grade":"S"|"A"|"B"|"C"|"D"|"F","score":0-100,"summary":"2-3 sentences",' +
-  '"sections":[{"id":"s1","heading":"exact section heading","lines":[{"id":"s1l1","text":"exact line or bullet text, verbatim"}]}],' +
-  '"ats":{"score":0-100,"usesTablesOrColumns":false,"headers":{"experience":true,"education":true,"projects":false},"issues":["short ATS risk"]},' +
+const SUGGESTION_SCHEMA =
   '"suggestions":[{"id":"kebab-case","type":"rewrite"|"metric"|"ats"|"general","lineId":"s1l2 or null",' +
   '"title":"quest title: 2-6 words, Title Case, imperative, e.g. \\"Add a Quantitative Figure\\"",' +
   '"detail":"1-2 sentences on what to change and why","before":"original line text or null",' +
   '"after":"for type rewrite: the improved line, starting with a strong action verb, same facts — never invent numbers; else null",' +
   '"question":"for type metric: the question that draws the number out, e.g. \\"Did you cut latency, and by how much?\\"; else null",' +
-  '"category":"impact"|"keywords"|"formatting"|"structure"|"credibility"}],' +
+  '"category":"impact"|"keywords"|"formatting"|"structure"|"credibility"}]';
+
+const RESUME_SCHEMA =
+  'Reply with JSON only: {"grade":"S"|"A"|"B"|"C"|"D"|"F","score":0-100,"summary":"2-3 sentences",' +
+  '"sections":[{"id":"s1","heading":"exact section heading","lines":[{"id":"s1l1","text":"exact line or bullet text, verbatim"}]}],' +
+  '"ats":{"score":0-100,"usesTablesOrColumns":false,"headers":{"experience":true,"education":true,"projects":false},"issues":["short ATS risk"]},' +
+  SUGGESTION_SCHEMA + ',' +
   '"fields":{"name":null,"email":null,"phone":null,"location":null,"title":null,"linkedin":null,"github":null,' +
   '"yearsExperience":null,"major":null,"degreeLevel":"Associate"|"Bachelors"|"Masters"|"PhD"|null,"graduationYear":null,"graduated":null,' +
   '"qualifications":[],"skills":[],"frameworks":[],"experience":[{"company":null,"role":null,"start":null,"end":null}],' +
-  '"education":[{"school":null,"degree":null,"year":null}]}}';
+  '"education":[{"school":null,"degree":null,"year":null}]}' +
+  ` Return exactly ${SUGGESTION_BATCH} suggestions, most important first.`;
 
 const RESUME_TASK =
   "You are the Resume Grader for JobMaxxing, a career-prep app for college students and early-career applicants in the US. You review one resume at a time " +
