@@ -763,7 +763,7 @@ export async function reviewResume(input: {
   file?: { name: string; type: string; bytes: Uint8Array } | undefined;
   owner?: { userId: string; name: string } | undefined;
   openFixes?: ResumeSuggestion[] | undefined;
-  openQuests?: { id: string; title: string; description?: string }[] | undefined;
+  openQuests?: { id: string; title: string; description?: string | undefined }[] | undefined;
 }): Promise<ResumeReview & { integrated: string[]; questsDone: string[] }> {
   const open = input.openFixes ?? [];
   const quests = input.openQuests ?? [];
