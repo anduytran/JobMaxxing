@@ -18,6 +18,8 @@ import { cn } from "@/lib/utils";
 import { InterviewRecorder, RecordingPlayer } from "@/components/InterviewRecorder";
 import loadingVideo from "@/assets/max/max-loading.mp4.asset.json";
 import { linkRecording, useRecordings } from "@/lib/interview-recordings";
+import { getInterviewVoice } from "@/lib/voice.functions";
+import { VOICES } from "@/lib/voices";
 
 type Stage = "setup" | "review" | "options" | "live" | "your_questions" | "grading" | "report";
 

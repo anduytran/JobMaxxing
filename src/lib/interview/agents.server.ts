@@ -281,7 +281,9 @@ export function fallbackGrade(t: TranscriptTurn[], job: ParsedJob): InterviewGra
   let cq = clamp(realQs.length ? 30 + goodQs * 25 + (realQs.some((q) => /team|growth|success|challenge|roadmap/i.test(q)) ? 15 : 0) : 5);
   if (hostile) { quality = Math.min(quality, 10); concise = Math.min(concise, 15); cq = Math.min(cq, 5); }
 
-  let overall = clamp(quality * 0.6 + concise * 0.2 + cq * 0.2);
+  // Priority order: answer quality, then conciseness, then tone, then question quality.
+  const toneScore = hostile ? 0 : clamp(60 + Math.min(star, 5) * 6 + (filler > 4 ? -15 : 5));
+  let overall = clamp(quality * 0.45 + concise * 0.25 + toneScore * 0.2 + cq * 0.1);
   if (hostile) overall = Math.min(overall, 10);
   else if (!substantive) overall = Math.min(overall, 25);
   const strengths: string[] = [];
