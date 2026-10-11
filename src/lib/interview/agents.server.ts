@@ -418,6 +418,7 @@ export async function startInterviewConversation(opts: {
       message: "The candidate has joined. Greet them in one short sentence and ask your first question.",
       context: TURN_RULES,
     });
+    await trackUsage(opts.userId, "question_agent", context, msg.message ?? "");
     return { conversationId: conv.id, reply: parseTurn(msg.message).line };
   } catch (err) {
     console.error("Raia conversation start failed", err);
@@ -426,7 +427,7 @@ export async function startInterviewConversation(opts: {
 }
 
 export async function continueInterviewConversation(opts: {
-  conversationId: string; text: string; phase: TranscriptTurn["phase"]; secondsLeft: number; lastQuestion: boolean;
+  conversationId: string; text: string; phase: TranscriptTurn["phase"]; secondsLeft: number; lastQuestion: boolean; userId?: string;
 }): Promise<{ reply: string; done: boolean } | null> {
   const secret = key(ENV.questions);
   if (!secret) return null;
