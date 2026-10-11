@@ -23,6 +23,8 @@ export type PeerSession = {
   current: number;
   transcript: TranscriptTurn[];
   grade: InterviewGrade | null;
+  /** Client-only marker: set by the page, never stored — which side am I? */
+  _meIsHost?: boolean;
 };
 
 const TYPES = ["technical", "behavioral", "mixed"] as const;
