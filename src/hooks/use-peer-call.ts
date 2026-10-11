@@ -142,6 +142,7 @@ export function usePeerCall(opts: {
     if (!sessionId) return;
     userLeft.current = false;
     const g = ++gen.current;
+    myOffer.current = appliedAnswer.current = null; // never apply an answer to an older offer
     setError(null);
     setState("connecting");
     try {
