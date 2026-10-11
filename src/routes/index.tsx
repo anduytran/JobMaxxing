@@ -191,6 +191,17 @@ function Dashboard() {
         >
           <SceneBackdrop kind={featKey} />
           <div className="featured-scrim pointer-events-none absolute inset-0" />
+          {/* Lock In hangs from the card's top-left corner and always leads to the
+              place where the featured quest actually gets done. */}
+          {featured ? (
+            <Link to={featLink} className={LOCK_IN_TAB}>
+              Lock In <ArrowRight className="h-4 w-4 transition-transform duration-150 group-hover:translate-x-1" />
+            </Link>
+          ) : (
+            <Link to="/interview" search={{ radar: undefined }} className={LOCK_IN_TAB}>
+              Lock In <ArrowRight className="h-4 w-4 transition-transform duration-150 group-hover:translate-x-1" />
+            </Link>
+          )}
           {/* The column stretches to the card so the eyebrow, the pitch and the dots
               anchor the top, middle and bottom of the screen. */}
           <div className="relative z-10 flex w-full max-w-2xl flex-col justify-start md:max-w-[calc(50%_-_13svh_-_1.5rem)] md:justify-between">
