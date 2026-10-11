@@ -36,7 +36,7 @@ export function SkillRadar() {
   }
 
   const data = ratings.map((r) => ({ skill: r.skill, rating: r.rating, answered: r.answered }));
-  const best = ratings[0];
+  const best = ratings[0]!;
 
   return (
     <div className="panel p-6">
