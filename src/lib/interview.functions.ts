@@ -74,13 +74,12 @@ export const saveSoloSession = createServerFn({ method: "POST" })
     const user = await currentUser();
     if (!user) return { ok: false };
     const { neonExecute } = await import("./neon.server");
-    await neonExecute(
+    const r = await neonExecute(
       `insert into public.devup_interview (user_id, job, type, overall, grade, transcript)
-       values ($1, $2, $3, 0, null, '[]'::jsonb)
-       on conflict (user_id, job, type) do nothing`,
+       values ($1, $2, $3, 0, null, '[]'::jsonb) returning id::text as id`,
       [user.id, data.job?.title ?? null, data.type],
-    ).catch((e) => console.error("interview start save failed", e));
-    return { ok: true };
+    ).catch((e) => { console.error("interview start save failed", e); return { rows: [] as Record<string, unknown>[] }; });
+    return { id: (r.rows[0]?.["id"] as string) ?? null };
   });
 
 export const gradeInterviewTranscript = createServerFn({ method: "POST" })
