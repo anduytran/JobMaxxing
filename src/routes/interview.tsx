@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useGame } from "@/lib/game";
 import {
-  fetchJobPosting, generateInterviewQuestions, getInterviewAgents, gradeInterviewTranscript, parseJobDescription, sendInterviewTurn, speakInterviewLine, getScribeToken, startLiveInterview,
+  fetchJobPosting, generateInterviewQuestions, getInterviewAgents, gradeInterviewTranscript, parseJobDescription, saveSoloSession, sendInterviewTurn, speakInterviewLine, getScribeToken, startLiveInterview,
 } from "@/lib/interview.functions";
 import { awardRadarPracticeXp, setRadarStatus } from "@/lib/radar.functions";
 import {
@@ -152,6 +152,8 @@ function Interview() {
     setBusy(true);
     try {
       const qs = await generateInterviewQuestions({ data: { job, type, length, roast: false } });
+      const saved = await saveSoloSession({ data: { job, type } }).catch(() => null);
+      setSavedId(saved?.id ?? null);
       const live = await startLiveInterview({ data: { job, type, length, roast: false, plan: qs } }).catch(() => null);
       const first = qs[0];
       if (!first) throw new Error("No interview questions were returned. Please try again.");
