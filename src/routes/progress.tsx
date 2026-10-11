@@ -4,7 +4,7 @@ import { useGame } from "@/lib/game";
 import { PageHeader } from "@/components/AppShell";
 import { ResumeScoreCard } from "@/components/ResumeScoreCard";
 import { SkillRadar } from "@/components/SkillRadar";
-import { InterviewModePicker } from "@/components/InterviewModePicker";
+import { useInterviewModePicker } from "@/components/InterviewModePicker";
 import { ApplicationTracker, CareerProgressCard, RecentXpCard, SavedInterviewsCard, StreakCard } from "@/components/CareerBoard";
 import { getResumeDashboard, setGoalFixes, fixesSummary, totalAwarded } from "@/lib/resume.functions";
 import { getCareerDashboard, type CareerDashboard } from "@/lib/career.functions";
@@ -29,7 +29,7 @@ function ProgressPage() {
   const [resumeDone, setResumeDone] = useState(0);
   const [resumePending, setResumePending] = useState(0);
   const [resumeAwarded, setResumeAwarded] = useState(0);
-  const [showPicker, setShowPicker] = useState(false);
+  const { openInterviewMode, interviewModeDialog } = useInterviewModePicker();
 
   const load = useCallback(() => {
     getCareerDashboard().then(setCareer).catch(() => {});
@@ -77,7 +77,7 @@ function ProgressPage() {
           <ResumeScoreCard resume={resume} done={resumeDone} pending={resumePending} totalAwarded={resumeAwarded} onShuffle={shuffle} refreshing={false} />
         </div>
         <div className="min-w-0 lg:col-span-3">
-          <SkillRadar onPractice={() => setShowPicker(true)} />
+          <SkillRadar onPractice={openInterviewMode} />
         </div>
         <div className="flex min-w-0 flex-col gap-5 lg:col-span-2">
           {career && <StreakCard streak={career.streak} />}
@@ -90,7 +90,7 @@ function ProgressPage() {
           {career && <SavedInterviewsCard items={career.solo} onChanged={load} />}
         </div>
       </div>
-      {showPicker && <InterviewModePicker onClose={() => setShowPicker(false)} />}
+      {interviewModeDialog}
     </main>
   );
 }

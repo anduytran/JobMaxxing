@@ -230,7 +230,7 @@ export function SavedInterviewsCard({ items, onChanged }: { items: SoloInterview
     <section aria-label="Saved interviews" className="panel hover-lift flex min-w-0 flex-col p-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="flex items-center gap-2 text-base font-normal text-muted-foreground"><Mic className="h-5 w-5 shrink-0" />Saved interviews</h2>
-        <Button asChild size="sm" variant="outline"><Link to="/interview" search={{} as never}>New interview</Link></Button>
+        <Button asChild size="sm" variant="outline"><Link to="/interview" search={{ radar: undefined }}>New interview</Link></Button>
       </div>
       {items.length === 0 ? (
         <p className="mt-4 text-sm text-muted-foreground">Finish a solo interview and its score, feedback and transcript are saved here.</p>
