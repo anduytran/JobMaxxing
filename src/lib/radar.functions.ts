@@ -321,7 +321,7 @@ async function fetchJobs(prefs: JobPrefs): Promise<{ listings: RawListing[]; err
   const filtered = jobs.filter((l) => roles.some((r) => titleFit(l.title, r) > 0));
   const { filterRadarTitles } = await import("./interview/agents.server");
   const keep = await filterRadarTitles(filtered.map((l) => l.title), roles);
-  return { listings: keep ? keep.map((i) => filtered[i]!) : filtered, error };
+  return { listings: keep ? keep.map((i) => filtered[i]!) : filtered, ...(error ? { error } : {}) };
 }
 
 const clean = (v: unknown, max: number): string | null => {
