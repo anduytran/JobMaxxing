@@ -54,13 +54,26 @@ export async function startSession(userId: string) {
       params: [userId, MAX_SESSIONS_PER_USER],
     },
   ]);
+  clearLegacySessionCookies();
   setCookie(SESSION_COOKIE, token, {
     httpOnly: true, secure: true, sameSite: "none", partitioned: true, path: "/", expires,
   });
 }
 
+// Browsers key partitioned (CHIPS) cookies separately from plain ones, so a
+// cookie set before partitioning was introduced survives next to the new one
+// and can shadow it with a stale token. Clear every legacy variant whenever
+// the session cookie is written or removed.
+function clearLegacySessionCookies() {
+  deleteCookie(SESSION_COOKIE, { path: "/" });
+  deleteCookie(SESSION_COOKIE, { path: "/", secure: true, sameSite: "lax" });
+  deleteCookie(SESSION_COOKIE, { path: "/", secure: true, sameSite: "strict" });
+  deleteCookie(SESSION_COOKIE, { path: "/", secure: true, sameSite: "none" });
+}
+
 export async function endSession() {
   const token = getCookie(SESSION_COOKIE);
+  clearLegacySessionCookies();
   deleteCookie(SESSION_COOKIE, { path: "/", secure: true, sameSite: "none", partitioned: true });
   if (token) await neonExecute("delete from public.devup_session where token_hash = $1", [await sha256(token)]);
 }
