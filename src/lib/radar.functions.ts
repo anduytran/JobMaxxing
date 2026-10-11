@@ -234,7 +234,11 @@ async function fetchTheMuse(where: string | undefined): Promise<RawListing[]> {
       url.searchParams.set("location", where);
       url.searchParams.set("page", String(page));
       url.searchParams.set("descending", "true");
-      const res = await fetch(url, { signal: AbortSignal.timeout(15_000) });
+      const res = await fetch(url, {
+        signal: AbortSignal.timeout(15_000),
+        // The Muse's CDN rejects requests without a browser-like user agent.
+        headers: { "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36", Accept: "application/json" },
+      });
       if (!res.ok) { console.error("The Muse search failed", res.status); break; }
       const body = (await res.json()) as { results?: any[] };
       for (const j of body.results ?? []) {
