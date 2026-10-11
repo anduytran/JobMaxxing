@@ -22,7 +22,7 @@ const STATUS_LABEL: Record<FriendRow["status"], string> = {
 
 /** Friends list + requests + search. When `inviteCode` is set (host waiting in
  *  the lobby), each friend gets an Invite button that pings them in-app. */
-export function FriendsPanel({ inviteCode, roleTitle }: { inviteCode?: string; roleTitle?: string | null }) {
+export function FriendsPanel({ inviteCode, roleTitle }: { inviteCode?: string | undefined; roleTitle?: string | null }) {
   const [friends, setFriends] = useState<FriendRow[]>([]);
   const [requests, setRequests] = useState<{ id: string; name: string; email: string }[]>([]);
   const [query, setQuery] = useState("");
