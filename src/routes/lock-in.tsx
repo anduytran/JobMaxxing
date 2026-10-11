@@ -3,6 +3,7 @@ import { FileText, Mic, Radar } from "lucide-react";
 import { MAX_POSES } from "@/components/Max";
 import { useInterviewModePicker } from "@/components/InterviewModePicker";
 import { MaxNote, useRandomMaxNote } from "@/components/MaxNote";
+import penAsset from "@/assets/desk-pen.png.asset.json";
 
 export const Route = createFileRoute("/lock-in")({
   head: () => ({
@@ -66,7 +67,17 @@ function LockIn() {
 
           {/* Heading on the left, Max's note pinned to the desk on the right. */}
           <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-wrap items-start justify-between gap-6 px-4 pt-10 md:px-8">
-            <h1 className="text-4xl font-bold md:text-5xl">Choose your mode</h1>
+            <div>
+              <h1 className="text-4xl font-bold md:text-5xl">Choose your mode</h1>
+              <div className="mt-2 h-10 w-64 overflow-hidden md:w-80">
+                <img
+                  src={penAsset.url}
+                  alt=""
+                  aria-hidden="true"
+                  className="pointer-events-none -my-[18%] w-full -rotate-2 select-none drop-shadow-md"
+                />
+              </div>
+            </div>
             <MaxNote note={note} onCycle={next} className="-rotate-2" />
           </div>
 
