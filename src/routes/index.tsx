@@ -195,7 +195,7 @@ function Dashboard() {
                 <Button className="mt-5 min-w-32 rounded-none" onClick={openInterviewMode}>Start<ArrowRight className="h-4 w-4" /></Button>
               ) : (
                 <Button asChild className="mt-5 min-w-32 rounded-none">
-                  <Link to={destination} search={destination === "/interview" ? { radar: undefined } : {}}>Start<ArrowRight className="h-4 w-4" /></Link>
+                  <Link to={destination} search={{}}>Start<ArrowRight className="h-4 w-4" /></Link>
                 </Button>
               )}
             </div>
