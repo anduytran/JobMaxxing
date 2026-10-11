@@ -250,7 +250,7 @@ export const peerSignal = createServerFn({ method: "POST" })
     const s = await loadForUser(data.id, user.id);
     const { neonExecute } = await import("./neon.server");
     const signal = s.meIsHost
-      ? (data.reset || !s.signal.offer ? { offer: data.sdp } : { ...s.signal, offer: data.sdp })
+      ? (data.reset || !s.signal.offer ? { offer: data.sdp, video: s.signal.video } : { ...s.signal, offer: data.sdp })
       : { ...s.signal, answer: data.sdp };
     await neonExecute("update public.devup_peer_session set signal = $2::jsonb where id = $1::uuid", [s.id, JSON.stringify(signal)]);
     return { ok: true };
