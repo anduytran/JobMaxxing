@@ -56,20 +56,32 @@ export function createBrowserVoice(onPlayback?: PlaybackObserver, onWord?: WordO
         let completed = "";
         let sessionText = "";
         let done = false;
+        let finishing = false;
         let restartTimer: ReturnType<typeof setTimeout> | undefined;
+        let finishTimer: ReturnType<typeof setTimeout> | undefined;
         const transcript = () => `${completed} ${sessionText}`.trim();
         const clear = () => {
           clearTimeout(restartTimer);
+          clearTimeout(finishTimer);
           finishCapture = undefined;
           cancelCapture = undefined;
         };
-        const finish = () => {
+        const settle = () => {
           if (done) return;
           done = true;
           clear();
-          try { rec?.stop(); } catch { /* already stopped */ }
           const text = transcript();
           if (text) resolve(text); else reject(new Error("Didn't catch that — try again or type your answer."));
+        };
+        // Done speaking: stop the mic but keep listening for the final results
+        // still in flight, so the last words aren't cut off. The recognizer
+        // delivers remaining finals, then onend settles; a short timer caps the wait.
+        const finish = () => {
+          if (done || finishing) return;
+          finishing = true;
+          clearTimeout(restartTimer);
+          try { rec?.stop(); } catch { /* already stopped */ }
+          finishTimer = setTimeout(settle, 900);
         };
         finishCapture = finish;
         cancelCapture = () => {
@@ -98,6 +110,8 @@ export function createBrowserVoice(onPlayback?: PlaybackObserver, onWord?: WordO
         rec.onend = () => {
           if (done) return;
           completed = transcript(); sessionText = "";
+          // After "Done speaking" the recognizer ends once final results arrive — settle with them.
+          if (finishing) { settle(); return; }
           restartTimer = setTimeout(() => { if (!done) { try { rec.start(); } catch { finish(); } } }, 250);
         };
         try { rec.start(); } catch { done = true; clear(); reject(new Error("Could not start microphone capture. Please try again.")); }
