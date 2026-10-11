@@ -83,7 +83,10 @@ function Collection() {
 
   const equip = (kind: "title" | "theme", value: string) => {
     equipItem({ data: { kind, value } }).then((r) => {
-      if (!r.ok) return toast.error(r.error);
+      if (!r.ok) {
+        toast.error(r.error);
+        return;
+      }
       setState((s) =>
         s
           ? {
