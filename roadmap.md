@@ -90,3 +90,9 @@
 ## Mock interview Max cleaned
 - [x] Removed the pale gray ground oval under his feet and the white wedge left in the crook of his bent arm, by clearing those pixels' alpha (no redraw, no change to his shape or colours); published as a new CDN asset and repointed the interview pose in `MAX_POSES`.
 - [x] Verified on the live signed-in dashboard: the mock interview slide paints the cleaned file, with no shadow oval, no white patch in the arm's negative space, and his feet and arm contours complete; build clean.
+
+## Max size parity
+- [x] Measure how much of each pose canvas Max actually fills and normalise every pose to the branding pose with per-pose scale factors.
+- [x] Cap the featured card's text column to Max's centred footprint so the headline and paragraph clear him at desktop and phone sizes.
+- [x] Stop the interview-category daily quest from repeating the mock-interview scene in the carousel.
+- [x] Verify all four slides render at matching rendered heights (within 4%), with clear text and arrow spacing, and the temporary verification sign-in removed.
