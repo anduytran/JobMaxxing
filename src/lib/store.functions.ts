@@ -254,3 +254,80 @@ export const equipItem = createServerFn({ method: "POST" })
       return fail(err);
     }
   });
+
+/** Roll the capsule machine: 250 points, wins a random wearable you don't own yet. */
+export const rollCapsule = createServerFn({ method: "POST" }).handler(
+  async (): Promise<
+    { ok: true; won: string; balance: number; remaining: number } | { ok: false; error: string }
+  > => {
+    try {
+      const userId = (await requireUser()).id;
+      const { results } = await neonExecute<{ results: any[] }>([
+        { query: BALANCE_SQL, params: [userId] },
+        {
+          query:
+            "select p.item_id from public.devup_purchase p where p.user_id = $1 and p.item_id = any($2)",
+          params: [userId, WEARABLE_IDS],
+        },
+      ]);
+      const balance = Number(results[0]?.rows?.[0]?.balance ?? 0);
+      if (balance < ROLL_COST)
+        return { ok: false, error: `You need ${ROLL_COST - balance} more points for a roll.` };
+      const owned = new Set((results[1]?.rows ?? []).map((r: any) => String(r.item_id)));
+      const remaining = WEARABLES.filter((w) => !owned.has(w.id));
+      if (!remaining.length) return { ok: false, error: "Collection complete — Max has every wearable." };
+      const won = remaining[Math.floor(Math.random() * remaining.length)];
+      const done = await neonExecute<{ results: any[] }>([
+        {
+          query: "insert into public.devup_purchase (user_id, item_id, cost) values ($1, $2, $3)",
+          params: [userId, won.id, ROLL_COST],
+        },
+        { query: BALANCE_SQL, params: [userId] },
+      ]);
+      return {
+        ok: true,
+        won: won.id,
+        balance: Number(done.results.at(-1)?.rows?.[0]?.balance ?? 0),
+        remaining: remaining.length - 1,
+      };
+    } catch (err) {
+      return fail(err);
+    }
+  },
+);
+
+/** Set which owned wearables Max wears. Slot conflicts are resolved by keeping the first. */
+export const equipWearables = createServerFn({ method: "POST" })
+  .inputValidator((input: { ids: unknown }) => {
+    const ids = Array.isArray(input.ids) ? input.ids.map(String).slice(0, WEARABLE_IDS.length) : [];
+    for (const id of ids) if (!WEARABLE_IDS.includes(id)) throw new Error("Unknown wearable.");
+    return { ids };
+  })
+  .handler(async ({ data }): Promise<StoreResult> => {
+    try {
+      const userId = (await requireUser()).id;
+      if (data.ids.length) {
+        const { rows } = await neonExecute(
+          "select item_id from public.devup_purchase where user_id = $1 and item_id = any($2)",
+          [userId, data.ids],
+        );
+        const owned = new Set(rows.map((r: any) => String(r.item_id)));
+        if (data.ids.some((id) => !owned.has(id)))
+          return { ok: false, error: "You don't own one of those wearables yet." };
+      }
+      // Resolve slot conflicts deterministically: first wearable claiming a slot wins.
+      const chosen: string[] = [];
+      for (const id of data.ids) {
+        const def = WEARABLES.find((w) => w.id === id)!;
+        if (!chosen.some((other) => slotsConflict(def, WEARABLES.find((w) => w.id === other)!)))
+          chosen.push(id);
+      }
+      await neonExecute(
+        "update public.devup_profile set active_wearables = $2::jsonb, updated_at = now() where id = $1",
+        [userId, JSON.stringify(chosen)],
+      );
+      return { ok: true };
+    } catch (err) {
+      return fail(err);
+    }
+  });
