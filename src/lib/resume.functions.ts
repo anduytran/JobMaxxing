@@ -113,7 +113,7 @@ async function currentXp(userId: string): Promise<number> {
  * version, the review, the fields it found, and pays first-scan / score-80 XP.
  */
 export const scanResume = createServerFn({ method: "POST" })
-  .inputValidator((i: { fileName: unknown; contentType?: unknown; fileBase64?: unknown; text?: unknown; sections?: unknown; note?: unknown }) => {
+  .inputValidator((i: { fileName: unknown; contentType?: unknown; fileBase64?: unknown; text?: unknown; sections?: unknown; note?: unknown; openQuests?: unknown }) => {
     const fileName = clean(i.fileName, 200) ?? "resume";
     const contentType = typeof i.contentType === "string" && FILE_TYPES.includes(i.contentType) ? i.contentType : null;
     const fileBase64 = typeof i.fileBase64 === "string" && contentType ? i.fileBase64 : null;
@@ -121,10 +121,14 @@ export const scanResume = createServerFn({ method: "POST" })
     const text = typeof i.text === "string" ? i.text.replace(/\r/g, "").trim().slice(0, 60_000) : "";
     const sections = cleanSections(i.sections);
     if (!fileBase64 && !sections.length && text.length < 80) throw new Error("Resume: That resume is too short to grade — paste the full text.");
-    return { fileName, contentType, fileBase64, text, sections, note: clean(i.note, 120) };
+    const openQuests = (Array.isArray(i.openQuests) ? i.openQuests : []).slice(0, 20).flatMap((q: any) => {
+      const id = clean(q?.id, 80), title = clean(q?.title, 160);
+      return id && title ? [{ id, title, description: clean(q?.description, 300) ?? undefined }] : [];
+    });
+    return { fileName, contentType, fileBase64, text, sections, note: clean(i.note, 120), openQuests };
   })
   .handler(async ({ data }): Promise<Result<{
-    review: StoredReview; awarded: { firstScan: number; levelUp: number; fixes: number; integrated: number }; xp: number;
+    review: StoredReview; awarded: { firstScan: number; levelUp: number; fixes: number; integrated: number }; xp: number; questsDone: string[];
   }>> => {
     try {
       const user = await requireUser();
@@ -140,6 +144,7 @@ export const scanResume = createServerFn({ method: "POST" })
       const review = await reviewResume({
         owner: { userId: user.id, name: user.email.split("@")[0] ?? "Candidate" },
         openFixes,
+        openQuests: data.openQuests,
         text: data.text || undefined,
         sections: data.sections.length ? data.sections : undefined,
         file: data.fileBase64 && data.contentType
@@ -201,6 +206,7 @@ export const scanResume = createServerFn({ method: "POST" })
         },
         awarded: { firstScan, levelUp, fixes: fixXp, integrated: review.integrated.length },
         xp: await currentXp(user.id),
+        questsDone: review.questsDone,
       };
     } catch (err) {
       return fail(err);

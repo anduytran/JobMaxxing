@@ -709,7 +709,9 @@ async function uploadPromptFile(fileName: string, contentType: string, bytes: Ui
 const CHECK_TASK =
   "FIX CHECK: OPEN FIXES lists fixes you gave on the previous version that were not yet confirmed. Compare against THIS resume and return " +
   '"integrated": [ids of OPEN FIXES the candidate has genuinely made in this version] at the top level of your JSON (empty array if none or no OPEN FIXES). ' +
-  "Only count a fix when the resume text shows it; placeholders like [X%] left unfilled do not count. ";
+  "Only count a fix when the resume text shows it; placeholders like [X%] left unfilled do not count. " +
+  'QUEST CHECK: OPEN QUESTS lists the candidate\'s unfinished resume quests. Return "questsDone": [ids of OPEN QUESTS this resume upload genuinely completes] at the top level (empty array if none). ' +
+  "Only count a quest when this resume version clearly satisfies it. ";
 
 async function resumeConversationId(userId: string, name: string, secret: string): Promise<string | null> {
   try {
@@ -761,8 +763,11 @@ export async function reviewResume(input: {
   file?: { name: string; type: string; bytes: Uint8Array } | undefined;
   owner?: { userId: string; name: string } | undefined;
   openFixes?: ResumeSuggestion[] | undefined;
-}): Promise<ResumeReview & { integrated: string[] }> {
+  openQuests?: { id: string; title: string; description?: string }[] | undefined;
+}): Promise<ResumeReview & { integrated: string[]; questsDone: string[] }> {
   const open = input.openFixes ?? [];
+  const quests = input.openQuests ?? [];
+  const questText = quests.length ? `\n\nOPEN QUESTS:\n${quests.map((q) => `[${q.id}] ${q.title}${q.description ? ` — ${q.description}` : ""}`).join("\n")}` : "\n\nOPEN QUESTS: (none)";
   const textBody = input.sections?.length
     ? `RESUME (line ids in brackets — reuse them as-is in sections and lineId):\n${sectionsText(input.sections)}`
     : (input.text ?? "").trim().length >= 80 ? `RESUME:\n${input.text}` : null;
@@ -770,34 +775,36 @@ export async function reviewResume(input: {
   let ai: Record<string, unknown> | null = null;
   if (textBody) {
     ai = await askResumeConversation<Record<string, unknown>>(input.owner,
-      `NEW RESUME VERSION — grade it fresh, using what you remember of earlier versions only to judge progress.\n${textBody}${openFixesText(open)}`, ctx);
+      `NEW RESUME VERSION — grade it fresh, using what you remember of earlier versions only to judge progress.\n${textBody}${openFixesText(open)}${questText}`, ctx);
   }
   if (!ai) {
     const files = input.file ? await uploadPromptFile(input.file.name, input.file.type, input.file.bytes) : null;
     const body = textBody ?? (files ? "RESUME: see the attached file." : `RESUME:\n${input.text ?? ""}`);
     // A full read of a real resume is the slowest of these calls; measured 18-28 s
     // on a warm endpoint and well over a minute when the org key is busy.
-    ai = await askRaia<Record<string, unknown>>(ENV.resume, `${body}${openFixesText(open)}`, ctx, 90_000, files ? [files] : undefined,
+    ai = await askRaia<Record<string, unknown>>(ENV.resume, `${body}${openFixesText(open)}${questText}`, ctx, 90_000, files ? [files] : undefined,
       { userId: input.owner?.userId, action: "resume grade" });
     if (ai && input.owner) {
       // Keep the grader conversation aware of this grade even though it was read via /prompts.
       void askResumeConversation(input.owner,
-        `RECORD ONLY (no reply needed beyond {"ok":true}): a new version was graded ${String(ai["score"] ?? "?")}/100. Fixes given: ` +
+        `RECORD ONLY (no reply needed beyond {"ok":true}): a new version was graded ${String(ai["score"] ?? "?")}/100. Quests confirmed complete: ${JSON.stringify(ai["questsDone"] ?? [])}. Fixes given: ` +
         JSON.stringify((Array.isArray(ai["suggestions"]) ? ai["suggestions"] : []).map((x: any) => x?.title)), "Acknowledge with {\"ok\":true}.", "resume grade").catch(() => {});
     }
   }
   const openIds = new Set(open.map((s) => s.id));
   const integrated = Array.isArray(ai?.["integrated"]) ? (ai!["integrated"] as unknown[]).map(String).filter((id) => openIds.has(id)) : [];
+  const questIds = new Set(quests.map((q) => q.id));
+  const questsDone = [...new Set(Array.isArray(ai?.["questsDone"]) ? (ai!["questsDone"] as unknown[]).map(String).filter((id) => questIds.has(id)) : [])];
   const review = ai && normalizeReview(ai, "raia");
   if (review) {
     // Keep the editor's ids stable when re-grading an edited version.
     if (input.sections?.length && !review.sections?.length) review.sections = input.sections;
-    return { ...review, integrated: [...new Set(integrated)] };
+    return { ...review, integrated: [...new Set(integrated)], questsDone };
   }
   const text = input.text || (input.sections ? input.sections.map((s) => `${s.heading}\n${s.lines.map((l) => `- ${l.text}`).join("\n")}`).join("\n\n") : "");
   const fb = fallbackReview(text);
   fb.sections = input.sections?.length ? input.sections : fallbackSections(text);
-  return { ...fb, integrated: [] };
+  return { ...fb, integrated: [], questsDone: [] };
 }
 
 const MORE_TASK =
