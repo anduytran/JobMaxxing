@@ -36,7 +36,6 @@ const FALLBACK_QUESTS: Quest[] = [
 export const ACHIEVEMENTS = [
   { id: "first", name: "First Blood", desc: "Completed first quest" },
   { id: "streak", name: "7-Day Streak", desc: "Logged in 7 days" },
-  { id: "roast", name: "Survived the Roast", desc: "Finished a Roast interview" },
   { id: "net", name: "Networker", desc: "10 connections" },
 ];
 
@@ -81,7 +80,7 @@ export function GameProvider({
   const [lastGain, setLastGain] = useState<Game["lastGain"]>(null);
 
   useEffect(() => {
-    document.documentElement.classList.toggle("roast", roast);
+    document.documentElement.classList.remove("roast");
   }, [roast]);
 
   // The in-app "reduce motion" switch; OS-level prefers-reduced-motion is

@@ -90,7 +90,7 @@ function Market() {
       busyId.current = null;
       if (res && !res.ok) { toast.error(res.error); void load(false); return; }
       if (res?.ok && res.awarded) {
-        setXp(res.xp!);
+        if (typeof res.xp === "number") setXp(res.xp);
         toast.success("Role saved", { description: `+${res.awarded} XP for saving a matched role.` });
       }
     }).catch(() => { busyId.current = null; });
@@ -99,7 +99,7 @@ function Market() {
   const viewRole = (job: RadarJob) => {
     markRadarViewed({ data: { jobId: job.id } }).then((res) => {
       if (res?.ok && res.awarded) {
-        setXp(res.xp!);
+        if (typeof res.xp === "number") setXp(res.xp);
         toast.success("Role reviewed", { description: `+${res.awarded} XP — every 5 roles you review pays out.` });
       }
     }).catch(() => {});
@@ -109,7 +109,7 @@ function Market() {
 
   const practice = (job: RadarJob) => {
     try {
-      sessionStorage.setItem("jobmaxxing:radar-jd", `${job.title}\n${job.company}\n${job.location}\n\n${job.description}`.slice(0, 9000));
+      sessionStorage.setItem("jobmaxxing:radar-jd", `${job.title}\n${job.company}\n${job.location}\n\n${job.description}`);
     } catch { /* storage unavailable — the interview still opens on the paste step */ }
     applyStatus(job.id, "interviewing");
     nav({ to: "/interview", search: { radar: job.id } });

@@ -98,12 +98,6 @@
   --shadow-control: 0 5px 12px -6px oklch(0.3 0.02 60 / 25%);
 }
 
-.roast {
-  --primary: oklch(0.6 0.21 30);
-  --accent: oklch(0.65 0.2 20);
-  --ring: oklch(0.6 0.21 30);
-}
-
 @layer base {
   * { border-color: var(--color-border); }
   body {
@@ -156,10 +150,10 @@
   aspect-ratio: 1;
   border-radius: 50%;
   background: radial-gradient(circle at 36% 30%,
-    color-mix(in oklab, var(--accent) 30%, white),
-    var(--accent) 55%,
-    color-mix(in oklab, var(--accent) 72%, black));
-  box-shadow: 0 18px 45px -12px color-mix(in oklab, var(--accent) 55%, transparent);
+    color-mix(in oklab, var(--voice-color) 30%, var(--card)),
+    var(--voice-color) 55%,
+    color-mix(in oklab, var(--voice-color) 72%, var(--foreground)));
+  box-shadow: 0 18px 45px -12px color-mix(in oklab, var(--voice-color) 55%, transparent);
 }
 .interview-voice-ring {
   position: absolute;
