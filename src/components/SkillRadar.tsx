@@ -1,14 +1,25 @@
 import { useEffect, useState } from "react";
 import { PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart, ResponsiveContainer } from "recharts";
-import { getSkillRatings } from "@/lib/interview.functions";
+import { RefreshCw } from "lucide-react";
+import { getSkillRatings, refreshSkillRatings } from "@/lib/interview.functions";
+import { Button } from "@/components/ui/button";
 import { RATING_MIN, RATING_MAX } from "@/lib/mmr.shared";
 
-type Rating = { skill: string; rating: number; answered: number };
+type Rating = { skill: string; rating: number; answered: number; evidence?: string | null };
 
-/** Spider-web radar chart of the user's per-skill MMR ratings (Career page). */
+/** Spider-web radar chart of the user's skill ratings (Career page). Ratings come from
+ *  interview grading and the Skill Expert agent, and never go down. */
 export function SkillRadar() {
   const [ratings, setRatings] = useState<Rating[]>([]);
   const [loading, setLoading] = useState(true);
+  const [updating, setUpdating] = useState(false);
+  const update = () => {
+    setUpdating(true);
+    refreshSkillRatings()
+      .then((r) => setRatings(r as Rating[]))
+      .catch(() => {})
+      .finally(() => setUpdating(false));
+  };
   useEffect(() => {
     getSkillRatings()
       .then((r) => setRatings(r as Rating[]))
@@ -42,8 +53,11 @@ export function SkillRadar() {
     <div className="panel p-6">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <div className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Skill web</div>
-        <div className="text-sm text-muted-foreground">
-          Strongest: <span className="font-semibold text-foreground">{best.skill}</span> · {best.rating}
+        <div className="flex items-center gap-3 text-sm text-muted-foreground">
+          <span>Strongest: <span className="font-semibold text-foreground">{best.skill}</span> · {best.rating}</span>
+          <Button size="sm" variant="ghost" onClick={update} disabled={updating} title="Skills only ever go up">
+            <RefreshCw className={updating ? "animate-spin" : ""} /> {updating ? "Rating…" : "Update"}
+          </Button>
         </div>
       </div>
       <div className="mt-2 h-80">
@@ -59,7 +73,8 @@ export function SkillRadar() {
       <div className="flex flex-wrap gap-2">
         {ratings.map((r) => (
           <span key={r.skill} className="rounded-full border bg-card px-3 py-1 text-xs text-muted-foreground">
-            {r.skill} <b className="text-foreground">{r.rating}</b> · {r.answered} answered
+            {r.skill} <b className="text-foreground">{r.rating}</b>
+            {r.evidence ? <span className="ml-1 opacity-80">· {r.evidence}</span> : r.answered ? <> · {r.answered} answered</> : null}
           </span>
         ))}
       </div>
