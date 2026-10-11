@@ -192,7 +192,8 @@ export function withScribeListening(base: VoiceAgent, getToken: () => Promise<st
         const text = () => [...committed, partial].join(" ").replace(/\s+/g, " ").trim();
         // Filler words are always biased in so the transcript stays verbatim (graders count them).
         const FILLERS = ["um", "uh", "uhm", "erm", "hmm", "like", "you know", "I mean", "sort of", "kind of", "basically", "actually"];
-        const terms = [...FILLERS, ...keyterms().filter(Boolean)].slice(0, 50);
+        // Scribe rejects keyterms over 20 characters with invalid_request, which kills capture.
+        const terms = [...FILLERS, ...keyterms().filter(Boolean)].filter((t) => t.length <= 20).slice(0, 50);
         const conn = Scribe.connect({
           token, modelId: "scribe_v2_realtime", commitStrategy: CommitStrategy.VAD,
           ...(terms.length ? { keyterms: terms } : {}),
