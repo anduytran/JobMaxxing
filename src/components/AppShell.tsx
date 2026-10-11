@@ -87,6 +87,9 @@ export function AppShell({ children }: { children: ReactNode }) {
               <span className="font-semibold">Lv {level}</span>
               <span className="hidden text-xs text-muted-foreground xl:inline">{levelTitle(level)}</span>
             </Link>
+            <Button variant="ghost" size="icon" className="hidden md:inline-flex" onClick={doSignOut} disabled={signingOut} aria-label="Sign out" title="Sign out">
+              <LogOut className="h-4 w-4" />
+            </Button>
             <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setOpen(!open)} aria-label="Menu" aria-expanded={open}>
               {open ? <X /> : <Menu />}
             </Button>
