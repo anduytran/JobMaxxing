@@ -11,8 +11,8 @@ import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
 import { usePeerCall } from "@/hooks/use-peer-call";
 import { useGame } from "@/lib/game";
-import { generateInterviewQuestions, parseJobDescription } from "@/lib/interview.functions";
-import { createBrowserVoice, type VoiceAgent } from "@/lib/interview/voice";
+import { generateInterviewQuestions, getScribeToken, parseJobDescription } from "@/lib/interview.functions";
+import { createBrowserVoice, withScribeListening, type VoiceAgent } from "@/lib/interview/voice";
 import {
   createPeerSession, getPeerSession, joinPeerSession, peerAskNext, peerEndSession, peerGrade, peerReady, peerSay, peerSetChecks, peerVideoConsent,
   type PeerSession,
@@ -159,7 +159,7 @@ function Page() {
   });
 
   const startSpeaking = async () => {
-    voiceRef.current ??= createBrowserVoice();
+    voiceRef.current ??= withScribeListening(createBrowserVoice(), async () => (await getScribeToken()).token, () => [...(session?.job?.skills ?? []), session?.job?.title ?? ""]);
     setCaption(""); setListening(true);
     try {
       const heard = await voiceRef.current.listen((t) => setCaption(t));

@@ -12,14 +12,14 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useGame } from "@/lib/game";
 import {
-  fetchJobPosting, generateInterviewQuestions, getInterviewAgents, gradeInterviewTranscript, parseJobDescription, sendInterviewTurn, speakInterviewLine, startLiveInterview,
+  fetchJobPosting, generateInterviewQuestions, getInterviewAgents, gradeInterviewTranscript, parseJobDescription, sendInterviewTurn, speakInterviewLine, getScribeToken, startLiveInterview,
 } from "@/lib/interview.functions";
 import { awardRadarPracticeXp, setRadarStatus } from "@/lib/radar.functions";
 import {
   LENGTHS, type AgentStatus, type InterviewGrade, type InterviewLength, type InterviewQuestion,
   type InterviewType, type ParsedJob, type TranscriptTurn,
 } from "@/lib/interview/types";
-import { createBrowserVoice, createElevenLabsVoice, type VoiceAgent, type VoicePlaybackState } from "@/lib/interview/voice";
+import { createBrowserVoice, createElevenLabsVoice, withScribeListening, type VoiceAgent, type VoicePlaybackState } from "@/lib/interview/voice";
 import { cn } from "@/lib/utils";
 
 
@@ -76,13 +76,16 @@ function Interview() {
   const [liveCaption, setLiveCaption] = useState("");
   const [captionsOn, setCaptionsOn] = useState(true);
   const captureGeneration = useRef(0);
+  const jobTerms = useRef<string[]>([]);
+  jobTerms.current = job ? [...(job.skills ?? []), job.title].filter((x): x is string => typeof x === "string") : [];
 
   const [convId, setConvId] = useState<string | null>(null);
   const [thinking, setThinking] = useState(false);
   useEffect(() => {
-    voice.current = agents.voice === "elevenlabs"
+    const base = agents.voice === "elevenlabs"
       ? createElevenLabsVoice(async (t) => (await speakInterviewLine({ data: { text: t } })).audio, setPlayback, setSpokenWord)
       : createBrowserVoice(setPlayback, setSpokenWord);
+    voice.current = withScribeListening(base, async () => (await getScribeToken()).token, () => jobTerms.current);
     return () => { captureGeneration.current++; voice.current?.stop(); };
   }, [agents.voice]);
   const stopVoice = () => {
