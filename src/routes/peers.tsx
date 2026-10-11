@@ -21,6 +21,7 @@ import { LENGTHS, type InterviewLength, type InterviewType, type ParsedJob } fro
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/peers")({
+  validateSearch: (s: Record<string, unknown>) => ({ join: typeof s["join"] === "string" ? s["join"] : undefined }),
   head: () => ({
     meta: [
       { title: "Peer Interviews — JobMaxxing" },
@@ -41,6 +42,7 @@ const capitalize = (s: string) =>
 
 function Page() {
   const { gainXp } = useGame();
+  const joinParam = Route.useSearch().join;
   const [stage, setStage] = useState<Stage>("intro");
   const [busy, setBusy] = useState(false);
   const [jd, setJd] = useState("");
