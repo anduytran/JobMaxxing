@@ -18,6 +18,7 @@ import openToWork from "@/assets/open-to-work.png.asset.json";
 
 import { questTitleLines } from "@/lib/quest-titles";
 import { ResetCountdown } from "@/components/ResetCountdown";
+import { useInterviewModePicker } from "@/components/InterviewModePicker";
 
 const MAX_ART: Record<string, MaxPose> = { setup: "resume", resume: "resume", interview: "interview", skills: "skills", hunt: "hunt", branding: "dap", social: "dap" };
 
@@ -107,6 +108,8 @@ function SceneBackdrop({ kind }: { kind: string }) {
 
 function Dashboard() {
   const { quests } = useGame();
+  // Clicking any Interview entry point opens the solo / peer popup first.
+  const { openInterviewMode, interviewModeDialog } = useInterviewModePicker();
   const open = quests.filter((q) => !q.done);
   const [pick, setPick] = useState<number | null>(null);
   const [dir, setDir] = useState(1);
@@ -188,9 +191,13 @@ function Dashboard() {
               )}
               <p ref={subRef} className="mt-5 max-w-md text-lg text-muted-foreground">{scene.blurb}</p>
               <p className="mt-6 flex items-center gap-2 text-sm font-semibold text-foreground"><Zap className="h-4 w-4 text-primary" />{reward}</p>
-              <Button asChild className="mt-5 min-w-32 rounded-none">
-                <Link to={destination} search={destination === "/interview" ? { radar: undefined } : {}}>Start<ArrowRight className="h-4 w-4" /></Link>
-              </Button>
+              {destination === "/interview" ? (
+                <Button className="mt-5 min-w-32 rounded-none" onClick={openInterviewMode}>Start<ArrowRight className="h-4 w-4" /></Button>
+              ) : (
+                <Button asChild className="mt-5 min-w-32 rounded-none">
+                  <Link to={destination} search={destination === "/interview" ? { radar: undefined } : {}}>Start<ArrowRight className="h-4 w-4" /></Link>
+                </Button>
+              )}
             </div>
             {total > 1 && (
               <div className="flex flex-wrap items-center gap-2">
@@ -239,11 +246,11 @@ function Dashboard() {
               </div>
               <p className="border-t border-border bg-muted/40 px-5 py-3 text-center text-xs font-bold uppercase tracking-[0.25em]">Improve</p>
               <div className="divide-y divide-border">
-                <Link to="/interview" search={{ radar: undefined }} className="group flex items-center gap-4 px-5 py-4 hover:bg-muted/50">
+                <button type="button" onClick={openInterviewMode} className="group flex w-full items-center gap-4 px-5 py-4 text-left hover:bg-muted/50">
                   <span className="grid h-10 w-10 place-items-center rounded-full border border-border bg-muted"><Mic className="h-5 w-5" /></span>
-                  <span className="flex-1 text-sm font-bold uppercase tracking-wider">AI Interview</span>
-                  <span className="text-xs text-muted-foreground">~15 mins</span>
-                </Link>
+                  <span className="flex-1 text-sm font-bold uppercase tracking-wider">Interview</span>
+                  <span className="text-xs text-muted-foreground">Solo or peer</span>
+                </button>
                 <Link to="/setup" className="group flex items-center gap-4 px-5 py-4 hover:bg-muted/50">
                   <span className="grid h-10 w-10 place-items-center rounded-full border border-border bg-muted"><FileText className="h-5 w-5" /></span>
                   <span className="flex-1 text-sm font-bold uppercase tracking-wider">Resume Lab</span>
@@ -263,6 +270,7 @@ function Dashboard() {
       </div>
 
 
+      {interviewModeDialog}
     </div>
   );
 }
