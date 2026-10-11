@@ -47,8 +47,10 @@ function SettingsPage() {
       <Input id={key} value={obj[key] ?? ""} onChange={(e) => set({ ...obj, [key]: e.target.value })} /></div>
   );
   return (
-    <div className="mx-auto max-w-xl space-y-6">
+    <div className="mx-auto max-w-[1500px] space-y-6">
       <h1 className="text-4xl font-bold md:text-5xl">Settings</h1>
+      <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
+        <div className="space-y-6">
       <div className="panel space-y-4 p-6">
         <div className="font-semibold">Profile photo</div>
         <AvatarPicker />
@@ -76,6 +78,8 @@ function SettingsPage() {
         <div className="text-sm text-muted-foreground">Current resume: {d.resume ? d.resume.fileName : "none uploaded yet"} · signed in as {g.email}</div>
         <Button disabled={!!saving} onClick={saveDetails}>{saving === "details" && <Loader2 className="animate-spin" />}{saving === "details" ? "Saving…" : "Save details"}</Button>
       </div>
+        </div>
+        <div className="space-y-6">
       <div className="panel space-y-5 p-6">
         <div className="font-semibold">Accessibility</div>
         <div className="flex items-center justify-between gap-4">
@@ -114,8 +118,10 @@ function SettingsPage() {
           <Switch checked={g.captions} onCheckedChange={g.setCaptions} />
         </div>
       </div>
-      <TokenUsagePanel />
-      <DemoLinksPanel />
+          <TokenUsagePanel />
+          <DemoLinksPanel />
+        </div>
+      </div>
     </div>
   );
 }
