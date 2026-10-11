@@ -207,17 +207,19 @@ export const scanResume = createServerFn({ method: "POST" })
         ? review.questsNew
         : data.openQuests.length
           ? []
-          : review.suggestions.slice(0, 2).map((s) => ({ title: s.title.slice(0, 120), description: s.detail ?? "" }));
+          : review.suggestions.slice(0, 2).map((s) => ({ title: s.title.slice(0, 120), description: s.detail ?? "", kind: "in-app" as const }));
       for (const q of ideas) {
         const slug = q.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 24) || "goal";
         const id = `resume-ai-${slug}-${Math.random().toString(36).slice(2, 7)}`;
+        // In-app quests (provable by a resume upload) pay full XP; external goals pay half.
+        const xp = q.kind === "external" ? 50 : 100;
         try {
           const { rows } = await neonQuery(
             `insert into public.devup_quest (id, title, xp, category, period, sort_order, user_id)
-             select $1, $2, 100, 'resume', 'once', -1, $3
+             select $1, $2, $4, 'resume', 'once', -1, $3
              where not exists (select 1 from public.devup_quest where user_id = $3 and lower(title) = lower($2))
              returning id`,
-            [id, q.title, user.id],
+            [id, q.title, user.id, xp],
           );
           if (rows[0]) questsAdded.push(q.title);
         } catch (e) {
