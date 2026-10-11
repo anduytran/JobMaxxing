@@ -404,7 +404,7 @@ export async function startInterviewConversation(opts: {
       message: "The candidate has joined. Greet them in one short sentence and ask your first question.",
       context: TURN_RULES,
     });
-    return { conversationId: conv.id, reply: spokenLine(msg.message) };
+    return { conversationId: conv.id, reply: parseTurn(msg.message).line };
   } catch (err) {
     console.error("Raia conversation start failed", err);
     return null;
@@ -413,12 +413,12 @@ export async function startInterviewConversation(opts: {
 
 export async function continueInterviewConversation(opts: {
   conversationId: string; text: string; phase: TranscriptTurn["phase"]; secondsLeft: number; lastQuestion: boolean;
-}): Promise<string | null> {
+}): Promise<{ reply: string; done: boolean } | null> {
   const secret = key(ENV.questions);
   if (!secret) return null;
   const steer =
     opts.phase === "candidate_questions"
-      ? "The candidate is now asking YOU questions about the role. Answer briefly and honestly (you are an AI, not the company), then ask if they have anything else."
+      ? "The candidate is now asking YOU questions about the role. Answer briefly and honestly (you are an AI, not the company), then ask if they have anything else. If they say they have nothing else or signal they are finished, give one short warm closing sentence and set done to true."
       : opts.lastQuestion || opts.secondsLeft < 20
         ? "Time is nearly up. Acknowledge the answer in one sentence and ask whether the candidate has any questions for you."
         : `About ${Math.max(0, Math.round(opts.secondsLeft))} seconds remain. Acknowledge briefly, then ask the next question (a follow-up if the answer was vague).`;
@@ -427,7 +427,7 @@ export async function continueInterviewConversation(opts: {
       message: opts.text,
       context: `${TURN_RULES} ${steer}`,
     });
-    return spokenLine(msg.message);
+    return parseTurn(msg.message);
   } catch (err) {
     console.error("Raia conversation turn failed", err);
     return null;
