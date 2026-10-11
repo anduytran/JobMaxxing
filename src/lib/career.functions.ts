@@ -239,19 +239,40 @@ export const getCareerDashboard = createServerFn({ method: "GET" }).handler(asyn
         : null,
       elo, radar: radarRows, peerActive, peerRecent: peerRecent.slice(0, 6),
       solo: solos.rows.map((r) => {
-        const g = (r["grade"] ?? {}) as { strengths?: string[]; improvements?: string[] };
+        const g = (r["grade"] ?? {}) as {
+          strengths?: string[]; improvements?: string[];
+          metrics?: { quality?: { score?: number }; conciseness?: { score?: number }; candidateQuestions?: { score?: number } };
+        };
         const t = Array.isArray(r["transcript"]) ? (r["transcript"] as { speaker: string; text: string }[]) : [];
         return {
           id: String(r["id"]), job: (r["job"] as string | null) ?? null, type: (r["type"] as string | null) ?? null,
           overall: r["overall"] == null ? null : Number(r["overall"]), at: String(r["at"] ?? ""),
           strengths: (g.strengths ?? []).slice(0, 3), improvements: (g.improvements ?? []).slice(0, 3),
           transcript: t.map((x) => ({ speaker: String(x.speaker), text: String(x.text) })),
+          metrics: {
+            quality: typeof g.metrics?.quality?.score === "number" ? Math.round(g.metrics.quality.score) : null,
+            conciseness: typeof g.metrics?.conciseness?.score === "number" ? Math.round(g.metrics.conciseness.score) : null,
+            questions: typeof g.metrics?.candidateQuestions?.score === "number" ? Math.round(g.metrics.candidateQuestions.score) : null,
+          },
         };
       }),
+      xpEvents: xpEvents.rows.map((r) => {
+        const reason = String(r["reason"] ?? "");
+        const label = reason.startsWith("quest:")
+          ? ((r["quest_title"] as string | null) ?? "Quest completed")
+          : reason.startsWith("radar:save:") ? "Saved a role"
+          : reason.startsWith("radar:review:") ? "Reviewed Job Radar matches"
+          : reason.startsWith("radar:practice:") ? "Practiced for a saved role"
+          : reason.startsWith("resume:") ? "Accepted a resume fix"
+          : reason.startsWith("milestone:") ? "Milestone reached"
+          : reason || "XP earned";
+        return { label, amount: Number(r["amount"] ?? 0), at: String(r["at"] ?? "") };
+      }),
+      interviewCount: Number(interviewCount.rows[0]?.["n"] ?? 0),
     };
   } catch (e) {
     console.error("career dashboard failed", e);
-    return { streak: EMPTY_STREAK, goal: null, elo: [], radar: [], peerActive: [], peerRecent: [], solo: [] };
+    return { streak: EMPTY_STREAK, goal: null, elo: [], radar: [], peerActive: [], peerRecent: [], solo: [], xpEvents: [], interviewCount: 0 };
   }
 });
 
