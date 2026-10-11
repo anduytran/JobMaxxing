@@ -13,7 +13,7 @@ export function VoicePicker() {
   const audio = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
-    getInterviewVoice().then((r) => setCurrent(r.voiceId)).catch(() => setCurrent(VOICES[0].id));
+    getInterviewVoice().then((r) => setCurrent(r.voiceId)).catch(() => setCurrent(VOICES[0]?.id ?? null));
     return () => audio.current?.pause();
   }, []);
 
