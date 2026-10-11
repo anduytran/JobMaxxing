@@ -50,11 +50,6 @@ export const fetchJobPosting = createServerFn({ method: "POST" })
       target = assertPublicUrl(new URL(loc, target).toString());
     }
     if (!res) throw new Error("Couldn't open that posting. Paste the description instead.");
-    const _unused = {
-      redirect: "follow",
-      signal: AbortSignal.timeout(15000),
-      headers: { "user-agent": "Mozilla/5.0 (compatible; JobMaxxing/1.0)", accept: "text/html,*/*" },
-    });
     if (!res.ok) throw new Error(`Couldn't open that posting (${res.status}). Paste the description instead.`);
     const html = await res.text();
     const text = html
