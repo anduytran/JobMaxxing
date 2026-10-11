@@ -226,6 +226,7 @@ export const scanResume = createServerFn({ method: "POST" })
         awarded: { firstScan, levelUp, fixes: fixXp, integrated: review.integrated.length },
         xp: await currentXp(user.id),
         questsDone: review.questsDone,
+        questsAdded,
       };
     } catch (err) {
       return fail(err);
