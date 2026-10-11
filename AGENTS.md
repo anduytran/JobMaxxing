@@ -12,7 +12,7 @@
 ## Architecture rules
 
 - ResumeScoreCard, DashboardProgressCards (merged Career card) and QuestMenu only read GameProvider and navigate; never award XP, create quests or change resets. Why: presentation reflects real workflows.
-- Featured titles use the browser-safe quest-titles helper, render two lines and preserve saved titles. Why: display copy must not rewrite quests.
+- Featured titles use the browser-safe quest-titles helper, render two lines and preserve saved titles. Why: display copy must not rewrite quests
 - Max poses come from `MAX_POSES` (uploaded images as CDN pointers; sign-in shares wave) and `MAX_SCALE` in `src/components/Max.tsx` normalises each pose to the branding pose's measured silhouette at `clamp(140px,21svh,300px) * MAX_SCALE[pose]`; motion lives in global CSS and AppShell's MotionConfig. Why: one art mapping, one motion system; each canvas has different transparent padding.
 - Game state (profile, XP, quests, resume reviews, interview sessions) persists in Neon Postgres through the Lovable connector gateway, not Lovable Cloud. Reads and writes stay in `createServerFn` handlers (`src/lib/devup.functions.ts`) using `src/lib/neon.server.ts` helpers — never from browser code, never localStorage; run schema changes once through the gateway or Neon's SQL editor. Why: the user chose Neon; request-time DDL multiplies one migration.
 - Agents stay server-only with Raia/fallbacks. VoiceAgent reports playback and live captions; capture ends manually and mic tests stop tracks on exit. Keep typed fallback/report transcript. Why: real voice states, no leaks
