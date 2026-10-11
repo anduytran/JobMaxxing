@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, FileText, Mic, Radar } from "lucide-react";
+import { FileText, Mic, Radar } from "lucide-react";
 import { MAX_POSES } from "@/components/Max";
 import { useInterviewModePicker } from "@/components/InterviewModePicker";
 import { MaxNote, useRandomMaxNote } from "@/components/MaxNote";
@@ -25,8 +25,46 @@ const MODES = [
   { to: "/market" as const, title: "Job Radar", tag: "Hunt", blurb: "Find roles matched to your resume and track where you applied.", icon: Radar, art: MAX_POSES.hunt, tint: "bg-success/15 text-success", xp: "+25 XP / save" },
 ];
 
+/** The page of a mode: photo band up top, ruled paper below. */
+function ModePage({ m }: { m: (typeof MODES)[number] }) {
+  return (
+    <>
+      <div className={`relative grid h-52 shrink-0 place-items-center overflow-hidden border-b ${m.tint.split(" ")[0]}`}>
+        <img src={m.art} alt="" className="mascot-float h-40 w-40 object-contain" draggable={false} />
+      </div>
+      <div className="paper-rules flex flex-1 flex-col p-6">
+        <div className="flex items-center gap-2">
+          <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-[3px] ${m.tint}`}><m.icon className="h-5 w-5" /></span>
+          <span className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">{m.tag}</span>
+          <span className="ml-auto shrink-0 border border-dashed px-2 py-1 text-xs font-bold text-success">{m.xp}</span>
+        </div>
+        <h2 className="mt-4 text-2xl font-bold">{m.title}</h2>
+        <p className="mt-2 flex-1 text-muted-foreground">{m.blurb}</p>
+      </div>
+    </>
+  );
+}
+
+/** A pile of sheets: two pages fanned underneath, the live one on top. */
+function ModeStack({ m, recommended }: { m: (typeof MODES)[number]; recommended?: boolean }) {
+  return (
+    <div className="paper-stack relative flex h-full flex-col pb-6">
+      {recommended && (
+        <span className="absolute -top-2 left-6 z-10 -rotate-1 bg-primary px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-primary-foreground">
+          Recommended
+        </span>
+      )}
+      <span aria-hidden className="paper-under paper-under-2" />
+      <span aria-hidden className="paper-under paper-under-1" />
+      <div className="paper-sheet flex h-full flex-col overflow-hidden">
+        <ModePage m={m} />
+      </div>
+    </div>
+  );
+}
+
 function LockIn() {
-  // The Interview card opens the solo / peer popup instead of going straight in.
+  // The Interview pile opens the solo / peer popup instead of going straight in.
   const { openInterviewMode, interviewModeDialog } = useInterviewModePicker();
   const { note, next } = useRandomMaxNote();
   return (
@@ -36,31 +74,13 @@ function LockIn() {
       <MaxNote note={note} onCycle={next} className="mt-4" />
 
 
-      <div className="mt-8 grid gap-5 md:grid-cols-3">
+      <div className="mt-10 grid gap-8 md:grid-cols-3">
         {MODES.map((m, i) => {
-          const card = (
-            <>
-              <div className={`relative grid h-56 place-items-center ${m.tint.split(" ")[0]}`}>
-                {i === 0 && <span className="absolute left-4 top-4 rounded-full bg-primary px-3 py-1 text-xs font-bold uppercase tracking-wider text-primary-foreground">Recommended</span>}
-                <img src={m.art} alt="" className="mascot-float h-44 w-44 object-contain" draggable={false} />
-              </div>
-              <div className="flex flex-1 flex-col p-6">
-                <div className="flex items-center gap-2">
-                  <span className={`grid h-9 w-9 place-items-center rounded-lg ${m.tint}`}><m.icon className="h-5 w-5" /></span>
-                  <span className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">{m.tag}</span>
-                  <span className="ml-auto text-sm font-semibold text-success">{m.xp}</span>
-                </div>
-                <h2 className="mt-4 text-2xl font-bold">{m.title}</h2>
-                <p className="mt-2 flex-1 text-muted-foreground">{m.blurb}</p>
-                <span className="mt-6 flex items-center gap-2 font-semibold text-primary">Lock in <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" /></span>
-              </div>
-            </>
-          );
-          const cls = "hover-lift group flex flex-col overflow-hidden rounded-3xl border bg-card text-left";
+          const stack = <ModeStack m={m} recommended={i === 0} />;
           return m.to === "/interview" ? (
-            <button key={m.to} type="button" onClick={openInterviewMode} className={cls}>{card}</button>
+            <button key={m.to} type="button" onClick={openInterviewMode} className="text-left">{stack}</button>
           ) : (
-            <Link key={m.to} to={m.to} search={{ radar: undefined } as never} className={cls}>{card}</Link>
+            <Link key={m.to} to={m.to} search={{ radar: undefined } as never} className="text-left">{stack}</Link>
           );
         })}
       </div>

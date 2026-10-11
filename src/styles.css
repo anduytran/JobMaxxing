@@ -387,3 +387,34 @@ html.dyslexia-font em, html.dyslexia-font i { font-style: normal; }
   --border: oklch(0.35 0.02 260);
   --input: oklch(0.37 0.02 260);
 }
+
+/* Lock In: each mode is a pile of sheets on a desk, not a card. */
+.paper-stack { position: relative; }
+.paper-sheet, .paper-under {
+  background-color: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: 3px;
+  box-shadow: var(--glow);
+}
+.paper-under {
+  position: absolute;
+  inset: 0;
+  transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.paper-under-1 { transform: translate(7px, 9px) rotate(-1.3deg); }
+.paper-under-2 { transform: translate(-6px, 17px) rotate(1deg); }
+.paper-sheet {
+  position: relative;
+  transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.28s;
+}
+.paper-rules {
+  background-image: repeating-linear-gradient(180deg, transparent 0 27px, color-mix(in oklab, var(--color-border) 65%, transparent) 27px 28px);
+}
+@media (hover: hover) {
+  html:not(.reduce-motion) .paper-stack:hover .paper-sheet { transform: translateY(-5px); box-shadow: var(--shadow-hover); }
+  html:not(.reduce-motion) .paper-stack:hover .paper-under-1 { transform: translate(13px, 16px) rotate(-2.4deg); }
+  html:not(.reduce-motion) .paper-stack:hover .paper-under-2 { transform: translate(-11px, 24px) rotate(1.9deg); }
+}
+html.reduce-motion .paper-sheet, html.reduce-motion .paper-under { transition: none; }
+html.high-contrast .paper-sheet, html.high-contrast .paper-under { border-width: 2px; }
+
