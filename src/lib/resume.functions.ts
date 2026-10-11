@@ -198,6 +198,25 @@ export const scanResume = createServerFn({ method: "POST" })
       const levelUp = review.score > XP_RULES.levelUpScore ? await milestone(user.id, "resume_80", XP_RULES.levelUp) : 0;
       const { bumpStreak } = await import("./career.functions");
       await bumpStreak(user.id).catch((e) => console.error("streak update failed", e));
+      // Grader-suggested quests land on the board automatically; skip titles the
+      // user already has so re-scans don't pile up duplicates.
+      const questsAdded: string[] = [];
+      for (const q of review.questsNew ?? []) {
+        const slug = q.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40) || "goal";
+        const id = `resume-ai-${slug}-${Math.random().toString(36).slice(2, 7)}`;
+        try {
+          const { rows } = await neonQuery(
+            `insert into public.devup_quest (id, title, xp, category, period, sort_order, user_id)
+             select $1, $2, 100, 'resume', 'once', -1, $3
+             where not exists (select 1 from public.devup_quest where user_id = $3 and lower(title) = lower($2))
+             returning id`,
+            [id, q.title, user.id],
+          );
+          if (rows[0]) questsAdded.push(q.title);
+        } catch (e) {
+          console.error("auto quest insert failed", e);
+        }
+      }
       return {
         ok: true,
         review: {
