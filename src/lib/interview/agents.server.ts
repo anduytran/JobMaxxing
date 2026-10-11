@@ -99,38 +99,53 @@ export async function parseJob(jd: string): Promise<ParsedJob> {
 }
 
 /**
- * Job Radar title gate: the parser agent judges which candidate job titles are relevant
+ * Job Radar title gate: an AI call judges which candidate job titles are relevant
  * to the user's target roles — relevance, not strict matching. One batched call per
- * refresh — skill extraction stays regex-only, so this is the radar's only agent call.
+ * refresh — skill extraction stays regex-only, so this is the radar's only AI call.
+ * Uses the Lovable AI Gateway (the Raia parser agent only accepts full job postings).
  * Returns the indices to keep; on any failure the caller keeps its regex survivors.
  */
 export async function filterRadarTitles(titles: string[], roles: string[]): Promise<number[] | null> {
   if (!titles.length || !roles.length) return titles.map((_, i) => i);
-  const list = titles.map((t, i) => `${i}: ${t}`).join("\n");
-  const ai = await askRaia<{ keep: number[] }>(
-    ENV.parser,
-    `Target roles: ${roles.join(", ")}\n\nJob titles:\n${list}`,
-    "You are screening job-board search results. For each numbered job title, decide whether it is relevant " +
-      "to someone searching for the target roles. Keep titles that are the same role, a close variant, or a " +
-      "genuinely adjacent role a candidate for the target would plausibly apply to (including a level up or down). " +
-      "Drop titles from unrelated functions (sales, warehouse, operations, recruiting, nursing) that merely share " +
-      "a word with the target. Use your judgment on the gray area — relevance, not exact wording. " +
-      'Reply with JSON only: {"keep": [indices of titles to keep]}.',
-    20_000,
-  );
-  // The parser agent answers in its own schema and tucks free-form answers into
-  // specialNotes, so look for the keep list there too.
-  let keep = ai && Array.isArray(ai.keep) ? ai.keep : null;
-  if (!keep && ai && Array.isArray((ai as any).specialNotes)) {
-    for (const note of (ai as any).specialNotes as string[]) {
-      try {
-        const parsed = JSON.parse(String(note));
-        if (Array.isArray(parsed?.keep)) { keep = parsed.keep; break; }
-      } catch { /* not JSON — skip */ }
-    }
+  const apiKey = process.env["LOVABLE_API_KEY"]?.trim();
+  if (!apiKey) return null;
+  try {
+    const { createOpenAI } = await import("@ai-sdk/openai");
+    const { streamText } = await import("ai");
+    const provider = createOpenAI({
+      baseURL: "https://ai.gateway.lovable.dev/v1",
+      apiKey,
+      headers: { "Lovable-API-Key": apiKey, "X-Lovable-AIG-SDK": "vercel-ai-sdk" },
+    });
+    const list = titles.map((t, i) => `${i}: ${t}`).join("\n");
+    const result = streamText({
+      model: provider.responses("openai/gpt-6-astra"),
+      system:
+        "You are screening job-board search results. For each numbered job title, decide whether it is relevant " +
+        "to someone searching for the target roles. Keep titles that are the same role, a close variant, or a " +
+        "genuinely adjacent role a candidate for the target would plausibly apply to (including a level up or down). " +
+        "Drop titles from unrelated functions (sales, warehouse, operations, recruiting, nursing) that merely share " +
+        "a word with the target. Use your judgment on the gray area — relevance, not exact wording. " +
+        'Reply with JSON only: {"keep": [indices of titles to keep]}.',
+      messages: [{ role: "user", content: `Target roles: ${roles.join(", ")}\n\nJob titles:\n${list}` }],
+      providerOptions: {
+        openai: {
+          store: false,
+          forceReasoning: true,
+          reasoningEffort: "low",
+          reasoningSummary: "auto",
+          include: ["reasoning.encrypted_content"],
+        },
+      },
+    });
+    const text = await result.text;
+    const parsed = JSON.parse(text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1)) as { keep?: number[] };
+    if (!Array.isArray(parsed.keep)) return null;
+    return parsed.keep.filter((i) => Number.isInteger(i) && i >= 0 && i < titles.length);
+  } catch (err) {
+    console.error("filterRadarTitles failed", err);
+    return null;
   }
-  if (!keep) return null;
-  return keep.filter((i) => Number.isInteger(i) && i >= 0 && i < titles.length);
 }
 
 // ---------- Question generation ----------
