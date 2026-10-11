@@ -17,7 +17,7 @@ type Item = { to: string; label: string; icon: typeof LayoutGrid; badge?: string
 // Lock In sits at the far left, right after the brand, as the one loud button.
 const LEFT: Item[] = [
   { to: "/", label: "Home", icon: LayoutGrid },
-  { to: "/quests", label: "Collection", icon: Swords },
+  { to: "/collection", label: "Collection", icon: Swords },
 ];
 const LOCKIN: Item = { to: "/lock-in", label: "Lock In", icon: ArrowRight };
 const RIGHT: Item[] = [
