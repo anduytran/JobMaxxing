@@ -54,8 +54,8 @@ export async function applySessionRatings(userId: string, items: { q: InterviewQ
        on conflict (prompt_hash) do update set skill_name = excluded.skill_name returning id::text as id, difficulty_rating`,
       [skill, q.text.slice(0, 2000), hash],
     );
-    const qid = String(qr[0]["id"]);
-    const difficulty = Number(qr[0]["difficulty_rating"]);
+    const qid = String(qr[0]?.["id"]);
+    const difficulty = Number(qr[0]?.["difficulty_rating"] ?? DEFAULT_RATING);
     const s = clamp(score, 0, 1);
     const e = expected(st.rating, difficulty);
     let k = st.answered < PLACEMENT_QUESTIONS ? K_PLACEMENT : K_STANDARD;
