@@ -125,7 +125,7 @@ export async function parseJobFromUrl(url: string, hint?: string, userId?: strin
     "if the link itself is a redirect or not indexed, search for the company and role from the hint instead. " +
     "Then parse it and reply with JSON only using your output schema: {title, summary, skills, qualifications, location, specialNotes}. " +
     "If you cannot find readable content for it, reply with title null and empty lists.",
-    60_000);
+    60_000, undefined, { userId, agent: "job_parser" });
   if (!ai || !Array.isArray(ai.skills) || (!ai.title && !ai.skills.length)) return null;
   return {
     title: ai.title ?? null,
@@ -143,12 +143,12 @@ export async function parseJobFromUrl(url: string, hint?: string, userId?: strin
  * relevance, not strict matching. One batched call per refresh.
  * Returns the indices to keep; on any failure the caller keeps its regex survivors.
  */
-export async function filterRadarTitles(titles: string[], roles: string[]): Promise<number[] | null> {
+export async function filterRadarTitles(titles: string[], roles: string[], userId?: string): Promise<number[] | null> {
   if (!titles.length || !roles.length) return titles.map((_, i) => i);
   const list = titles.map((t, i) => `${i}: ${t}`).join("\n");
   const ai = await askRaia<{ keep?: unknown }>(ENV.parser,
     `TITLE SCREENING\nTarget roles: ${roles.join(", ")}\n\nJob titles:\n${list}`,
-    "", 25_000);
+    "", 25_000, undefined, { userId, agent: "job_parser" });
   if (!ai || !Array.isArray(ai.keep)) return null;
   return ai.keep.filter((i): i is number => Number.isInteger(i) && (i as number) >= 0 && (i as number) < titles.length);
 }
