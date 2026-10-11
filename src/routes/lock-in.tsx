@@ -25,14 +25,9 @@ const MODES = [
 ];
 
 /** A colored folder standing on the desk, Max peeking out of the top. */
-function ModeFolder({ m, recommended }: { m: (typeof MODES)[number]; recommended?: boolean }) {
+function ModeFolder({ m }: { m: (typeof MODES)[number] }) {
   return (
     <div className={`folder ${m.folder} relative flex h-full flex-col`}>
-      {recommended && (
-        <span className="sticky-tag absolute -bottom-3 -right-3 z-30 px-3 py-1.5 text-[13px] font-bold italic tracking-tight">
-          Recommended
-        </span>
-      )}
       {/* back panel + tab */}
       <span aria-hidden className="folder-back" />
       <span aria-hidden className="folder-tab" />
@@ -76,8 +71,8 @@ function LockIn() {
           </div>
 
           <div className="relative z-10 mx-auto grid w-full max-w-6xl flex-1 content-end items-end gap-10 px-4 pb-14 md:grid-cols-3 md:px-8">
-            {MODES.map((m, i) => {
-              const folder = <ModeFolder m={m} recommended={i === 0} />;
+            {MODES.map((m) => {
+              const folder = <ModeFolder m={m} />;
               return m.to === "/interview" ? (
                 <button key={m.to} type="button" onClick={openInterviewMode} className="text-left">{folder}</button>
               ) : (
