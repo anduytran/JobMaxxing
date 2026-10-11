@@ -28,9 +28,12 @@ function LockIn() {
   const { openInterviewMode, interviewModeDialog } = useInterviewModePicker();
   return (
     <div className="mx-auto max-w-6xl">
-      <p className="text-xs font-semibold uppercase tracking-[0.25em] text-muted-foreground">Phase 2 · Lock in</p>
-      <h1 className="mt-2 text-4xl font-bold md:text-5xl">Choose your mode</h1>
-      <p className="mt-2 text-lg text-muted-foreground">Pick where you want to put in work today.</p>
+      <h1 className="text-4xl font-bold md:text-5xl">Choose your mode</h1>
+      <p className="mt-3 max-w-xl text-lg text-muted-foreground">
+        &ldquo;You don't have to have it all figured out. You just have to take the next step.&rdquo;
+        <span className="ml-2 whitespace-nowrap text-sm font-semibold uppercase tracking-[0.18em] text-primary">— Max</span>
+      </p>
+
       <div className="mt-8 grid gap-5 md:grid-cols-3">
         {MODES.map((m, i) => {
           const card = (
