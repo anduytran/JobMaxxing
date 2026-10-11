@@ -329,6 +329,16 @@ function Page() {
                   <span className={cn("font-mono", call.state === "connected" ? "text-accent" : "text-muted-foreground")}>
                     {call.state === "connected" ? "● Live audio" : "Connecting audio…"}
                   </span>
+                  {call.state === "connected" && !bothReady && (
+                    myReady ? (
+                      <span className="flex items-center gap-1 text-muted-foreground"><Loader2 className="h-3.5 w-3.5 animate-spin" /> Waiting for {partner ?? "your friend"} to ready up…</span>
+                    ) : (
+                      <Button size="sm" onClick={() => void act(() => peerReady({ data: { id: session.id, on: true } }))} disabled={busy}>
+                        <Check /> I'm ready
+                      </Button>
+                    )
+                  )}
+                  {bothReady && <span className="font-mono text-accent">● Both ready</span>}
                   <Button size="sm" variant="ghost" onClick={() => call.setMuted(!call.muted)}>{call.muted ? <MicOff /> : <Mic />} {call.muted ? "Unmute" : "Mute"}</Button>
                   <Button size="sm" variant="ghost" onClick={call.hangUp}><PhoneOff /> Leave call</Button>
                 </>
