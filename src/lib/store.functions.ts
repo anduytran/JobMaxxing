@@ -87,7 +87,7 @@ export const getStore = createServerFn({ method: "GET" }).handler(
           params: [userId],
         },
         {
-          query: "select active_title, active_theme from public.devup_profile where id = $1",
+          query: "select active_title, active_theme, active_wearables from public.devup_profile where id = $1",
           params: [userId],
         },
       ]);
@@ -111,6 +111,15 @@ export const getStore = createServerFn({ method: "GET" }).handler(
           ? String(results[5].rows[0].active_title)
           : null,
         activeTheme: String(results[5]?.rows?.[0]?.active_theme ?? "default"),
+        ownedWearables: (results[2]?.rows ?? [])
+          .map((r: any) => String(r.item_id))
+          .filter((id: string) => WEARABLE_IDS.includes(id)),
+        activeWearables: (Array.isArray(results[5]?.rows?.[0]?.active_wearables)
+          ? (results[5].rows[0].active_wearables as unknown[])
+          : []
+        )
+          .map(String)
+          .filter((id) => WEARABLE_IDS.includes(id)),
       };
     } catch (err) {
       return fail(err);
@@ -142,6 +151,8 @@ export const buyItem = createServerFn({ method: "POST" })
       ]);
       const item = results[0]?.rows?.[0];
       if (!item) return { ok: false, error: "Unknown item." };
+      if (item.category === "wearable")
+        return { ok: false, error: "Wearables come from the capsule machine — roll to win one." };
       if (results[2]?.rows?.length) return { ok: false, error: "You already own this." };
       const balance = Number(results[1]?.rows?.[0]?.balance ?? 0);
       const cost = Number(item.cost);
