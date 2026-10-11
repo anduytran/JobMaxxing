@@ -434,7 +434,7 @@ export const getRadar = createServerFn({ method: "POST" })
 export const setRadarStatus = createServerFn({ method: "POST" })
   .inputValidator((i: { jobId: unknown; status: unknown }) => {
     const jobId = clean(i.jobId, 40);
-    if (!jobId || !/^[0-9]+$/.test(jobId)) throw new Error("Invalid role.");
+    if (!jobId || !/^[a-z0-9_-]{3,48}$/i.test(jobId)) throw new Error("Invalid role.");
     if (!RADAR_STATUSES.includes(i.status as RadarStatus)) throw new Error("Invalid status.");
     return { jobId, status: i.status as RadarStatus };
   })
@@ -474,7 +474,7 @@ export const setRadarStatus = createServerFn({ method: "POST" })
 export const markRadarViewed = createServerFn({ method: "POST" })
   .inputValidator((i: { jobId: unknown }) => {
     const jobId = clean(i.jobId, 40);
-    if (!jobId || !/^[0-9]+$/.test(jobId)) throw new Error("Invalid role.");
+    if (!jobId || !/^[a-z0-9_-]{3,48}$/i.test(jobId)) throw new Error("Invalid role.");
     return { jobId };
   })
   .handler(async ({ data }): Promise<SaveResult & { awarded?: number }> => {
@@ -523,7 +523,7 @@ export const markRadarViewed = createServerFn({ method: "POST" })
 export const awardRadarPracticeXp = createServerFn({ method: "POST" })
   .inputValidator((i: { jobId: unknown }) => {
     const jobId = clean(i.jobId, 40);
-    if (!jobId || !/^[0-9]+$/.test(jobId)) throw new Error("Invalid role.");
+    if (!jobId || !/^[a-z0-9_-]{3,48}$/i.test(jobId)) throw new Error("Invalid role.");
     return { jobId };
   })
   .handler(async ({ data }): Promise<SaveResult & { awarded?: number }> => {
