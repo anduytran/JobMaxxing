@@ -531,7 +531,7 @@ export async function reviewResume(input: {
     ? `RESUME (line ids in brackets — reuse them as-is in sections and lineId):\n${sectionsText(input.sections)}`
     : files ? "RESUME: see the attached file." : `RESUME:\n${input.text ?? ""}`;
   const ai = await askRaia<Record<string, unknown>>(ENV.resume, body,
-    `${RESUME_TASK}${RESUME_GUARDRAILS} ${RESUME_SCHEMA}`,
+    `${RESUME_TASK}${RESUME_RUBRIC} ${RESUME_GUARDRAILS} ${RESUME_SCHEMA}`,
     // A full read of a real resume is the slowest of these calls; measured 18-28 s
     // on a warm endpoint and well over a minute when the org key is busy.
     90_000, files ? [files] : undefined);
