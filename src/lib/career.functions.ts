@@ -102,7 +102,7 @@ export const getCareerDashboard = createServerFn({ method: "GET" }).handler(asyn
       ),
       neonQuery(
         `select id::text as id, job, type, overall, grade, transcript, to_json(created_at) as at
-           from public.devup_interview where user_id = $1 order by created_at desc limit 20`,
+           from public.devup_interview where user_id = $1 and deleted_at is null order by created_at desc limit 20`,
         [user.id],
       ),
     ]);
@@ -203,6 +203,20 @@ export const getCareerDashboard = createServerFn({ method: "GET" }).handler(asyn
     return { streak: EMPTY_STREAK, goal: null, elo: [], radar: [], peerActive: [], peerRecent: [], solo: [] };
   }
 });
+
+/** Soft-delete a saved interview; the row stays in the table but leaves Career. */
+export const trashInterview = createServerFn({ method: "POST" })
+  .inputValidator((i: { id: unknown }) => ({ id: String(i.id ?? "") }))
+  .handler(async ({ data }) => {
+    const { requireUser } = await import("./auth.server");
+    const user = await requireUser();
+    const { neonExecute } = await import("./neon.server");
+    await neonExecute(
+      "update public.devup_interview set deleted_at = now() where id = $1::uuid and user_id = $2",
+      [data.id, user.id],
+    );
+    return { ok: true };
+  });
 
 export const saveCareerGoal = createServerFn({ method: "POST" })
   .inputValidator((i: { targetRole?: unknown; targetLevel?: unknown }) => ({

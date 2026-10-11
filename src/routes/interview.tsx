@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useGame } from "@/lib/game";
 import {
-  fetchJobPosting, generateInterviewQuestions, getInterviewAgents, gradeInterviewTranscript, parseJobDescription, sendInterviewTurn, speakInterviewLine, getScribeToken, startLiveInterview,
+  fetchJobPosting, generateInterviewQuestions, getInterviewAgents, gradeInterviewTranscript, parseJobDescription, saveSoloSession, sendInterviewTurn, speakInterviewLine, getScribeToken, startLiveInterview,
 } from "@/lib/interview.functions";
 import { awardRadarPracticeXp, setRadarStatus } from "@/lib/radar.functions";
 import {
@@ -80,6 +80,7 @@ function Interview() {
   jobTerms.current = job ? [...(job.skills ?? []), job.title].filter((x): x is string => typeof x === "string") : [];
 
   const [convId, setConvId] = useState<string | null>(null);
+  const [savedId, setSavedId] = useState<string | null>(null);
   const [thinking, setThinking] = useState(false);
   useEffect(() => {
     const base = agents.voice === "elevenlabs"
@@ -152,6 +153,8 @@ function Interview() {
     setBusy(true);
     try {
       const qs = await generateInterviewQuestions({ data: { job, type, length, roast: false } });
+      const saved = await saveSoloSession({ data: { job, type } }).catch(() => null);
+      setSavedId(saved?.id ?? null);
       const live = await startLiveInterview({ data: { job, type, length, roast: false, plan: qs } }).catch(() => null);
       const first = qs[0];
       if (!first) throw new Error("No interview questions were returned. Please try again.");
@@ -242,7 +245,7 @@ function Interview() {
     if (!job) return;
     setStage("grading");
     try {
-      const g = await gradeInterviewTranscript({ data: { transcript: turns, job, plan: questions } });
+      const g = await gradeInterviewTranscript({ data: { transcript: turns, job, plan: questions, sessionId: savedId } });
       setGrade(g);
       setRatings(g.ratings ?? []);
       setStage("report");

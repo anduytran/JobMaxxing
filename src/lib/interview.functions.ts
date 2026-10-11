@@ -62,11 +62,32 @@ export const generateInterviewQuestions = createServerFn({ method: "POST" })
     return generateQuestions(data.job, data.type, data.length, data.roast);
   });
 
+// Saves the interview the moment it starts (score 0, empty transcript) so it
+// always lands in Career; grading upserts the same row with the real result.
+export const saveSoloSession = createServerFn({ method: "POST" })
+  .inputValidator((i: { job: ParsedJob; type: unknown }) => ({
+    job: i.job,
+    type: (TYPES.includes(i.type as InterviewType) ? i.type : "mixed") as InterviewType,
+  }))
+  .handler(async ({ data }) => {
+    const { currentUser } = await import("./auth.server");
+    const user = await currentUser();
+    if (!user) return { ok: false };
+    const { neonExecute } = await import("./neon.server");
+    const r = await neonExecute(
+      `insert into public.devup_interview (user_id, job, type, overall, grade, transcript)
+       values ($1, $2, $3, 0, null, '[]'::jsonb) returning id::text as id`,
+      [user.id, data.job?.title ?? null, data.type],
+    ).catch((e) => { console.error("interview start save failed", e); return { rows: [] as Record<string, unknown>[] }; });
+    return { id: (r.rows[0]?.["id"] as string) ?? null };
+  });
+
 export const gradeInterviewTranscript = createServerFn({ method: "POST" })
-  .inputValidator((i: { transcript: TranscriptTurn[]; job: ParsedJob; plan?: InterviewQuestion[] }) => {
+  .inputValidator((i: { transcript: TranscriptTurn[]; job: ParsedJob; plan?: InterviewQuestion[]; sessionId?: unknown }) => {
     if (!Array.isArray(i.transcript) || i.transcript.length > 200) throw new Error("Invalid transcript.");
     return {
       job: i.job,
+      sessionId: typeof i.sessionId === "string" && /^[0-9a-f-]{36}$/i.test(i.sessionId) ? i.sessionId : null,
       transcript: i.transcript.map((t) => ({ ...t, text: String(t.text).slice(0, 4000) })),
       plan: (Array.isArray(i.plan) ? i.plan.slice(0, 12) : []).map((q) => ({
         id: String(q.id), kind: q.kind === "technical" ? "technical" as const : "behavioral" as const,
@@ -94,10 +115,18 @@ export const gradeInterviewTranscript = createServerFn({ method: "POST" })
           strengths: grade.strengths, improvements: grade.improvements,
         });
         const { neonExecute } = await import("./neon.server");
-        await neonExecute(
-          `insert into public.devup_interview (user_id, job, type, overall, grade, transcript) values ($1, $2, $3, $4, $5::jsonb, $6::jsonb)`,
-          [user.id, data.job?.title ?? null, data.plan.some((q) => q.kind === "technical") ? (data.plan.every((q) => q.kind === "technical") ? "technical" : "mixed") : "behavioral",
-            Math.round(Number(grade.overall) || 0), JSON.stringify(grade), JSON.stringify(data.transcript)],
+        const saveArgs = [user.id, data.job?.title ?? null, data.plan.some((q) => q.kind === "technical") ? (data.plan.every((q) => q.kind === "technical") ? "technical" : "mixed") : "behavioral",
+          Math.round(Number(grade.overall) || 0), JSON.stringify(grade), JSON.stringify(data.transcript)];
+        await (data.sessionId
+          ? neonExecute(
+              `update public.devup_interview set overall = $4, grade = $5::jsonb, transcript = $6::jsonb, deleted_at = null
+               where id = $7::uuid and user_id = $1`,
+              [...saveArgs, data.sessionId],
+            )
+          : neonExecute(
+              `insert into public.devup_interview (user_id, job, type, overall, grade, transcript) values ($1, $2, $3, $4, $5::jsonb, $6::jsonb)`,
+              saveArgs,
+            )
         ).catch((e) => console.error("interview save failed", e));
         const { bumpStreak } = await import("./career.functions");
         await bumpStreak(user.id).catch((e) => console.error("streak update failed", e));
