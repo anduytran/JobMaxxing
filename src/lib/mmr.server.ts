@@ -113,6 +113,6 @@ export async function listRatingChanges(userId: string, limit = 5) {
   return rows.map((r) => {
     const to = Number(r["rating"]);
     const from = Number(r["prev"]);
-    return { skill: String(r["skill_name"]), from, to, delta: to - from, at: r["at"] };
+    return { skill: String(r["skill_name"]), from, to, delta: to - from, at: String(r["at"]) };
   });
 }
