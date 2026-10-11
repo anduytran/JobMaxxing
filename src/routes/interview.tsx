@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useGame } from "@/lib/game";
 import {
-  generateInterviewQuestions, getInterviewAgents, gradeInterviewTranscript, parseJobDescription, sendInterviewTurn, speakInterviewLine, startLiveInterview,
+  fetchJobPosting, generateInterviewQuestions, getInterviewAgents, gradeInterviewTranscript, parseJobDescription, sendInterviewTurn, speakInterviewLine, startLiveInterview,
 } from "@/lib/interview.functions";
 import { awardRadarPracticeXp, setRadarStatus } from "@/lib/radar.functions";
 import {
