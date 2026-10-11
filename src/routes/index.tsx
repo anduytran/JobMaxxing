@@ -1,16 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { motion, useReducedMotion } from "framer-motion";
-import { ArrowRight, Check, ChevronLeft, ChevronRight, Clock, Code2, FileText, Flame, Mic, Radar, Sparkles, Users, Zap } from "lucide-react";
+import { ArrowRight, Check, ChevronLeft, ChevronRight, Clock, Code2, FileText, Mic, Radar, Sparkles, Users, Zap } from "lucide-react";
 import { useGame } from "@/lib/game";
-import { Mascot } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { useEffect, useRef, useState } from "react";
-import { getLatestResumeReview } from "@/lib/resume.functions";
 import meadowDesktop from "@/assets/quest-scenes/meadow-desktop.png.asset.json";
 import meadowMobile from "@/assets/quest-scenes/meadow-mobile.png.asset.json";
 import stageDesktop from "@/assets/quest-scenes/stage-desktop.png.asset.json";
 import stageMobile from "@/assets/quest-scenes/stage-mobile.png.asset.json";
-import type { StoredReview } from "@/lib/resume";
 import { MAX_POSES, MAX_SCALE, type MaxPose } from "@/components/Max";
 import { cn } from "@/lib/utils";
 import gymDesktop from "@/assets/quest-scenes/gym-desktop.png.asset.json";
@@ -21,20 +18,20 @@ import openToWork from "@/assets/open-to-work.png.asset.json";
 
 import { questTitleLines } from "@/lib/quest-titles";
 import { ResetCountdown } from "@/components/ResetCountdown";
-import { ResumeScoreCard } from "@/components/ResumeScoreCard";
-import { XpCareerCard } from "@/components/DashboardProgressCards";
 
 const MAX_ART: Record<string, MaxPose> = { setup: "resume", resume: "resume", interview: "interview", skills: "skills", hunt: "hunt", branding: "dap", social: "dap" };
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Dashboard — JobMaxxing" },
-      { name: "description", content: "Build career momentum with resume improvements, daily and weekly quests, XP milestones, and your next career rank." },
-      { property: "og:title", content: "JobMaxxing — Your career, levelled up" },
+      { title: "Featured Quests — JobMaxxing" },
+      { name: "description", content: "Start a featured career quest or AI mock interview and see the XP you can earn." },
+      { property: "og:title", content: "Featured Quests — JobMaxxing" },
       { property: "og:description", content: "Level up your job hunt with quests, XP and AI mock interviews." },
       { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { property: "og:image", content: stageDesktop.url },
+      { name: "twitter:image", content: stageDesktop.url },
     ],
   }),
   component: Dashboard,
@@ -109,14 +106,8 @@ function SceneBackdrop({ kind }: { kind: string }) {
 }
 
 function Dashboard() {
-  const { name, title, level, levelXp, xp, quests, details, lastGain } = useGame();
-  const first = name.split(" ")[0] || "there";
+  const { quests } = useGame();
   const open = quests.filter((q) => !q.done);
-  const done = quests.filter((q) => q.done).length;
-  const [review, setReview] = useState<StoredReview | null>(null);
-  const [reviewLoading, setReviewLoading] = useState(true);
-  useEffect(() => { getLatestResumeReview().then((r) => { if (r.ok) setReview(r.review); }).catch(() => {}).finally(() => setReviewLoading(false)); }, []);
-  const resumeScore = review?.score ?? (details.resume as { score?: number } | undefined)?.score;
   const [pick, setPick] = useState<number | null>(null);
   const [dir, setDir] = useState(1);
   // One slide per quest type — the carousel never shows two of the same kind.
@@ -137,6 +128,9 @@ function Dashboard() {
   const jump = (i: number) => { setDir(i >= featIdx ? 1 : -1); setPick(i); };
   const featKey = featured?.category?.toLowerCase() ?? "interview";
   const featPose = MAX_ART[featKey] ?? "interview";
+  const interviewQuest = open.find((q) => q.category.toLowerCase() === "interview");
+  const reward = featured ? `+${featured.xp} XP` : interviewQuest ? `+${interviewQuest.xp} quest XP · up to 400 interview XP` : "Up to 400 XP";
+  const destination = featKey === "interview" ? "/interview" : featKey === "setup" || featKey === "resume" ? "/setup" : featKey === "hunt" ? "/radar" : "/quests";
   const featArt = MAX_POSES[featPose];
   const featScale = MAX_SCALE[featPose];
   // Decode Max and the scene backdrop together so they appear at the same moment.
@@ -171,13 +165,6 @@ function Dashboard() {
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [featured?.id, dir, reducedMotion]);
-  const [tip, setTip] = useState(0);
-  const tips = [
-    "You don't have to have it all figured out. You just have to take the next step.",
-    "A good interview is a conversation, not a performance. Take a breath. You've got this.",
-    "That thing you think is 'just part of the job'? It might be your best resume story.",
-    "Some days, one small step is plenty. Progress still counts.",
-  ];
 
   return (
     <div>
@@ -200,7 +187,10 @@ function Dashboard() {
                 <h2 className="min-h-[2.2em] break-words text-foreground text-3xl font-bold leading-[1.1] sm:text-4xl lg:text-5xl"><span className="block">Practice your</span><span className="block">mock interview</span></h2>
               )}
               <p ref={subRef} className="mt-5 max-w-md text-lg text-muted-foreground">{scene.blurb}</p>
-              <p className="mt-6 flex items-center gap-2 text-sm text-muted-foreground"><Clock className="h-4 w-4" />{featured ? `+${featured.xp} XP waiting for you` : "15 minutes to a more confident you"}</p>
+              <p className="mt-6 flex items-center gap-2 text-sm font-semibold text-foreground"><Zap className="h-4 w-4 text-primary" />{reward}</p>
+              <Button asChild className="mt-5 min-w-32 rounded-none">
+                <Link to={destination} search={destination === "/interview" ? { radar: undefined } : {}}>Start<ArrowRight className="h-4 w-4" /></Link>
+              </Button>
             </div>
             {total > 1 && (
               <div className="flex flex-wrap items-center gap-2">
@@ -272,42 +262,7 @@ function Dashboard() {
         </>)}
       </div>
 
-      {/* Phase 2 — the routes and progress cards live below the fold. */}
-      <div className="mx-auto max-w-6xl space-y-8 px-4 py-10 md:px-10 md:py-14">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">Let's make your next move count</p>
-            <h1 className="mt-2 text-4xl font-bold md:text-5xl">Looking good, {first} <span className="text-accent">✦</span></h1>
-            <p className="mt-2 text-lg text-muted-foreground">{done > 0 ? `${done} quests behind you. Take a moment to appreciate that.` : "Glad you're here. Let's start with one small win."}</p>
-          </div>
-          <div className="panel flex items-center gap-3 px-5 py-3 text-sm transition-shadow hover:shadow-md">
-            <Flame className="animate-flame h-5 w-5 text-primary" /><b>{done} quests done</b><span className="border-l pl-3 text-muted-foreground">Keep it going!</span>
-          </div>
-        </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Link to="/interview" search={{ radar: undefined }} className="hover-lift flex items-center gap-4 rounded-2xl border bg-card p-5">
-            <span className="grid h-12 w-12 place-items-center rounded-xl bg-primary/15 text-primary"><Mic className="h-6 w-6" /></span>
-            <span className="flex-1"><span className="block font-semibold">Interviews</span><span className="text-sm text-muted-foreground">Jump into a mock interview</span></span>
-            <ArrowRight className="h-5 w-5 text-muted-foreground" />
-          </Link>
-          <Link to="/setup" className="hover-lift flex items-center gap-4 rounded-2xl border bg-card p-5">
-            <span className="grid h-12 w-12 place-items-center rounded-xl bg-accent/20 text-accent-foreground"><FileText className="h-6 w-6" /></span>
-            <span className="flex-1"><span className="block font-semibold">Resume Lab</span><span className="text-sm text-muted-foreground">Grade and polish your resume</span></span>
-            <ArrowRight className="h-5 w-5 text-muted-foreground" />
-          </Link>
-        </div>
-
-        <div className="grid grid-cols-1 items-stretch gap-5 sm:grid-cols-2">
-          <ResumeScoreCard review={review} score={resumeScore} loading={reviewLoading} />
-          <XpCareerCard xp={xp} level={level} levelXp={levelXp} lastGain={lastGain} title={title} />
-        </div>
-
-        <div className="flex items-center gap-5 rounded-2xl border bg-hero/60 p-6">
-          <Button variant="ghost" aria-label="Another thought from Max" title="Another thought from Max" className="h-20 w-20 shrink-0 p-0 hover:bg-transparent" onClick={() => setTip((t) => (t + 1) % tips.length)}><Mascot className="h-20 w-20" /></Button>
-          <div className="min-w-0"><div className="font-semibold">Max says</div><motion.p key={tip} initial={reducedMotion ? false : { opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="min-h-12 text-muted-foreground" aria-live="polite">{tips[tip]}</motion.p></div>
-        </div>
-      </div>
     </div>
   );
 }
