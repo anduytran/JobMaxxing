@@ -561,6 +561,40 @@ export async function reviewResume(input: {
   return fb;
 }
 
+const MORE_TASK =
+  "You are the Resume Grader for JobMaxxing. The candidate has already integrated every suggestion listed under ALREADY GIVEN, so the resume in front of " +
+  `you has improved. Return the NEXT ${SUGGESTION_BATCH} highest-impact changes, ordered most important first, each genuinely new: not a repeat, rewording, ` +
+  "or restatement of anything in ALREADY GIVEN, and not a fix the current text already satisfies. Same rubric, honesty, placeholder and wording rules as the " +
+  "first grade, same suggestion types. " +
+  'Reply with JSON only: {' + SUGGESTION_SCHEMA + '}';
+
+/**
+ * The next batch of fixes, asked only once the current ones are integrated. Works
+ * from the editor's current sections (the transcription the grade was built from),
+ * so a scanned resume still works; returns [] when the agent is unreachable.
+ */
+export async function nextSuggestions(input: {
+  sections?: ResumeSection[] | undefined;
+  text?: string | undefined;
+  already: ResumeSuggestion[];
+}): Promise<ResumeSuggestion[]> {
+  const sections = input.sections ?? [];
+  if (!sections.length && !(input.text ?? "").trim()) return [];
+  const body = sections.length
+    ? `RESUME (line ids in brackets — reuse them as-is in lineId):\n${sectionsText(sections)}`
+    : `RESUME:\n${input.text ?? ""}`;
+  const given = input.already.map((s, i) => `${i + 1}. ${s.title} — ${s.detail}`).join("\n") || "(none)";
+  const ai = await askRaia<{ suggestions?: unknown }>(
+    ENV.resume,
+    `${body}\n\nALREADY GIVEN (do not repeat these):\n${given}`,
+    `${MORE_TASK}${RESUME_RUBRIC} ${RESUME_GUARDRAILS}`,
+    60_000,
+  );
+  const lineIds = new Set(sections.flatMap((s) => s.lines.map((l) => l.id)));
+  const taken = new Set(input.already.map((s) => s.id));
+  return normalizeSuggestions(ai?.suggestions, lineIds, SUGGESTION_BATCH, taken);
+}
+
 function fallbackSections(text: string): ResumeSection[] {
   const out: ResumeSection[] = [];
   let cur: ResumeSection = { id: "s1", heading: "Header", lines: [] };
