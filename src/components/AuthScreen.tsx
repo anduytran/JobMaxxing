@@ -9,6 +9,10 @@ import { Label } from "@/components/ui/label";
 import { signIn, signUp } from "@/lib/auth.functions";
 import { MAX_POSES } from "@/components/Max";
 import interviewShot from "@/assets/landing/interview-review.asset.json";
+import stageDesktop from "@/assets/quest-scenes/stage-desktop.png.asset.json";
+import officeDesktop from "@/assets/quest-scenes/office-desktop.png.asset.json";
+import billboardDesktop from "@/assets/quest-scenes/billboard-desktop.png.asset.json";
+import meadowDesktop from "@/assets/quest-scenes/meadow-desktop.png.asset.json";
 
 const spring = { type: "spring" as const, stiffness: 380, damping: 30 };
 const rise = {
@@ -149,6 +153,9 @@ const QUESTS = [
     title: "AI mock interviews",
     text: "An interviewer that talks back. Answer out loud, then get graded on what you said and how clearly you said it.",
     chips: ["Answer quality", "Conciseness", "Your questions"],
+    scene: stageDesktop.url,
+    pose: MAX_POSES.interview,
+    poseAlt: "Max holding a microphone, ready to interview",
   },
   {
     tag: "Main quest",
@@ -157,6 +164,9 @@ const QUESTS = [
     title: "Resume grader",
     text: "Upload your resume. Max grades it against strong resumes in your field and flags the bullets holding you back.",
     chips: ["ATS check", "Action verbs", "Metrics"],
+    scene: officeDesktop.url,
+    pose: MAX_POSES.resume,
+    poseAlt: "Max holding a resume folder",
   },
   {
     tag: "Co-op quest",
@@ -165,6 +175,9 @@ const QUESTS = [
     title: "Peer interviews",
     text: "Pair up with a friend over a live call. One of you runs the AI-written script, the other answers — then you swap.",
     chips: ["Live audio", "Shared transcript", "Two-sided grades"],
+    scene: billboardDesktop.url,
+    pose: MAX_POSES.dap,
+    poseAlt: "Max giving a dap to a friend",
   },
   {
     tag: "Scouting quest",
@@ -173,6 +186,9 @@ const QUESTS = [
     title: "Job radar",
     text: "Roles matched to your resume and your dealbreakers. Save the good ones, or practice for one in a click.",
     chips: ["Real listings", "Match scores", "One-click practice"],
+    scene: meadowDesktop.url,
+    pose: MAX_POSES.hunt,
+    poseAlt: "Max scanning the horizon for roles",
   },
 ];
 
