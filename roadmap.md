@@ -115,3 +115,9 @@
 - [x] Gate the next batch behind integration: `moreResumeSuggestions` re-checks the stored review and refuses while any current fix is unapplied, appending only genuinely new fixes with ids that can't collide.
 - [x] Show the gate in Resume Lab — a "Next 3 fixes" card whose button stays locked and names the open fixes until all three are in.
 - [x] Verify against the live grader: a sample student resume came back with exactly 3 ranked fixes; integrating all 3 unlocked "Generate 3 more", which added 3 new ones; replaying the generate request while fixes were open was refused server-side; the throwaway account used for the run was deleted and the build is clean.
+
+## Featured quest Start and Career overview
+- [x] Add Start links and visible XP to every featured slide without changing quest rewards.
+- [x] Move the pictured personal overview from Home to Career, retaining Career milestones.
+- [x] Check navigation targets against existing pages and verify the preview has no public runtime errors.
+- [ ] Verify Start clicks and Career overview signed-in — blocked by unavailable account session.
