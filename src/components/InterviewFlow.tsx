@@ -388,6 +388,13 @@ export function InterviewFlow({ agents, api, radar, profileSkills = [], captions
             <Button onClick={start} disabled={busy || !ack}>{busy && <Loader2 className="animate-spin" />} Start {LENGTHS[length].label} {type} interview</Button>
             {!ack && <span className="text-xs text-muted-foreground">Confirm the box above to start.</span>}
           </div>
+          {busy && (
+            <div className="flex flex-col items-center gap-3 rounded-2xl border border-border bg-card/60 p-6 text-center" role="status" aria-live="polite">
+              <video src={loadingVideo.url} autoPlay loop muted playsInline className="h-40 w-40 rounded-2xl object-contain" aria-label="Max is getting the interview ready" />
+              <p className="text-sm font-medium">Max is setting the stage…</p>
+              <p className="text-xs text-muted-foreground">Writing your questions and opening the room. Usually takes a few seconds.</p>
+            </div>
+          )}
         </section>
       )}
 
