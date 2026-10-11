@@ -5,8 +5,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { neonExecute, neonQuery, neonUserError } from "./neon.server";
 import { requireUser } from "./auth.server";
 import {
-  EMPTY_FIELDS, GRADES, XP_RULES,
-  type Grade, type ResumeFields, type ResumeReview, type ResumeSection, type ResumeVersion, type StoredReview,
+  EMPTY_FIELDS, GRADES, SUGGESTION_BATCH, XP_RULES,
+  type Grade, type ResumeFields, type ResumeReview, type ResumeSection, type ResumeSuggestion, type ResumeVersion, type StoredReview,
 } from "./resume";
 
 type Result<T> = ({ ok: true } & T) | { ok: false; error: string };
@@ -217,6 +217,53 @@ export const applyResumeSuggestion = createServerFn({ method: "POST" })
         version = Number(saved.rows[0]?.["version"] ?? 0) || null;
       }
       return { ok: true, xp: Number(rows[0]?.["xp"] ?? 0), awarded: Number(rows[0]?.["awarded"] ?? 0), version };
+    } catch (err) {
+      return fail(err);
+    }
+  });
+
+/**
+ * Unlocks the next batch of fixes. It only opens once every suggestion on this
+ * review is integrated — the check runs here, not in the browser, so the queue
+ * can't be skipped — and the agent is told what it already said so the new
+ * batch is genuinely new.
+ */
+export const moreResumeSuggestions = createServerFn({ method: "POST" })
+  .inputValidator((i: { reviewId: unknown; sections?: unknown }) => {
+    const reviewId = String(i.reviewId ?? "");
+    if (!/^\d{1,19}$/.test(reviewId)) throw new Error("Unknown review.");
+    return { reviewId, sections: cleanSections(i.sections) };
+  })
+  .handler(async ({ data }): Promise<Result<{ suggestions: ResumeSuggestion[]; added: number }>> => {
+    try {
+      const user = await requireUser();
+      const { rows } = await neonQuery(
+        `select id::text as id, file_name, grade, overall_score, summary, details, xp_awarded, version_id::text as version_id,
+                to_json(created_at) as created_at_iso
+           from public.devup_resume_review where id = $1::bigint and user_id = $2`,
+        [data.reviewId, user.id],
+      );
+      if (!rows[0]) return { ok: false, error: "That review wasn't found." };
+      const stored = toStored(rows[0]);
+      const open = stored.suggestions.filter((s) => !s.applied).length;
+      if (open) {
+        const word = open === 1 ? "your open fix" : `your ${open} open fixes`;
+        return { ok: false, error: `Integrate ${word} first — the next ${SUGGESTION_BATCH} unlock once they're in.` };
+      }
+      const { nextSuggestions } = await import("./interview/agents.server");
+      const fresh = await nextSuggestions({
+        sections: data.sections.length ? data.sections : undefined,
+        already: stored.suggestions,
+      });
+      if (!fresh.length) return { ok: false, error: "No new fixes came back — re-scan to grade the current version." };
+      await neonExecute(
+        `update public.devup_resume_review
+            set details = jsonb_set(coalesce(details, '{}'::jsonb), '{suggestions}',
+                  coalesce(details->'suggestions', '[]'::jsonb) || $3::jsonb)
+          where id = $1::bigint and user_id = $2`,
+        [data.reviewId, user.id, JSON.stringify(fresh)],
+      );
+      return { ok: true, suggestions: fresh, added: fresh.length };
     } catch (err) {
       return fail(err);
     }
