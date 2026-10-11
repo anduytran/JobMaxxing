@@ -169,11 +169,13 @@ async function fetchAdzuna(prefs: JobPrefs): Promise<{ listings: AdzunaListing[]
   // Too few exact titles (rare roles): widen to the exact phrase anywhere, then keep only
   // listings whose title shares the role's key words.
   if (jobs.length < 8) for (const role of roles) await search({ what_phrase: role }, 1);
-  // Always keep only listings whose title fits a target role — never fall back to the
-  // unfiltered set, or a rare role ("AI Architect") floods the radar with anything
-  // that mentioned the words in its description.
+  // Cheap regex pre-filter first (no API calls): drop titles that share nothing with a
+  // target role. Then one batched agent call makes the strict final call on the
+  // survivors; if the agent is unreachable, the regex survivors stand.
   const filtered = jobs.filter((l) => roles.some((r) => titleFit(String(l.title ?? ""), r) > 0));
-  return { listings: filtered };
+  const { filterRadarTitles } = await import("./interview/agents.server");
+  const keep = await filterRadarTitles(filtered.map((l) => String(l.title ?? "")), roles);
+  return { listings: keep ? keep.map((i) => filtered[i]!) : filtered };
 }
 
 const clean = (v: unknown, max: number): string | null => {
