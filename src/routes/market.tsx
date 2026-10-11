@@ -56,6 +56,7 @@ function Market() {
   const { details, saveDetails, setXp } = useGame();
   const [jobs, setJobs] = useState<RadarJob[] | null>(null);
   const [loading, setLoading] = useState(false);
+  const [appliedPrompt, setAppliedPrompt] = useState<RadarJob | null>(null);
   const [savingPrefs, setSavingPrefs] = useState(false);
   const [prefs, setPrefs] = useState({
     roles: details.jobPrefs.roles ?? "",
@@ -103,6 +104,7 @@ function Market() {
       }
     }).catch(() => {});
     setJobs((js) => js?.map((j) => (j.id === job.id ? { ...j, viewed: true } : j)) ?? null);
+    if (job.status === "new" || job.status === "saved") setAppliedPrompt(job);
   };
 
   const practice = (job: RadarJob) => {
@@ -228,6 +230,32 @@ function Market() {
           )}
         </div>
       </section>
+
+      {/* Applied prompt — shown after opening a listing */}
+      {appliedPrompt && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-foreground/30 p-4" role="dialog" aria-modal="true" aria-label="Did you apply?">
+          <div className="panel w-full max-w-sm p-6 text-center">
+            <h3 className="font-display text-xl">Did you apply?</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {appliedPrompt.title} · {appliedPrompt.company}
+            </p>
+            <div className="mt-6 flex flex-col gap-2">
+              <Button
+                onClick={() => {
+                  applyStatus(appliedPrompt.id, "applied");
+                  setAppliedPrompt(null);
+                  toast.success("Marked as applied", { description: "Nice — keep the momentum going." });
+                }}
+              >
+                <Check className="h-4 w-4" /> Yes, I applied
+              </Button>
+              <Button variant="outline" onClick={() => setAppliedPrompt(null)}>
+                Just looking
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
