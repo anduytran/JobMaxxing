@@ -442,6 +442,7 @@ export async function continueInterviewConversation(opts: {
       message: opts.text,
       context: `${TURN_RULES} ${steer}`,
     });
+    await trackUsage(opts.userId, "question_agent", `${TURN_RULES} ${steer}\n${opts.text}`, msg.message ?? "");
     const { line, done } = parseTurn(msg.message);
     return { reply: line, done };
   } catch (err) {
@@ -742,6 +743,7 @@ async function askResumeConversation<T>(owner: { userId: string; name: string } 
   try {
     const msg = await raiaPost<{ message: string }>(secret, `/conversations/${id}/messages`, { message, context });
     const text = msg.message ?? "";
+    await trackUsage(owner.userId, "resume_grader", `${context}\n${message}`, text);
     return JSON.parse(text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1)) as T;
   } catch (err) {
     console.error("Resume conversation turn failed", err);
