@@ -327,40 +327,102 @@ function Interview() {
       )}
 
       {(stage === "live" || stage === "your_questions" || stage === "grading") && (
-        <section className="flex min-h-[36rem] flex-col border-y bg-card">
-          <div className="flex items-center gap-3 border-b p-4">
-            <div className="grid h-9 w-9 place-items-center rounded bg-primary text-primary-foreground"><Bot className="h-4 w-4" /></div>
-            <div className="flex-1">
+        <section className="relative flex min-h-[calc(100svh-12rem)] flex-col overflow-hidden rounded-lg border bg-card">
+          {/* Header */}
+          <div className="flex items-center justify-between gap-4 p-5">
+            <div>
               <div className="text-sm font-semibold">{roast ? "Gordon, Senior Hiring Manager" : "Ava, Friendly Recruiter"}</div>
-              <div className="font-mono text-[10px] text-muted-foreground">
-                {stage === "grading" ? "Interview complete" : stage === "live" ? `Question ${qi + 1} / ${questions.length}` : "Your questions for the interviewer"}
+              <div className="text-xs text-muted-foreground">
+                {job?.title ? `${job.title}. ` : ""}{LENGTHS[length].label} {type} interview.
               </div>
             </div>
-            <div className={cn("flex items-center gap-1 font-mono text-sm", left < 30 && stage === "live" && "text-destructive")}>
-              <Timer className="h-4 w-4" /> {fmt(Math.max(0, left))}
+            <div className="flex items-center gap-3">
+              <span className={cn("font-mono text-sm", left < 30 && stage === "live" && "text-destructive")}>{fmt(Math.max(0, left))} left</span>
+              <Button variant="outline" size="sm" disabled={stage === "grading" || thinking} onClick={finish}>End interview</Button>
             </div>
-            <Button variant="ghost" size="icon" onClick={() => { setVoiceOn(!voiceOn); stopVoice(); }} aria-label="Toggle interviewer voice" aria-pressed={voiceOn}>
-              {voiceOn ? <Volume2 /> : <VolumeX />}
-            </Button>
           </div>
-          {stage === "live" && <Progress value={(qi / Math.max(1, questions.length)) * 100} className="h-1 rounded-none" />}
-          <div className="flex flex-1 items-center justify-center">
-            <InterviewVoicePresence state={voiceState} caption={stage === "grading" ? undefined : currentCaption} />
+
+          {/* Giant faint question behind the orb */}
+          {currentCaption && (
+            <p aria-hidden="true" className="pointer-events-none absolute inset-x-8 top-16 select-none text-center text-5xl font-bold leading-tight text-foreground/10 md:text-7xl">
+              {currentCaption}
+            </p>
+          )}
+
+          {/* Orb stage */}
+          <div className="relative flex flex-1 items-center justify-center px-6">
+            <div className="pointer-events-none absolute left-6 top-1/2 hidden -translate-y-1/2 md:block">
+              <div className="mb-2 h-px w-6 bg-foreground/40" />
+              <div className="text-sm font-semibold">
+                {stage === "live" ? `Question ${qi + 1} of ${questions.length}` : stage === "grading" ? "Interview complete" : "Your questions"}
+              </div>
+              <div className="mt-1 text-xs text-muted-foreground">
+                {stage === "grading" ? "Reviewing your interview."
+                  : stage === "your_questions" ? "Ask the interviewer anything."
+                  : `${questions[qi]?.kind === "technical" ? "Technical" : "Behavioral"}. ${voiceState === "speaking" || voiceState === "preparing" ? "The interviewer is speaking." : voiceState === "listening" ? "Listening to you." : voiceState === "thinking" ? "Thinking." : "Your turn to answer."}`}
+              </div>
+            </div>
+            <InterviewVoicePresence state={voiceState} />
+            <div className="absolute right-6 top-1/2 hidden w-52 -translate-y-1/2 flex-col items-center gap-3 text-center md:flex">
+              <button
+                type="button"
+                aria-label="Hold to answer"
+                disabled={thinking || stage === "grading" || playback !== "ready"}
+                onPointerDown={(e) => { e.preventDefault(); if (!listening) void speak(); }}
+                onPointerUp={() => { if (listening) voice.current?.finishListening(); }}
+                onPointerLeave={() => { if (listening) voice.current?.finishListening(); }}
+                className={cn("grid h-14 w-14 place-items-center rounded-full border-2 transition",
+                  listening ? "border-primary bg-primary text-primary-foreground" : "border-foreground/60 hover:border-primary hover:text-primary",
+                  (thinking || stage === "grading" || playback !== "ready") && "opacity-40")}
+              >
+                <Mic className="h-5 w-5" />
+              </button>
+              <div className="text-sm font-semibold">{listening ? "Release to send" : "Hold to answer"}</div>
+              <p className="text-xs text-muted-foreground">The room stays quiet while you talk. Hold Space or press and hold the button, then let go when you're done.</p>
+            </div>
           </div>
-          {listening && <div className="mx-auto w-full max-w-2xl px-4 pb-6 text-center"><p className="mb-2 text-xs font-semibold uppercase text-muted-foreground">Your answer</p><p className="min-h-12 text-lg leading-relaxed" aria-live="off">{liveCaption || "…"}</p></div>}
-          <div className="flex flex-wrap items-center justify-center gap-2 border-t p-4">
-            <Button onClick={listening ? () => voice.current?.finishListening() : speak} disabled={thinking || stage === "grading" || playback !== "ready"}>
-              {listening ? <Square /> : <Mic />} {listening ? "Done speaking" : "Speak"}
-            </Button>
-            {listening && <Button variant="outline" onClick={stopVoice}>Cancel answer</Button>}
-            <Button variant="outline" size="icon" title="Type an answer" aria-label="Type an answer" aria-pressed={typing} onClick={() => setTyping(!typing)} disabled={listening || thinking || stage === "grading"}><Keyboard /></Button>
-            {typing && <form className="flex w-full gap-2" onSubmit={(e) => { e.preventDefault(); void answer(text); }}>
+
+          {/* Caption bubble */}
+          {captionsOn && (listening ? liveCaption : currentCaption) && stage !== "grading" && (
+            <div className="mx-auto mb-6 w-full max-w-xl px-6">
+              <p className="rounded-lg border bg-background px-5 py-3 text-center text-sm shadow-sm" aria-live="off">
+                {listening ? (liveCaption || "…") : `“${currentCaption}”`}
+              </p>
+            </div>
+          )}
+
+          {/* Typing fallback */}
+          {typing && (
+            <form className="mx-auto mb-4 flex w-full max-w-xl gap-2 px-6" onSubmit={(e) => { e.preventDefault(); void answer(text); }}>
               <Input aria-label="Your answer" value={text} onChange={(e) => setText(e.target.value)} disabled={thinking || stage === "grading" || playback !== "ready"}
                 placeholder={stage === "live" ? "Type your answer…" : "Ask the interviewer a question…"} />
               <Button type="submit" size="icon" aria-label="Send" disabled={!text.trim() || thinking || stage === "grading" || playback !== "ready"}><Send /></Button>
-            </form>}
-            {stage === "live" && <Button variant="secondary" disabled={thinking} onClick={() => toTail("Let's stop the questions here.")}>Skip to my questions</Button>}
-            {stage === "your_questions" && <Button variant="destructive" disabled={thinking} onClick={finish}><Square /> End interview</Button>}
+            </form>
+          )}
+
+          {/* Footer */}
+          <div className="flex flex-wrap items-center justify-between gap-3 p-5 text-xs text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-4">
+              <button type="button" onClick={() => setCaptionsOn(!captionsOn)} aria-pressed={captionsOn} className={cn("flex items-center gap-1.5 hover:text-foreground", captionsOn && "font-semibold text-foreground")}>
+                <Captions className="h-3.5 w-3.5" /> Captions {captionsOn ? "on" : "off"}
+              </button>
+              <button type="button" onClick={() => { if (currentCaption && voiceOn) void voice.current?.speak(currentCaption); }} disabled={!currentCaption || !voiceOn || stage === "grading"} className="flex items-center gap-1.5 hover:text-foreground disabled:opacity-40">
+                <RotateCcw className="h-3.5 w-3.5" /> Replay question
+              </button>
+              <button type="button" onClick={() => { setVoiceOn(!voiceOn); stopVoice(); }} aria-pressed={voiceOn} className="flex items-center gap-1.5 hover:text-foreground">
+                {voiceOn ? <Volume2 className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />} Sound
+              </button>
+              <button type="button" onClick={() => setTyping(!typing)} aria-pressed={typing} className={cn("flex items-center gap-1.5 hover:text-foreground", typing && "font-semibold text-foreground")}>
+                <Keyboard className="h-3.5 w-3.5" /> Type instead
+              </button>
+              {/* Mobile answer control (the hold button is hidden on small screens) */}
+              <span className="md:hidden">
+                <Button size="sm" onClick={listening ? () => voice.current?.finishListening() : speak} disabled={thinking || stage === "grading" || playback !== "ready"}>
+                  {listening ? <Square /> : <Mic />} {listening ? "Done speaking" : "Speak"}
+                </Button>
+              </span>
+            </div>
+            <p className="hidden sm:block">Orb pulses while the interviewer speaks and slowly draws inward while you answer.</p>
           </div>
         </section>
       )}
