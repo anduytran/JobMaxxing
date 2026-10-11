@@ -235,7 +235,7 @@ function SavedInterviews({ items }: { items: CareerDashboard["solo"] }) {
     <div className="panel p-6 lg:col-span-2">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <div className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Saved interviews</div>
-        <Button asChild size="sm" variant="outline"><Link to="/interview">New interview</Link></Button>
+        <Button asChild size="sm" variant="outline"><Link to="/interview" search={{} as never}>New interview</Link></Button>
       </div>
       {items.length === 0 ? (
         <p className="mt-4 text-sm text-muted-foreground">Finish a solo interview and its score, feedback and transcript are saved here.</p>
