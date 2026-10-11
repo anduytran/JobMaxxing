@@ -61,7 +61,8 @@ export async function applySessionRatings(userId: string, items: { q: InterviewQ
     if (st.stale) k *= 1.5;
     const before = st.rating;
     const raw = before + k * (s - e);
-    const after = Math.round(clamp(clamp(raw, st.start - SESSION_CAP, st.start + SESSION_CAP), RATING_MIN, RATING_MAX));
+    // Skills only ever go up: a weaker answer holds the rating instead of lowering it.
+    const after = Math.max(before, Math.round(clamp(clamp(raw, st.start - SESSION_CAP, st.start + SESSION_CAP), RATING_MIN, RATING_MAX)));
     st.rating = after;
     st.answered += 1;
     const newDiff = Math.round(clamp(difficulty - K_STANDARD * (s - e), RATING_MIN, RATING_MAX));
@@ -76,7 +77,7 @@ export async function applySessionRatings(userId: string, items: { q: InterviewQ
   for (const [skill, st] of state) {
     results.push({
       query: `insert into public.devup_skill_rating (user_id, skill_name, rating, questions_answered, last_updated) values ($1::uuid, $2, $3, $4, now())
-              on conflict (user_id, skill_name) do update set rating = excluded.rating, questions_answered = excluded.questions_answered, last_updated = now()`,
+              on conflict (user_id, skill_name) do update set rating = greatest(public.devup_skill_rating.rating, excluded.rating), questions_answered = excluded.questions_answered, last_updated = now()`,
       params: [userId, skill, st.rating, st.answered],
     });
   }
@@ -91,8 +92,8 @@ export function scoredItems(plan: InterviewQuestion[], asked: number, qualityPct
 
 export async function listRatings(userId: string) {
   const { rows } = await neonQuery(
-    `select skill_name, rating, questions_answered from public.devup_skill_rating where user_id = $1::uuid order by rating desc limit 50`,
+    `select skill_name, rating, questions_answered, evidence from public.devup_skill_rating where user_id = $1::uuid order by rating desc limit 50`,
     [userId],
   );
-  return rows.map((r) => ({ skill: String(r["skill_name"]), rating: Number(r["rating"]), answered: Number(r["questions_answered"]) }));
+  return rows.map((r) => ({ skill: String(r["skill_name"]), rating: Number(r["rating"]), answered: Number(r["questions_answered"]), evidence: r["evidence"] ? String(r["evidence"]) : null }));
 }

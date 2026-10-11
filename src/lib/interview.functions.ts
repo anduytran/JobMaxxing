@@ -56,6 +56,18 @@ export const gradeInterviewTranscript = createServerFn({ method: "POST" })
         const { applySessionRatings, scoredItems } = await import("./mmr.server");
         ratings = await applySessionRatings(user.id, scoredItems(data.plan, answered, grade.metrics.quality.score));
       }
+      if (user) {
+        const { refreshSkills } = await import("./skills.server");
+        await refreshSkills(user.id, {
+          kind: "mock interview (candidate)", job: data.job?.title ?? null, skills: data.job?.skills ?? [],
+          overall: grade.overall, metrics: Object.fromEntries(Object.entries(grade.metrics).map(([k, v]) => [k, v ? v.score : null])),
+          strengths: grade.strengths, improvements: grade.improvements,
+        });
+        const { listRatings } = await import("./mmr.server");
+        const now = await listRatings(user.id);
+        const before = new Map(ratings.map((r) => [r.skill, r]));
+        ratings = now.map((r) => ({ skill: r.skill, before: before.get(r.skill)?.before ?? r.rating, after: r.rating, answered: r.answered }));
+      }
     } catch (e) { console.error("rating update failed", e); }
     return { ...grade, ratings };
   });
@@ -64,6 +76,22 @@ export const getSkillRatings = createServerFn({ method: "GET" }).handler(async (
   const { currentUser } = await import("./auth.server");
   const user = await currentUser();
   if (!user) return [];
+  const { listRatings } = await import("./mmr.server");
+  const { lastRefreshAge, refreshSkills } = await import("./skills.server");
+  // First visit: let the Skill Expert backfill ratings from existing activity.
+  if ((await lastRefreshAge(user.id)) === null) {
+    await refreshSkills(user.id).catch((e) => console.error("skill backfill failed", e));
+  }
+  return listRatings(user.id);
+});
+
+/** Ask the Skill Expert to re-rate now (at most once every 2 minutes). Ratings never go down. */
+export const refreshSkillRatings = createServerFn({ method: "POST" }).handler(async () => {
+  const { requireUser } = await import("./auth.server");
+  const user = await requireUser();
+  const { lastRefreshAge, refreshSkills } = await import("./skills.server");
+  const age = await lastRefreshAge(user.id);
+  if (age === null || age > 120) await refreshSkills(user.id);
   const { listRatings } = await import("./mmr.server");
   return listRatings(user.id);
 });
