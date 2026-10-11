@@ -10,6 +10,7 @@ import { Max, type MaxPose } from "@/components/Max";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { QuestMenu } from "@/components/QuestMenu";
+import { InviteListener } from "@/components/InviteListener";
 
 type Item = { to: string; label: string; icon: typeof LayoutGrid; badge?: string };
 // Flat nav, no sections — Interview leads because it's the core product.
@@ -46,6 +47,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <MotionConfig reducedMotion="user"><div className="flex min-h-screen flex-col">
+      <InviteListener />
       {navigating && <div role="progressbar" aria-label="Loading page" className="fixed inset-x-0 top-0 z-50 h-0.5 animate-pulse bg-primary" />}
 
       {/* Valorant-style top nav: brand left, centered tabs with active underline, player cluster right */}
