@@ -16,7 +16,7 @@ export function QuestMenu() {
   const show = () => { cancel(); setOpen(true); };
   const hide = () => { cancel(); timer.current = setTimeout(() => setOpen(false), 200); };
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
-  const groups: { label: string; period: ResetPeriod; limit: number }[] = [{ label: "Daily", period: "daily", limit: 4 }, { label: "Weekly", period: "weekly", limit: 3 }];
+  const groups: { label: string; period: ResetPeriod; limit: number }[] = [{ label: "Daily", period: "daily", limit: 2 }, { label: "Weekly", period: "weekly", limit: 3 }];
   const tracked = quests.filter(q => q.period === "daily" || q.period === "weekly");
   const doneCount = tracked.filter(q => q.done).length;
   return <Popover open={open} onOpenChange={setOpen}>

@@ -110,8 +110,8 @@ function DraggableMax({ bounds }: { bounds: React.RefObject<HTMLElement | null> 
         }}
       >
         <motion.img
-          src={MAX_POSES.wave}
-          alt="Max, the JobMaxxing briefcase, waving"
+          src={dizzy ? MAX_POSES.dap : MAX_POSES.wave}
+          alt={dizzy ? "Max, the JobMaxxing briefcase, being dragged around" : "Max, the JobMaxxing briefcase, waving"}
           draggable={false}
           className="mascot-personality w-56 md:w-72"
           animate={dizzy && !reduce ? { rotate: [0, -4, 4, 0] } : {}}
@@ -286,7 +286,6 @@ export function AuthScreen() {
             </div>
             <div className="mt-2"><XpBadge amount="+25 XP" /></div>
           </motion.div>
-          <p className="absolute bottom-0 text-xs text-muted-foreground">Drag Max. Shake him for a surprise.</p>
         </div>
       </section>
 
