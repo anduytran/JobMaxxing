@@ -27,7 +27,7 @@ Live at https://jobmaxxing.work
 
 - **Frontend:** React 19 + TanStack Start (file-based routing, server functions, SSR), Tailwind CSS v4, Framer Motion, Recharts
 - **Backend:** TanStack Start server functions; PostgreSQL (Neon) for all state; cookie-based sessions (email + password, PBKDF2)
-- **AI:** Raia agent platform for conversations, grading, and analysis; ElevenLabs for voice and transcription
+- **AI:** Raia agent platform for API conversations; ElevenLabs for voice and transcription
 - **Realtime:** WebRTC (STUN) for peer audio/video, browser speech recognition fallback
 - **Jobs:** Adzuna API for Job Radar listings
 
