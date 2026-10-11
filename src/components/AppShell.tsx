@@ -13,6 +13,7 @@ import { QuestMenu } from "@/components/QuestMenu";
 
 type Item = { to: string; label: string; icon: typeof LayoutGrid; badge?: string };
 // Flat nav, no sections — Interview leads because it's the core product.
+// Lock In sits at the far left, right after the brand, as the one loud button.
 const LEFT: Item[] = [
   { to: "/", label: "Home", icon: LayoutGrid },
   { to: "/quests", label: "Collection", icon: Swords },
@@ -22,7 +23,7 @@ const RIGHT: Item[] = [
   { to: "/progress", label: "Career", icon: LineChart },
   { to: "/store", label: "Store", icon: Store },
 ];
-const ITEMS: Item[] = [...LEFT, LOCKIN, ...RIGHT];
+const ITEMS: Item[] = [LOCKIN, ...LEFT, ...RIGHT];
 
 export function Mascot({ className }: { className?: string }) {
   return <Max className={className} />;
