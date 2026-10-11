@@ -204,6 +204,20 @@ export const getCareerDashboard = createServerFn({ method: "GET" }).handler(asyn
   }
 });
 
+/** Soft-delete a saved interview; the row stays in the table but leaves Career. */
+export const trashInterview = createServerFn({ method: "POST" })
+  .inputValidator((i: { id: unknown }) => ({ id: String(i.id ?? "") }))
+  .handler(async ({ data }) => {
+    const { requireUser } = await import("./auth.server");
+    const user = await requireUser();
+    const { neonExecute } = await import("./neon.server");
+    await neonExecute(
+      "update public.devup_interview set deleted_at = now() where id = $1::uuid and user_id = $2",
+      [data.id, user.id],
+    );
+    return { ok: true };
+  });
+
 export const saveCareerGoal = createServerFn({ method: "POST" })
   .inputValidator((i: { targetRole?: unknown; targetLevel?: unknown }) => ({
     targetRole: typeof i.targetRole === "string" ? i.targetRole.trim().slice(0, 100) || null : null,
