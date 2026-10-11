@@ -799,7 +799,7 @@ export async function gradeInterviewer(transcript: TranscriptTurn[], job: Parsed
     "Score the quality and relevance of the questions and follow-ups they asked, accuracy, conciseness (clear, to the point, little jargon), and tone if measurable. " +
     "Reply JSON {overall,xp,metrics:{quality:{score,feedback},conciseness:{score,feedback},followUps:{score,feedback},tone:null|{score,feedback}},strengths[],improvements[]}; scores 0-100, xp 0-150.");
   if (ai && typeof ai.overall === "number" && ai.metrics?.quality) {
-    const m = ai.metrics as Record<string, MetricLike | null | undefined>;
+    const m = ai.metrics as unknown as { quality?: MetricLike; conciseness?: MetricLike; followUps?: MetricLike; candidateQuestions?: MetricLike; tone?: MetricLike | null };
     const fix = (x: MetricLike | null | undefined): MetricLike | null =>
       x && typeof x === "object" ? { score: clamp(x.score), feedback: String(x.feedback ?? "") } : null;
     const quality = fix(m.quality)!;

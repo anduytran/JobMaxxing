@@ -59,6 +59,7 @@ function Page() {
   const [caption, setCaption] = useState("");
   const voiceRef = useRef<VoiceAgent | null>(null);
   const gradeAsked = useRef<string | null>(null);
+  const gradeTries = useRef(0);
   const xpPaid = useRef<string | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
@@ -105,7 +106,7 @@ function Page() {
     if (stage !== "report" || !session || session.flag || session.grade || session.grading) return;
     if (gradeAsked.current === session.id) return;
     gradeAsked.current = session.id;
-    void peerGrade({ data: { id: session.id } }).then(() => refresh()).catch((e) => { gradeAsked.current = null; toast.error(`Grading failed — retrying shortly. ${(e as Error).message}`); });
+    void peerGrade({ data: { id: session.id } }).then(() => refresh()).catch((e) => { if (gradeTries.current++ < 2) setTimeout(() => { gradeAsked.current = null; void refresh().catch(() => {}); }, 5000); toast.error(`Grading failed — retrying shortly. ${(e as Error).message}`); });
   }, [stage, session]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Feed each side's score into XP once.
