@@ -62,7 +62,7 @@ export function MaxFigure({ worn = [], width = 200, className }: { worn?: string
  * Placement percentages are calibrated to the wave pose; other poses share the
  * same normalized silhouette, so the overlay lands close enough to read as worn.
  */
-export function WornMax({ pose = "wave", className, alt = "" }: { pose?: MaxPose; className?: string; alt?: string }) {
+export function WornMax({ pose = "wave", className, alt = "" }: { pose?: MaxPose | undefined; className?: string | undefined; alt?: string | undefined }) {
   const worn = useWornWearables();
   return (
     <span className={`relative inline-block select-none ${className ?? ""}`}>
