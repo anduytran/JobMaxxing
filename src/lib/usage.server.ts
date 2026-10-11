@@ -34,7 +34,8 @@ export function tokensFrom(body: unknown, promptAndReply: string): number {
  */
 export async function recordTokenUsage(userId: string | undefined, action: UsageAction, tokens: number): Promise<void> {
   const n = Math.round(Number(tokens) || 0);
-  if (!userId || !n || !ACTION_SET.has(action)) return;
+  // Demo guests have no account id; only real (uuid) accounts are counted.
+  if (!userId || !/^[0-9a-f-]{36}$/i.test(userId) || !n || !ACTION_SET.has(action)) return;
   try {
     await neonExecute(
       `insert into public.devup_token_usage (user_id, agent, tokens) values ($1::uuid, $2, $3)`,

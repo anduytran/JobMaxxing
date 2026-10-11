@@ -541,7 +541,7 @@ export function InterviewFlow({ agents, api, radar, profileSkills = [], captions
                 )}
               </div>
               <div className="flex flex-col items-start gap-3 rounded-2xl border bg-card p-6">
-                <h2 className="font-display text-2xl font-bold">Keep the streak going</h2>
+                <h2 className="font-display text-2xl font-bold">{demo ? "Try another round" : "Keep the streak going"}</h2>
                 <p className="text-sm text-muted-foreground">Another session on the same role is the fastest way to lift your weakest score.</p>
                 <Button onClick={reset} className="mt-1">New interview</Button>
                 <details className="w-full text-sm">

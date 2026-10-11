@@ -37,7 +37,7 @@ export function DemoLinksPanel() {
     <div className="panel space-y-5 p-6">
       <div>
         <div className="font-semibold">Demo links</div>
-        <p className="text-sm text-muted-foreground">Anyone with a link can try a full interview without an account. Nothing is saved to anyone; each interview uses one of the link's uses.</p>
+        <p className="text-sm text-muted-foreground">Anyone with a link can try a full interview without an account. Nothing is saved to anyone; each visit uses one of the link's uses.</p>
       </div>
       <form className="flex flex-wrap gap-2" onSubmit={(e) => { e.preventDefault(); void create(); }}>
         <Input aria-label="Link name" placeholder="Who is it for? e.g. Judges" value={label} onChange={(e) => setLabel(e.target.value)} className="min-w-48 flex-1" />
