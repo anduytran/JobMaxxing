@@ -2,7 +2,8 @@
 // an ElevenLabs implementation plugs in here once an agent exists.
 export interface VoiceAgent {
   speak(text: string): Promise<void>;
-  listen(): Promise<string>; // resolves with the candidate's transcribed answer
+  listen(onTranscript?: (text: string) => void): Promise<string>;
+  finishListening(): void;
   stop(): void;
 }
 
@@ -13,6 +14,8 @@ type PlaybackObserver = (state: VoicePlaybackState) => void;
 export function createBrowserVoice(onPlayback?: PlaybackObserver): VoiceAgent {
   let rec: any = null;
   let settlePlayback: (() => void) | undefined;
+  let finishCapture: (() => void) | undefined;
+  let cancelCapture: (() => void) | undefined;
   return {
     speak: (text) =>
       new Promise((resolve) => {
@@ -29,50 +32,64 @@ export function createBrowserVoice(onPlayback?: PlaybackObserver): VoiceAgent {
         window.speechSynthesis.cancel();
         window.speechSynthesis.speak(u);
       }),
-    listen: () =>
+    listen: (onTranscript) =>
       new Promise((resolve, reject) => {
         const w = window as unknown as { SpeechRecognition?: SR; webkitSpeechRecognition?: SR };
         const Ctor = w.SpeechRecognition ?? w.webkitSpeechRecognition;
         if (!Ctor) return reject(new Error("Voice input isn't supported in this browser — type your answer instead."));
-        // Generous on pauses: keep listening through short silences and only finish
-        // after SILENCE_MS of quiet once the candidate has started talking.
-        const SILENCE_MS = 3500;
-        const START_MS = 10000; // time allowed before the first word
-        let finalText = "";
-        let interim = "";
+        cancelCapture?.();
+        let completed = "";
+        let sessionText = "";
         let done = false;
-        let timer: ReturnType<typeof setTimeout> | undefined;
+        let restartTimer: ReturnType<typeof setTimeout> | undefined;
+        const transcript = () => `${completed} ${sessionText}`.trim();
+        const clear = () => {
+          clearTimeout(restartTimer);
+          finishCapture = undefined;
+          cancelCapture = undefined;
+        };
         const finish = () => {
           if (done) return;
           done = true;
-          clearTimeout(timer);
+          clear();
           try { rec?.stop(); } catch { /* already stopped */ }
-          const text = `${finalText} ${interim}`.trim();
+          const text = transcript();
           if (text) resolve(text); else reject(new Error("Didn't catch that — try again or type your answer."));
         };
-        const arm = (ms: number) => { clearTimeout(timer); timer = setTimeout(finish, ms); };
+        finishCapture = finish;
+        cancelCapture = () => {
+          if (done) return;
+          done = true; clear();
+          rec?.abort?.();
+          reject(new Error("Voice capture cancelled."));
+        };
         rec = new Ctor();
         rec.continuous = true;
         rec.interimResults = true;
+        rec.lang = navigator.language || "en-US";
         rec.onresult = (e: any) => {
-          interim = "";
-          for (let i = e.resultIndex; i < e.results.length; i++) {
-            const t = e.results[i][0].transcript as string;
-            if (e.results[i].isFinal) finalText += ` ${t}`; else interim += ` ${t}`;
-          }
-          arm(SILENCE_MS);
+          if (done) return;
+          // Rebuild the current session, rather than appending repeated final results.
+          sessionText = Array.from(e.results as ArrayLike<any>).map((result) => result[0].transcript as string).join(" ");
+          onTranscript?.(transcript());
         };
         rec.onerror = (e: any) => {
-          if (e.error === "no-speech" || e.error === "aborted") return finish();
-          done = true; clearTimeout(timer); reject(new Error(e.error ?? "Voice input failed"));
+          if (done || e.error === "no-speech") return;
+          done = true; clear();
+          rec?.abort?.();
+          reject(new Error(e.error === "not-allowed" ? "Microphone access was denied. Check your browser permissions." : e.error ?? "Voice input failed"));
         };
-        // Some browsers end the session on their own after a pause — restart until our timer decides.
-        rec.onend = () => { if (!done) { try { rec.start(); } catch { finish(); } } };
-        rec.start();
-        arm(START_MS);
+        // A natural pause never submits. Restart browser-ended capture until Done speaking.
+        rec.onend = () => {
+          if (done) return;
+          completed = transcript(); sessionText = "";
+          restartTimer = setTimeout(() => { if (!done) { try { rec.start(); } catch { finish(); } } }, 250);
+        };
+        try { rec.start(); } catch { done = true; clear(); reject(new Error("Could not start microphone capture. Please try again.")); }
       }),
+    finishListening: () => finishCapture?.(),
     stop: () => {
-      rec?.abort?.();
+      cancelCapture?.();
       if (typeof window !== "undefined") window.speechSynthesis?.cancel();
       settlePlayback?.();
       onPlayback?.("ready");
@@ -106,7 +123,8 @@ export function createElevenLabsVoice(synth: (text: string) => Promise<string | 
         audio.play().catch(finish);
       });
     },
-    listen: () => { audio?.pause(); return browser.listen(); },
+    listen: (onTranscript) => { audio?.pause(); return browser.listen(onTranscript); },
+    finishListening: () => browser.finishListening(),
     stop: () => { generation++; audio?.pause(); settlePlayback?.(); browser.stop(); onPlayback?.("ready"); },
   };
 }
