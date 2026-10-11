@@ -33,17 +33,40 @@ export const generateInterviewQuestions = createServerFn({ method: "POST" })
   });
 
 export const gradeInterviewTranscript = createServerFn({ method: "POST" })
-  .inputValidator((i: { transcript: TranscriptTurn[]; job: ParsedJob }) => {
+  .inputValidator((i: { transcript: TranscriptTurn[]; job: ParsedJob; plan?: InterviewQuestion[] }) => {
     if (!Array.isArray(i.transcript) || i.transcript.length > 200) throw new Error("Invalid transcript.");
     return {
       job: i.job,
       transcript: i.transcript.map((t) => ({ ...t, text: String(t.text).slice(0, 4000) })),
+      plan: (Array.isArray(i.plan) ? i.plan.slice(0, 12) : []).map((q) => ({
+        id: String(q.id), kind: q.kind === "technical" ? "technical" as const : "behavioral" as const,
+        text: String(q.text).slice(0, 2000), skill: q.skill ? String(q.skill).slice(0, 100) : null,
+      })),
     };
   })
   .handler(async ({ data }) => {
     const { gradeInterview } = await import("./interview/agents.server");
-    return gradeInterview(data.transcript, data.job);
+    const grade = await gradeInterview(data.transcript, data.job);
+    let ratings: import("./mmr.server").RatingChange[] = [];
+    try {
+      const { currentUser } = await import("./auth.server");
+      const user = await currentUser();
+      const answered = data.transcript.filter((t) => t.speaker === "candidate" && t.phase === "interview").length;
+      if (user && answered > 0) {
+        const { applySessionRatings, scoredItems } = await import("./mmr.server");
+        ratings = await applySessionRatings(user.id, scoredItems(data.plan, answered, grade.metrics.quality.score));
+      }
+    } catch (e) { console.error("rating update failed", e); }
+    return { ...grade, ratings };
   });
+
+export const getSkillRatings = createServerFn({ method: "GET" }).handler(async () => {
+  const { currentUser } = await import("./auth.server");
+  const user = await currentUser();
+  if (!user) return [];
+  const { listRatings } = await import("./mmr.server");
+  return listRatings(user.id);
+});
 
 export const startLiveInterview = createServerFn({ method: "POST" })
   .inputValidator((i: { job: ParsedJob; type: unknown; length: unknown; roast: unknown; plan: InterviewQuestion[] }) => ({

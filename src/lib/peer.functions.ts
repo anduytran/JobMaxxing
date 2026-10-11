@@ -294,6 +294,13 @@ export const peerGrade = createServerFn({ method: "POST" })
         "update public.devup_peer_session set grade = $2::jsonb, interviewer_grade = $3::jsonb where id = $1::uuid",
         [s.id, JSON.stringify(candidate), JSON.stringify(interviewer)],
       );
+      // Candidate's skill ratings move with the graded answer quality.
+      const candidateId = s.hostRole === "candidate" ? s.hostId : s.guestId;
+      if (candidateId) {
+        const { applySessionRatings, scoredItems } = await import("./mmr.server");
+        await applySessionRatings(candidateId, scoredItems(s.questions, asked, candidate.metrics.quality.score))
+          .catch((e) => console.error("rating update failed", e));
+      }
     } catch (e) {
       await neonExecute("update public.devup_peer_session set grade = null where id = $1::uuid", [s.id]);
       throw e;
