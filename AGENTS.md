@@ -11,7 +11,7 @@
 
 ## Architecture rules
 
-- ResumeScoreCard, DashboardProgressCards (merged Career card) and QuestMenu only read GameProvider and navigate; never award XP, create quests or change resets. Why: presentation reflects real workflows
+- ResumeScoreCard, DashboardProgressCards and QuestMenu only read GameProvider and navigate; never award XP, create quests or change resets. Why: presentation reflects real workflows
 - Featured titles use the browser-safe quest-titles helper, render two lines and preserve saved titles. Why: display copy must not rewrite quests
 - Max poses come from `MAX_POSES` (CDN pointers) and `MAX_SCALE` in `src/components/Max.tsx`, normalised to the branding silhouette at `clamp(140px,21svh,300px) * MAX_SCALE[pose]`; motion lives in global CSS and AppShell's MotionConfig. Why: one art mapping, one motion system.
 - Game state (profile, XP, quests, resume reviews, interviews) persists in Neon Postgres through the Lovable connector gateway, not Lovable Cloud. Reads and writes stay in `createServerFn` handlers using `src/lib/neon.server.ts` helpers — never browser code, never localStorage; run schema changes once through the gateway. Why: the user chose Neon; request-time DDL multiplies one migration
@@ -23,7 +23,7 @@
 - Resume grading uploads the file to the Raia Resume Agent via `/external/prompts/upload-url` (pdfjs text is only a fallback); output must match `normalizeReview` in `src/lib/interview/agents.server.ts`. Each save is a `devup_resume_version` row, each grade a `devup_resume_review` linked by `version_id`; one-time XP milestones use `milestone:*` reasons on `devup_xp_event` (unique index). Why: stable ids for history and XP.
 - Resume fixes ship in batches of `SUGGESTION_BATCH` (`src/lib/resume.ts`), clamped in the grader prompt, `normalizeReview` and the fallback; only `moreResumeSuggestions` issues the next batch and refuses while any current fix is unapplied. Why: no skipping
 - Never `order by id` after `id::text as id`; qualify it. Why: text sort
-- Store economy (`src/lib/store.functions.ts`): spendable points = sum(devup_xp_event) − sum(devup_purchase.cost); boosters multiply XP at award time in devup.functions; themes apply via `data-theme` on <html>. Why: points track XP with no extra writes
+- Store economy (`src/lib/store.functions.ts`): points = sum(devup_xp_event) − sum(devup_purchase.cost); boosters multiply XP at award time in devup.functions; themes apply via `data-theme` on <html>. Why: points track XP with no extra writes
 
 - Home's featured quest card fills the viewport; greeting, shortcuts, resume score, career progress and Max tips live on `/progress`. Uploaded CDN scenes render as full-inset covers, portrait variants on phones; interview-category quests get no slide; each slide shows its real quest XP and a `Start` link. Why: art fills screen, words clear of Max
 - Quest reset countdowns derive from `src/lib/reset-times.ts` (next daily reset = 00:00 UTC, weekly = Monday 00:00 UTC) and render only after hydration. Why: match server `date_trunc`; avoid hydration mismatch.
