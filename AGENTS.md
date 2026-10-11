@@ -32,10 +32,10 @@
 - Career dashboard (/progress) reads one aggregate, `getCareerDashboard` in `src/lib/career.functions.ts` (streaks, goals, Elo history in `devup_skill_rating_log`, saved radar roles with skill gaps, peer sessions). Graded interviews and resume scans call `bumpStreak`. Why: one dashboard source
 - Friends/invites live in `src/lib/friends.functions.ts`; presence is derived from sessions, `InviteListener` polls, and invites carry the peer code so accepting calls joinPeerSession. Why: no realtime server; reuses the peer flow
 - Tracked skills may be custom, but a new one must pass the Skill Expert's check (`vetSkill`) before it is added. Why: only real skills get rated
-- New Max pose art is trimmed to the shared framing (figure fills its square, feet on the bottom) before getting a `MAX_SCALE`. Why: wide margins float out of the mobile card
+- New Max pose art is trimmed (figure fills square, feet at bottom) before a `MAX_SCALE`. Why: margins float out of mobile card
 - Interview XP is paid only by `claimInterviewXp` from the stored grade, once per `iv:` reason; no endpoint takes a client XP amount. Why: no XP minting
 - User-supplied URLs are fetched only signed-in, through `assertPublicUrl` per redirect hop. Why: no private-network fetches
 - `/demo/$token` runs `InterviewFlow` signed out via `demo.functions` only: secret links, per-run call budget, no user writes. Why: public demo, bounded cost
 - Wearable placement comes from `placeWearable` in `src/lib/wearable-fit.ts` (measured per-pose anchors + user-dragged spots in `devup_profile.wearable_spots`); every dressed Max uses it. Why: one fit per pose
-- Interviewer voice is a curated list in `src/lib/voices.ts`, saved in `devup_profile.interview_voice`; demo links keep the default voice. Why: server validates voice ids
-- Interview camera recordings are consent-gated by `InterviewRecorder` and live only in tab memory (`src/lib/interview-recordings.ts`, blob URLs), rewatchable/downloadable but never uploaded. Why: no file storage chosen yet
+- Interviewer voice: curated `src/lib/voices.ts`, saved in `devup_profile.interview_voice`; demos use default. Why: server validates ids
+- Interview videos: consent via `InterviewRecorder`, tab-memory blobs only (`interview-recordings.ts`), never uploaded. Why: no file storage yet
