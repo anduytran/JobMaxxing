@@ -94,11 +94,11 @@ function fallbackParse(jd: string): ParsedJob {
   return { title, summary: jd.replace(/\s+/g, " ").slice(0, 280), skills, qualifications, location: loc?.[1]?.trim() ?? null, specialNotes: [] };
 }
 
-export async function parseJob(jd: string): Promise<ParsedJob> {
+export async function parseJob(jd: string, userId?: string): Promise<ParsedJob> {
   const ai = await askRaia<ParsedJob>(ENV.parser, jd,
     "Parse this job posting following your own instructions (security, fairness and flag rules included). " +
     "Reply with JSON only using your output schema: {title, summary, skills, qualifications, location, specialNotes} — " +
-    "null for anything the posting does not state.");
+    "null for anything the posting does not state.", 45_000, undefined, { userId, agent: "job_parser" });
   if (ai && Array.isArray(ai.skills)) {
     return {
       title: ai.title ?? null,
@@ -118,7 +118,7 @@ export async function parseJob(jd: string): Promise<ParsedJob> {
  * of the posting URL fails or returns unreadable text. Returns null when the
  * agent can't find the posting, so the caller can ask the user to paste it.
  */
-export async function parseJobFromUrl(url: string, hint?: string): Promise<ParsedJob | null> {
+export async function parseJobFromUrl(url: string, hint?: string, userId?: string): Promise<ParsedJob | null> {
   const ai = await askRaia<ParsedJob>(ENV.parser,
     `JOB URL\n${url}${hint ? `\n\nHint: this link is for a role described as: ${hint.slice(0, 400)}` : ""}`,
     "This is a URL MODE request per your instructions. Use web search to open or find this job posting — " +
