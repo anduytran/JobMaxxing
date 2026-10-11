@@ -241,18 +241,28 @@ export const peerSetChecks = createServerFn({ method: "POST" })
   });
 
 // WebRTC signalling: the host posts the offer, the guest the answer (full SDP, ICE gathered).
+// Writes are atomic jsonb updates so a late answer never clobbers a newer offer,
+// and an answer is only stored when it answers the offer currently on the row.
 export const peerSignal = createServerFn({ method: "POST" })
-  .inputValidator((i: { id: unknown; sdp: unknown; reset?: unknown }) => ({
+  .inputValidator((i: { id: unknown; sdp: unknown; reset?: unknown; forOffer?: unknown }) => ({
     id: String(i.id ?? ""), sdp: String(i.sdp ?? "").slice(0, 20000), reset: !!i.reset,
+    forOffer: typeof i.forOffer === "string" ? i.forOffer.slice(0, 20000) : "",
   }))
   .handler(async ({ data }) => {
     const user = await me();
     const s = await loadForUser(data.id, user.id);
     const { neonExecute } = await import("./neon.server");
-    const signal = s.meIsHost
-      ? (data.reset || !s.signal.offer ? { offer: data.sdp, video: s.signal.video } : { ...s.signal, offer: data.sdp })
-      : { ...s.signal, answer: data.sdp };
-    await neonExecute("update public.devup_peer_session set signal = $2::jsonb where id = $1::uuid", [s.id, JSON.stringify(signal)]);
+    if (s.meIsHost) {
+      await neonExecute(
+        "update public.devup_peer_session set signal = jsonb_build_object('offer', $2::text, 'video', coalesce(signal->'video', '{}'::jsonb)) where id = $1::uuid",
+        [s.id, data.sdp],
+      );
+      return { ok: true };
+    }
+    await neonExecute(
+      "update public.devup_peer_session set signal = jsonb_set(signal, '{answer}', to_jsonb($2::text)) where id = $1::uuid and signal->>'offer' = $3",
+      [s.id, data.sdp, data.forOffer],
+    );
     return { ok: true };
   });
 
