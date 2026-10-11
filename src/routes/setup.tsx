@@ -6,7 +6,6 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { levelTitle, useGame } from "@/lib/game";
 import {
-  applyResumeSuggestion,
   getResumeState,
   getResumeVersion,
   moreResumeSuggestions,
@@ -165,19 +164,9 @@ function Setup() {
         return void toast("Add the number to that line first, then claim the fix.");
       }
     }
-    setApplying(s.id);
-    const changed = JSON.stringify(next) !== saved;
-    const res = await applyResumeSuggestion({ data: { reviewId: review.id, suggestionId: s.id, sections: changed ? next : undefined } });
-    setApplying(null);
-    if (!res.ok) return void toast.error(res.error);
+    // Fixes are confirmed only by the grader reading an uploaded or re-scanned resume.
     setSections(next);
-    if (changed) setSaved(JSON.stringify(next));
-    setReview({ ...review, suggestions: review.suggestions.map((x) => (x.id === s.id ? { ...x, applied: true } : x)) });
-    setXp(res.xp);
-    toast.success(res.awarded ? `+${res.awarded} XP · fix integrated` : "Already claimed", {
-      description: res.version ? `Saved as version ${res.version}` : undefined,
-    });
-    if (res.version) void refresh();
+    toast("Save or upload your updated resume and rescan — the grader confirms this fix and pays its XP.");
   };
 
   /** Asks for the next batch — the server refuses while any of the current fixes is still open. */
