@@ -50,7 +50,7 @@ export function InterviewFlow({ agents, api, radar, profileSkills = [], captions
 }) {
   const search = { radar };
   const details = { skills: profileSkills };
-  const [stage, setStage] = useState<Stage>("intro");
+  const [stage, setStage] = useState<Stage>(demo ? "setup" : "intro");
   const [jd, setJd] = useState("");
   const radarJobId = useRef<string | null>(null);
   const radarBootstrapped = useRef(false);
@@ -288,7 +288,7 @@ export function InterviewFlow({ agents, api, radar, profileSkills = [], captions
     return () => clearTimeout(t);
   }, [thinking, playback, stage, turns, voiceOn]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const reset = () => { stopVoice(); setTyping(false); setConvId(null); setStage("intro"); setGrade(null); setTurns([]); setJob(null); setAck(false); radarJobId.current = null; autoFinish.current = false; };
+  const reset = () => { stopVoice(); setTyping(false); setConvId(null); setStage(demo ? "setup" : "intro"); setGrade(null); setTurns([]); setJob(null); setAck(false); radarJobId.current = null; autoFinish.current = false; };
 
   return (
     <div className={cn(immersive ? "w-full" : "mx-auto max-w-6xl space-y-4 px-4 py-6 md:px-10 md:py-10")}>
