@@ -395,6 +395,10 @@ function Interview() {
 
 const fmt = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
+// Speech recognition returns lowercase text; restore sentence capitalization before sending.
+const capitalizeTranscript = (s: string) =>
+  s.replace(/(^\s*[a-z])|([.?!]\s+[a-z])/g, (m) => m.toUpperCase()).replace(/\bi\b/g, "I").replace(/\bi(')(?=[a-z])/gi, "I$1");
+
 function Choice<T extends string>({ label, value, onChange, options }: { label: string; value: T; onChange: (v: T) => void; options: [T, string][] }) {
   return (
     <div>
