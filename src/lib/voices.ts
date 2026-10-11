@@ -9,7 +9,7 @@ export const VOICES: VoiceOption[] = [
   { id: "nPczCjzI2devNBz1zQrb", name: "Brian", style: "Deep, confident American male — senior hiring manager" },
   { id: "cgSgspJ2msm6clMCkdW9", name: "Jessica", style: "Bright, upbeat American female — friendly recruiter" },
   { id: "IKne3meq5aSn9XLyUdCD", name: "Charlie", style: "Casual, natural Australian male — startup chat" },
-  { id: "pFZP5JQG7iQjIQuC4Bf1", name: "Lily", style: "Crisp, professional British female — formal panel" },
+  { id: "pFZP5JQG7iQjIQuC4Bku", name: "Lily", style: "Crisp, professional British female — formal panel" },
 ];
 
 export const VOICE_IDS = VOICES.map((v) => v.id);

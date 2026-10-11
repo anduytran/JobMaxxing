@@ -452,7 +452,7 @@ export async function synthesize(text: string, userId?: string, voiceId?: string
   const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}?output_format=mp3_44100_128`, {
     method: "POST",
     headers: { "xi-api-key": apiKey, "Content-Type": "application/json" },
-    body: JSON.stringify({ text, model_id: "eleven_turbo_v2_5", voice_settings: { stability: 0.45, similarity_boost: 0.75, style: 0.3 } }),
+    body: JSON.stringify({ text, model_id: "eleven_turbo_v2_5", voice_settings: VOICE_ID === "nPczCjzI2devNBz1zQrb" ? { stability: 0.65, similarity_boost: 0.75, style: 0 } : { stability: 0.45, similarity_boost: 0.75, style: 0.3 } }),
   });
   if (!res.ok) { console.error("ElevenLabs TTS failed", res.status, await res.text()); return null; }
   const bytes = new Uint8Array(await res.arrayBuffer());
