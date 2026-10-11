@@ -18,6 +18,7 @@ export type MaxPose = keyof typeof MAX_POSES;
 export const MAX_SCALE: Record<MaxPose, number> = {
   dap: 1,
   interview: 1.04,
+  dizzy: 1.1,
   resume: 1.06,
   skills: 1.16,
   wave: 1.16,
