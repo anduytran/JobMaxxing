@@ -18,6 +18,8 @@ import { cn } from "@/lib/utils";
 import { InterviewRecorder, RecordingPlayer } from "@/components/InterviewRecorder";
 import loadingVideo from "@/assets/max/max-loading.mp4.asset.json";
 import { linkRecording, useRecordings } from "@/lib/interview-recordings";
+import { getInterviewVoice } from "@/lib/voice.functions";
+import { VOICES } from "@/lib/voices";
 
 type Stage = "setup" | "review" | "options" | "live" | "your_questions" | "grading" | "report";
 
@@ -89,6 +91,14 @@ export function InterviewFlow({ agents, api, radar, profileSkills = [], captions
   const [recId, setRecId] = useState<string | null>(null);
   // The interview (first question + countdown) waits for the recording consent choice.
   const [consented, setConsented] = useState(false);
+  const [interviewerName, setInterviewerName] = useState(VOICES.find((v) => v.id === "JBFqnCBsd6RMkjVDRZzb")?.name ?? "George");
+  useEffect(() => {
+    if (demo) return;
+    void getInterviewVoice().then((r) => {
+      const name = VOICES.find((v) => v.id === r.voiceId)?.name;
+      if (name) setInterviewerName(name);
+    }).catch(() => {});
+  }, [demo]);
   const pendingFirst = useRef<{ text: string; questionId?: string } | null>(null);
   const recordings = useRecordings();
   const myRecording = recordings.find((r) => r.id === recId);
@@ -417,7 +427,7 @@ export function InterviewFlow({ agents, api, radar, profileSkills = [], captions
           {/* Header */}
           <div className="flex items-center justify-between gap-4 p-5">
             <div>
-              <div className="text-sm font-semibold">Ava, Friendly Recruiter</div>
+              <div className="text-sm font-semibold">{interviewerName}, your interviewer</div>
               <div className="text-xs text-muted-foreground">
                 {job?.title ? `${job.title}. ` : ""}{LENGTHS[length].label} {type} interview.
               </div>
