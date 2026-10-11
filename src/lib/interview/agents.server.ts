@@ -711,7 +711,9 @@ const CHECK_TASK =
   '"integrated": [ids of OPEN FIXES the candidate has genuinely made in this version] at the top level of your JSON (empty array if none or no OPEN FIXES). ' +
   "Only count a fix when the resume text shows it; placeholders like [X%] left unfilled do not count. " +
   'QUEST CHECK: OPEN QUESTS lists the candidate\'s unfinished resume quests. Return "questsDone": [ids of OPEN QUESTS this resume upload genuinely completes] at the top level (empty array if none). ' +
-  "Only count a quest when this resume version clearly satisfies it. ";
+  "Only count a quest when this resume version clearly satisfies it. " +
+  'QUEST IDEAS: also return "questsNew": up to 3 NEW resume quests, each {"title": 4-8 word goal, "description": one sentence}, targeting this resume\'s biggest remaining gaps. ' +
+  "Do not repeat OPEN QUESTS or anything this version already achieves; return an empty array when the resume is already strong. ";
 
 async function resumeConversationId(userId: string, name: string, secret: string): Promise<string | null> {
   try {
