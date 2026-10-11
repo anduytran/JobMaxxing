@@ -154,3 +154,72 @@ export function createElevenLabsVoice(synth: (text: string) => Promise<string | 
     stop: () => { generation++; audio?.pause(); settlePlayback?.(); clearWord(); browser.stop(); onPlayback?.("ready"); },
   };
 }
+
+/** Wraps a voice so listening uses ElevenLabs realtime Scribe (accurate, streaming captions).
+ *  Falls back to the wrapped voice's browser recognition if the token or socket fails. */
+export function withScribeListening(base: VoiceAgent, getToken: () => Promise<string | null>, keyterms: () => string[] = () => []): VoiceAgent {
+  let finish: (() => void) | undefined;
+  let cancel: (() => void) | undefined;
+  let usingBase = false;
+  return {
+    speak: (text) => base.speak(text),
+    listen: async (onTranscript) => {
+      cancel?.();
+      usingBase = false;
+      const token = await getToken().catch(() => null);
+      if (!token) { usingBase = true; return base.listen(onTranscript); }
+      const { Scribe, CommitStrategy, RealtimeEvents } = await import("@elevenlabs/client");
+      return new Promise<string>((resolve, reject) => {
+        const committed: string[] = [];
+        let partial = "";
+        let done = false;
+        let opened = false;
+        let flushTimer: ReturnType<typeof setTimeout> | undefined;
+        const text = () => [...committed, partial].join(" ").replace(/\s+/g, " ").trim();
+        const terms = keyterms().filter(Boolean).slice(0, 50);
+        const conn = Scribe.connect({
+          token, modelId: "scribe_v2_realtime", commitStrategy: CommitStrategy.VAD,
+          ...(terms.length ? { keyterms: terms } : {}),
+          microphone: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+        });
+        const end = (ok: boolean, err?: Error) => {
+          if (done) return;
+          done = true; clearTimeout(flushTimer); finish = undefined; cancel = undefined;
+          try { conn.close(); } catch { /* closed */ }
+          const t = text();
+          if (ok && t) resolve(t); else reject(err ?? new Error("Didn't catch that — try again or type your answer."));
+        };
+        conn.on(RealtimeEvents.OPEN, () => { opened = true; });
+        conn.on(RealtimeEvents.PARTIAL_TRANSCRIPT, (m) => { partial = m.text ?? ""; onTranscript?.(text()); });
+        conn.on(RealtimeEvents.COMMITTED_TRANSCRIPT, (m) => {
+          if (m.text?.trim()) committed.push(m.text.trim());
+          partial = ""; onTranscript?.(text());
+          if (flushTimer) end(true); // final commit after "Done speaking"
+        });
+        const fail = (m: unknown) => {
+          if (done) return;
+          if (!opened && !committed.length) {
+            // Socket never came up: fall back to browser recognition for this answer.
+            done = true; finish = undefined; cancel = undefined;
+            try { conn.close(); } catch { /* closed */ }
+            usingBase = true;
+            base.listen(onTranscript).then(resolve, reject);
+            return;
+          }
+          console.error("Scribe error", m);
+          end(true, new Error("Voice capture failed — type your answer instead."));
+        };
+        for (const e of [RealtimeEvents.ERROR, RealtimeEvents.AUTH_ERROR, RealtimeEvents.QUOTA_EXCEEDED, RealtimeEvents.RATE_LIMITED, RealtimeEvents.INPUT_ERROR, RealtimeEvents.TRANSCRIBER_ERROR]) conn.on(e, fail as never);
+        finish = () => {
+          if (done || flushTimer) return;
+          try { conn.commit(); } catch { /* nothing pending */ }
+          // Flush the last words, but never make the user wait more than ~1.2 s.
+          flushTimer = setTimeout(() => end(true), partial ? 1200 : 300);
+        };
+        cancel = () => end(false, new Error("Voice capture cancelled."));
+      });
+    },
+    finishListening: () => (usingBase ? base.finishListening() : finish?.()),
+    stop: () => { cancel?.(); base.stop(); },
+  };
+}

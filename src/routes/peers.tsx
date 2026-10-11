@@ -11,8 +11,8 @@ import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
 import { usePeerCall } from "@/hooks/use-peer-call";
 import { useGame } from "@/lib/game";
-import { generateInterviewQuestions, parseJobDescription } from "@/lib/interview.functions";
-import { createBrowserVoice, type VoiceAgent } from "@/lib/interview/voice";
+import { generateInterviewQuestions, getScribeToken, parseJobDescription } from "@/lib/interview.functions";
+import { createBrowserVoice, withScribeListening, type VoiceAgent } from "@/lib/interview/voice";
 import {
   createPeerSession, getPeerSession, joinPeerSession, peerAskNext, peerEndSession, peerGrade, peerReady, peerSay, peerSetChecks, peerVideoConsent,
   type PeerSession,
@@ -59,6 +59,7 @@ function Page() {
   const [caption, setCaption] = useState("");
   const voiceRef = useRef<VoiceAgent | null>(null);
   const gradeAsked = useRef<string | null>(null);
+  const gradeTries = useRef(0);
   const xpPaid = useRef<string | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
@@ -105,7 +106,7 @@ function Page() {
     if (stage !== "report" || !session || session.flag || session.grade || session.grading) return;
     if (gradeAsked.current === session.id) return;
     gradeAsked.current = session.id;
-    void peerGrade({ data: { id: session.id } }).then(() => refresh()).catch((e) => toast.error((e as Error).message));
+    void peerGrade({ data: { id: session.id } }).then(() => refresh()).catch((e) => { if (gradeTries.current++ < 2) setTimeout(() => { gradeAsked.current = null; void refresh().catch(() => {}); }, 5000); toast.error(`Grading failed — retrying shortly. ${(e as Error).message}`); });
   }, [stage, session]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Feed each side's score into XP once.
@@ -158,7 +159,7 @@ function Page() {
   });
 
   const startSpeaking = async () => {
-    voiceRef.current ??= createBrowserVoice();
+    voiceRef.current ??= withScribeListening(createBrowserVoice(), async () => (await getScribeToken()).token, () => [...(session?.job?.skills ?? []), session?.job?.title ?? ""]);
     setCaption(""); setListening(true);
     try {
       const heard = await voiceRef.current.listen((t) => setCaption(t));
@@ -540,7 +541,8 @@ function Choice<T extends string>({ label, value, onChange, options }: { label: 
   );
 }
 
-function Metric({ label, m }: { label: string; m: { score: number; feedback: string } }) {
+function Metric({ label, m }: { label: string; m: { score: number; feedback: string } | null | undefined }) {
+  if (!m) return null;
   return (
     <div className="rounded border p-3">
       <div className="mb-1 flex justify-between text-sm"><span>{label}</span><span className="font-mono">{m.score}</span></div>
