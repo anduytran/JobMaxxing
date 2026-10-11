@@ -137,7 +137,7 @@ function Dashboard() {
   const interviewQuest = open.find((q) => q.category.toLowerCase() === "interview");
   const reward = featured ? `+${featured.xp} XP` : interviewQuest ? `+${interviewQuest.xp} quest XP · up to 400 interview XP` : "Up to 400 XP";
   const wornWearables = useWornWearables();
-  const destination = featKey === "interview" ? "/interview" : featKey === "setup" || featKey === "resume" ? "/setup" : featKey === "hunt" ? "/market" : "/quests";
+  const destination = featKey === "interview" ? "/interview" : featKey === "setup" || featKey === "resume" ? "/setup" : featKey === "hunt" ? "/market" : "/quests/add";
   const featArt = MAX_POSES[featPose];
   const featScale = MAX_SCALE[featPose];
   // Decode Max and the scene backdrop together so they appear at the same moment.

@@ -202,7 +202,7 @@ function TopTab({ item: { to, label }, active }: { item: Item; active: boolean }
 function CheckReward() { return <Zap className="h-5 w-5 text-primary" />; }
 
 /** Round profile photo, falling back to initials when none is set. */
-function AvatarFace({ url, initials, className }: { url: string | null; initials: string; className?: string }) {
+export function AvatarFace({ url, initials, className }: { url: string | null; initials: string; className?: string }) {
   if (url) return <img src={url} alt="" className={cn("shrink-0 rounded-full object-cover", className)} />;
   return <span className={cn("grid shrink-0 place-items-center rounded-full bg-sidebar-accent font-semibold text-primary", className)}>{initials}</span>;
 }
