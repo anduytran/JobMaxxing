@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { neonExecute } from "./neon.server";
 import { requireUser } from "./auth.server";
 import { ROLL_COST, WEARABLES, WEARABLE_IDS, slotsConflict } from "./wearables";
+import { cleanSpots, type WearableSpots } from "./wearable-fit";
 
 // ---------------------------------------------------------------------------
 // Store economy: spendable points = lifetime XP earned minus points spent.
@@ -127,14 +128,14 @@ export const getStore = createServerFn({ method: "GET" }).handler(
   },
 );
 
-/** Lightweight read of just the equipped wearables, for dressing Max app-wide. */
+/** Lightweight read of the equipped wearables and their custom spots, for dressing Max app-wide. */
 export const getActiveWearables = createServerFn({ method: "GET" }).handler(
-  async (): Promise<{ ok: true; ids: string[] } | { ok: false; error: string }> => {
+  async (): Promise<{ ok: true; ids: string[]; spots: WearableSpots } | { ok: false; error: string }> => {
     try {
       const userId = (await requireUser()).id;
       const { results } = await neonExecute<{ results: any[] }>([
         {
-          query: "select active_wearables from public.devup_profile where id = $1",
+          query: "select active_wearables, wearable_spots from public.devup_profile where id = $1",
           params: [userId],
         },
       ]);
@@ -142,12 +143,28 @@ export const getActiveWearables = createServerFn({ method: "GET" }).handler(
       const ids = (Array.isArray(raw) ? (raw as unknown[]) : [])
         .map(String)
         .filter((id) => WEARABLE_IDS.includes(id));
-      return { ok: true, ids };
+      return { ok: true, ids, spots: cleanSpots(results[0]?.rows?.[0]?.wearable_spots, WEARABLE_IDS) };
     } catch (err) {
       return fail(err);
     }
   },
 );
+
+/** Save where the user dragged their wearables, per pose. */
+export const saveWearableSpots = createServerFn({ method: "POST" })
+  .inputValidator((input: { spots: unknown }) => ({ spots: cleanSpots(input.spots, WEARABLE_IDS) }))
+  .handler(async ({ data }): Promise<{ ok: true } | { ok: false; error: string }> => {
+    try {
+      const userId = (await requireUser()).id;
+      await neonExecute(
+        "update public.devup_profile set wearable_spots = $2::jsonb, updated_at = now() where id = $1",
+        [userId, JSON.stringify(data.spots)],
+      );
+      return { ok: true };
+    } catch (err) {
+      return fail(err);
+    }
+  });
 
 export const buyItem = createServerFn({ method: "POST" })
   .inputValidator((input: { itemId: unknown }) => {
