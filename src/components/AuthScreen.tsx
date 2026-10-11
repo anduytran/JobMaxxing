@@ -367,21 +367,41 @@ export function AuthScreen() {
                 key={q.title}
                 {...rise}
                 transition={{ ...rise.transition, delay: i * 0.07 }}
-                className="group flex flex-col gap-3 rounded-2xl border border-border bg-card p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-[var(--shadow-hover)]"
+                className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all hover:-translate-y-1 hover:shadow-[var(--shadow-hover)]"
               >
-                <div className="flex items-center justify-between">
-                  <QuestTag type={q.tag} />
-                  <XpBadge amount={q.xp} />
+                <div className="relative h-44 overflow-hidden">
+                  <img
+                    src={q.scene}
+                    alt=""
+                    className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+                    loading="lazy"
+                  />
+                  <img
+                    src={q.pose}
+                    alt={q.poseAlt}
+                    className="absolute bottom-0 right-4 h-[92%] object-contain drop-shadow-md transition-transform duration-500 group-hover:-translate-y-1.5"
+                    loading="lazy"
+                  />
+                  <div className="absolute left-4 top-4 flex items-center gap-2">
+                    <QuestTag type={q.tag} />
+                  </div>
+                  <div className="absolute right-4 top-4">
+                    <XpBadge amount={q.xp} />
+                  </div>
                 </div>
-                <span className="grid size-11 place-items-center rounded-xl bg-secondary text-secondary-foreground transition-transform group-hover:scale-110">
-                  <q.icon className="size-5" />
-                </span>
-                <h3 className="font-display text-xl font-semibold">{q.title}</h3>
-                <p className="text-sm text-muted-foreground">{q.text}</p>
-                <div className="mt-auto flex flex-wrap gap-1.5 pt-2">
-                  {q.chips.map((c) => (
-                    <span key={c} className="rounded-full border border-border px-2.5 py-1 text-xs text-muted-foreground">{c}</span>
-                  ))}
+                <div className="flex flex-1 flex-col gap-3 p-6">
+                  <h3 className="flex items-center gap-2.5 font-display text-xl font-semibold">
+                    <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-secondary text-secondary-foreground transition-transform group-hover:scale-110">
+                      <q.icon className="size-4" />
+                    </span>
+                    {q.title}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">{q.text}</p>
+                  <div className="mt-auto flex flex-wrap gap-1.5 pt-2">
+                    {q.chips.map((c) => (
+                      <span key={c} className="rounded-full border border-border px-2.5 py-1 text-xs text-muted-foreground">{c}</span>
+                    ))}
+                  </div>
                 </div>
               </motion.article>
             ))}
