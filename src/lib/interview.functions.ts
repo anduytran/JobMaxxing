@@ -62,6 +62,27 @@ export const generateInterviewQuestions = createServerFn({ method: "POST" })
     return generateQuestions(data.job, data.type, data.length, data.roast);
   });
 
+// Saves the interview the moment it starts (score 0, empty transcript) so it
+// always lands in Career; grading upserts the same row with the real result.
+export const saveSoloSession = createServerFn({ method: "POST" })
+  .inputValidator((i: { job: ParsedJob; type: unknown }) => ({
+    job: i.job,
+    type: (TYPES.includes(i.type as InterviewType) ? i.type : "mixed") as InterviewType,
+  }))
+  .handler(async ({ data }) => {
+    const { currentUser } = await import("./auth.server");
+    const user = await currentUser();
+    if (!user) return { ok: false };
+    const { neonExecute } = await import("./neon.server");
+    await neonExecute(
+      `insert into public.devup_interview (user_id, job, type, overall, grade, transcript)
+       values ($1, $2, $3, 0, null, '[]'::jsonb)
+       on conflict (user_id, job, type) do nothing`,
+      [user.id, data.job?.title ?? null, data.type],
+    ).catch((e) => console.error("interview start save failed", e));
+    return { ok: true };
+  });
+
 export const gradeInterviewTranscript = createServerFn({ method: "POST" })
   .inputValidator((i: { transcript: TranscriptTurn[]; job: ParsedJob; plan?: InterviewQuestion[] }) => {
     if (!Array.isArray(i.transcript) || i.transcript.length > 200) throw new Error("Invalid transcript.");
@@ -95,7 +116,8 @@ export const gradeInterviewTranscript = createServerFn({ method: "POST" })
         });
         const { neonExecute } = await import("./neon.server");
         await neonExecute(
-          `insert into public.devup_interview (user_id, job, type, overall, grade, transcript) values ($1, $2, $3, $4, $5::jsonb, $6::jsonb)`,
+          `insert into public.devup_interview (user_id, job, type, overall, grade, transcript) values ($1, $2, $3, $4, $5::jsonb, $6::jsonb)
+           on conflict (user_id, job, type) do update set overall = excluded.overall, grade = excluded.grade, transcript = excluded.transcript, created_at = now(), deleted_at = null`,
           [user.id, data.job?.title ?? null, data.plan.some((q) => q.kind === "technical") ? (data.plan.every((q) => q.kind === "technical") ? "technical" : "mixed") : "behavioral",
             Math.round(Number(grade.overall) || 0), JSON.stringify(grade), JSON.stringify(data.transcript)],
         ).catch((e) => console.error("interview save failed", e));
