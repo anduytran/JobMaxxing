@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useGame } from "@/lib/game";
 import {
-  generateInterviewQuestions, getInterviewAgents, gradeInterviewTranscript, parseJobDescription, sendInterviewTurn, speakInterviewLine, startLiveInterview,
+  fetchJobPosting, generateInterviewQuestions, getInterviewAgents, gradeInterviewTranscript, parseJobDescription, sendInterviewTurn, speakInterviewLine, startLiveInterview,
 } from "@/lib/interview.functions";
 import { awardRadarPracticeXp, setRadarStatus } from "@/lib/radar.functions";
 import {
@@ -115,11 +115,24 @@ function Interview() {
     radarBootstrapped.current = true;
     radarJobId.current = search.radar;
     setStage("setup");
+    let stored = "";
+    let url = "";
     try {
-      const stored = sessionStorage.getItem("jobmaxxing:radar-jd") ?? "";
+      stored = sessionStorage.getItem("jobmaxxing:radar-jd") ?? "";
+      url = sessionStorage.getItem("jobmaxxing:radar-url") ?? "";
       sessionStorage.removeItem("jobmaxxing:radar-jd");
-      setJd(stored);
+      sessionStorage.removeItem("jobmaxxing:radar-url");
     } catch { /* The user can paste the full description if storage is unavailable. */ }
+    setJd(stored);
+    // Prefer the live posting: fetch the role's URL and hand its text to the
+    // Job Parser. Falls back to the radar summary when the page can't be read.
+    if (url) {
+      setBusy(true);
+      fetchJobPosting({ data: { url } })
+        .then(({ text }) => { setJd(text); return analyze(text); })
+        .catch(() => { /* Stored summary stays in the box for Analyze job. */ })
+        .finally(() => setBusy(false));
+    }
   }, [search.radar]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const analyze = async (jdText: string = jd) => {

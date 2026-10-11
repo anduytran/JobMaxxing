@@ -20,6 +20,36 @@ export const parseJobDescription = createServerFn({ method: "POST" })
     return parseJob(data.jd);
   });
 
+// Fetches a public job posting URL server-side and extracts readable text so
+// the Job Parser can work from the live posting instead of a pasted description.
+export const fetchJobPosting = createServerFn({ method: "POST" })
+  .inputValidator((i: { url: unknown }) => {
+    const url = typeof i.url === "string" ? i.url.trim() : "";
+    let parsed: URL;
+    try { parsed = new URL(url); } catch { throw new Error("That job link doesn't look valid."); }
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") throw new Error("That job link doesn't look valid.");
+    return { url: parsed.toString() };
+  })
+  .handler(async ({ data }) => {
+    const res = await fetch(data.url, {
+      redirect: "follow",
+      signal: AbortSignal.timeout(15000),
+      headers: { "user-agent": "Mozilla/5.0 (compatible; JobMaxxing/1.0)", accept: "text/html,*/*" },
+    });
+    if (!res.ok) throw new Error(`Couldn't open that posting (${res.status}). Paste the description instead.`);
+    const html = await res.text();
+    const text = html
+      .replace(/<script[\s\S]*?<\/script>/gi, " ")
+      .replace(/<style[\s\S]*?<\/style>/gi, " ")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&#39;|&apos;/g, "'").replace(/&quot;/g, '"')
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 12000);
+    if (text.length < 200) throw new Error("That posting didn't have readable text. Paste the description instead.");
+    return { text };
+  });
+
 export const generateInterviewQuestions = createServerFn({ method: "POST" })
   .inputValidator((i: { job: ParsedJob; type: unknown; length: unknown; roast: unknown }) => ({
     job: i.job,
