@@ -79,12 +79,12 @@ export const getStreak = createServerFn({ method: "GET" }).handler(async (): Pro
   const user = await currentUser();
   if (!user) return EMPTY_STREAK;
   try {
-    const rows = await neonQuery<{ current_streak: number; longest_streak: number; last: string | null; streak_freeze_count: number }>(
+    const res = await neonQuery<{ rows: { current_streak: number; longest_streak: number; last: string | null; streak_freeze_count: number }[] }>(
       `select current_streak, longest_streak, to_json(last_activity_date) as last, streak_freeze_count
          from public.devup_activity_streak where user_id = $1`,
       [user.id],
     );
-    const s = rows[0];
+    const s = res.rows[0];
     if (!s) return EMPTY_STREAK;
     const info: StreakInfo = {
       current: Number(s.current_streak),
