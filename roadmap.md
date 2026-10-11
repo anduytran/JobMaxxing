@@ -142,3 +142,9 @@
 - [x] Widen the agent's enforced JSON output schema to include location and specialNotes so those app fields stop being dropped.
 - [x] Simplify the app-side parseJob prompt to defer to the agent's instructions.
 - [x] Verify on a sample posting: all six fields returned, prompt-injection text inside the posting flagged in specialNotes instead of followed.
+
+## Peer interviews
+- [x] Neon devup_peer_session table (code, host/guest, roles, plan, transcript, grade).
+- [x] src/lib/peer.functions.ts: create/join/poll/ask/answer/end/save-grade server functions, participant-scoped.
+- [x] /peers rewritten: host flow (JD → parse → options → lobby code), join by code, live text interview, graded report; candidate earns interview XP, interviewer +25 XP.
+- [x] Verified end to end with two temporary accounts (code join, live turns, graded report on both sides); test accounts deleted.
