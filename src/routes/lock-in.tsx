@@ -29,7 +29,7 @@ function ModeFolder({ m, recommended }: { m: (typeof MODES)[number]; recommended
   return (
     <div className={`folder ${m.folder} relative flex h-full flex-col`}>
       {recommended && (
-        <span className="absolute -top-3 left-1/2 z-20 -translate-x-1/2 -rotate-2 bg-primary px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-primary-foreground">
+        <span className="sticky-tag absolute -top-6 left-1/2 z-20 -translate-x-1/2 px-3 py-1.5 text-[13px] font-bold italic tracking-tight">
           Recommended
         </span>
       )}
@@ -70,9 +70,10 @@ function LockIn() {
           <span aria-hidden className="desk-paper right-[20%] top-[52%] h-28 w-24 -rotate-3" />
           <span aria-hidden className="desk-paper left-[42%] top-[6%] h-36 w-28 rotate-2" />
 
-          <div className="relative z-10 mx-auto w-full max-w-6xl px-4 pt-10 md:px-8">
+          {/* Heading on the left, Max's note pinned to the desk on the right. */}
+          <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-wrap items-start justify-between gap-6 px-4 pt-10 md:px-8">
             <h1 className="text-4xl font-bold md:text-5xl">Choose your mode</h1>
-            <MaxNote note={note} onCycle={next} className="mt-4" />
+            <MaxNote note={note} onCycle={next} className="-rotate-2" />
           </div>
 
           <div className="relative z-10 mx-auto grid w-full max-w-6xl flex-1 content-end items-end gap-10 px-4 pb-14 md:grid-cols-3 md:px-8">

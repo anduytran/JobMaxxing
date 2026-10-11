@@ -421,6 +421,61 @@ html.dyslexia-font em, html.dyslexia-font i { font-style: normal; }
   box-shadow: 0 3px 6px -2px color-mix(in oklab, var(--color-foreground) 30%, transparent);
   opacity: 0.9;
 }
+
+/* Yellow sticky notes: Max's note on the desk and the "Recommended" flag
+   stuck to a folder. The corner is cut and folded, so the wood shows through. */
+.sticky-note, .sticky-tag {
+  --sticky: oklch(0.88 0.155 96);
+  --sticky-deep: oklch(0.74 0.145 88);
+  --sticky-ink: oklch(0.32 0.07 70);
+  --sticky-cut: 18px;
+  position: relative;
+  color: var(--sticky-ink);
+  background: linear-gradient(180deg,
+    color-mix(in oklab, var(--sticky) 85%, var(--color-card)),
+    var(--sticky) 42%,
+    color-mix(in oklab, var(--sticky) 88%, var(--sticky-deep)));
+  border-radius: 2px;
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - var(--sticky-cut)), calc(100% - var(--sticky-cut)) 100%, 0 100%);
+  filter: drop-shadow(0 9px 9px color-mix(in oklab, var(--color-foreground) 34%, transparent));
+  rotate: -1.2deg;
+  transition: rotate 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), translate 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.sticky-tag { --sticky-cut: 10px; rotate: -3deg; }
+/* the adhesive band along the top */
+.sticky-note::before, .sticky-tag::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 26%;
+  background: linear-gradient(180deg,
+    color-mix(in oklab, var(--sticky) 62%, var(--color-card)),
+    transparent);
+  pointer-events: none;
+}
+/* the folded-over corner */
+.sticky-note::after, .sticky-tag::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: var(--sticky-cut);
+  height: var(--sticky-cut);
+  clip-path: polygon(0 0, 100% 0, 0 100%);
+  background: linear-gradient(to bottom right,
+    color-mix(in oklab, var(--sticky-deep) 80%, var(--color-foreground)),
+    color-mix(in oklab, var(--sticky) 55%, var(--color-card)));
+  pointer-events: none;
+}
+@media (hover: hover) {
+  html:not(.reduce-motion) .sticky-note:hover,
+  html:not(.reduce-motion) .sticky-tag:hover { rotate: 0deg; translate: 0 -3px; }
+}
+html.reduce-motion .sticky-note, html.reduce-motion .sticky-tag { transition: none; }
+html.high-contrast .sticky-note, html.high-contrast .sticky-tag {
+  --sticky-ink: oklch(0.18 0.04 70);
+  box-shadow: inset 0 0 0 2px color-mix(in oklab, var(--color-foreground) 75%, transparent);
+}
 .desk-edge {
   height: 26px;
   background: linear-gradient(180deg,
