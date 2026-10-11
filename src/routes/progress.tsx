@@ -11,6 +11,7 @@ import { getLatestResumeReview } from "@/lib/resume.functions";
 import type { StoredReview } from "@/lib/resume";
 import { useInterviewModePicker } from "@/components/InterviewModePicker";
 import { SkillRadar } from "@/components/SkillRadar";
+import { CareerStats, StreakBadge, useCareerDashboard } from "@/components/CareerStats";
 
 export const Route = createFileRoute("/progress")({
   head: () => ({
@@ -36,6 +37,7 @@ function Page() {
   useEffect(() => { getLatestResumeReview().then((r) => { if (r.ok) setReview(r.review); }).catch(() => {}).finally(() => setReviewLoading(false)); }, []);
   const resumeScore = review?.score ?? (details.resume as { score?: number } | undefined)?.score;
   const reducedMotion = useReducedMotion();
+  const { data: career, reload } = useCareerDashboard();
   const [tip, setTip] = useState(0);
   const tips = [
     "You don't have to have it all figured out. You just have to take the next step.",
@@ -53,8 +55,11 @@ function Page() {
             <h1 className="mt-2 text-4xl font-bold md:text-5xl">Looking good, {first} <span className="text-accent">✦</span></h1>
             <p className="mt-2 text-lg text-muted-foreground">{done > 0 ? `${done} quests behind you. Take a moment to appreciate that.` : "Glad you're here. Let's start with one small win."}</p>
           </div>
-          <div className="panel flex items-center gap-3 px-5 py-3 text-sm transition-shadow hover:shadow-md">
-            <Flame className="animate-flame h-5 w-5 text-primary" /><b>{done} quests done</b><span className="border-l pl-3 text-muted-foreground">Keep it going!</span>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="panel flex items-center gap-3 px-5 py-3 text-sm transition-shadow hover:shadow-md">
+              <Flame className="animate-flame h-5 w-5 text-primary" /><b>{done} quests done</b><span className="border-l pl-3 text-muted-foreground">Keep it going!</span>
+            </div>
+            {career && career.streak.current > 0 && <StreakBadge streak={career.streak} />}
           </div>
         </div>
 
@@ -77,6 +82,7 @@ function Page() {
         </div>
 
         <SkillRadar />
+        {career && <CareerStats data={career} onGoalSaved={reload} />}
 
         <div className="flex items-center gap-5 rounded-2xl border bg-hero/60 p-6">
           <Button variant="ghost" aria-label="Another thought from Max" title="Another thought from Max" className="h-20 w-20 shrink-0 p-0 hover:bg-transparent" onClick={() => setTip((t) => (t + 1) % tips.length)}><Mascot className="h-20 w-20" /></Button>
