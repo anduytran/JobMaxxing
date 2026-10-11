@@ -1,6 +1,8 @@
 # Roadmap
 
 ## Interview voice presence
+- [ ] Add manual Done speaking / Send answer, live candidate captions, a five-word correction budget and default microphone test.
+- [ ] Test capture, correction limits and microphone cleanup in browser fixtures.
 - [x] Replace the live chat bubbles with a pulsing circle for listening, thinking and speaking; preserve captions, typed fallback and report transcript.
 - [x] Verify isolated circle states, reduced motion, playback callbacks and cancellation; build clean. Interview agents and speech pickup unchanged.
 - [ ] Verify an audible signed-in interview end-to-end — blocked by unavailable Neon account session and real microphone input.
