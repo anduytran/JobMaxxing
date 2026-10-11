@@ -91,8 +91,14 @@ export function InterviewRecorder({ active, kind, title, onSaved }: {
         </AlertDialogContent>
       </AlertDialog>
       {recording && (
-        <div className="fixed bottom-4 left-4 z-40 overflow-hidden rounded-xl border border-border bg-card shadow-lg">
-          <video ref={preview} muted autoPlay playsInline className="h-24 w-40 -scale-x-100 object-cover" aria-label="Your camera" />
+        <div
+          className="fixed z-40 cursor-grab touch-none overflow-hidden rounded-xl border border-border bg-card shadow-lg active:cursor-grabbing"
+          style={pos ? { left: pos.x, top: pos.y } : { top: 16, right: 16 }}
+          onPointerDown={onDragStart}
+          role="presentation"
+          aria-label="Your camera preview — drag to move"
+        >
+          <video ref={preview} muted autoPlay playsInline className="pointer-events-none h-24 w-40 -scale-x-100 object-cover" aria-label="Your camera" />
           <div className="flex items-center justify-between gap-2 px-2 py-1 text-xs">
             <span className="flex items-center gap-1 font-medium text-destructive"><Circle className="h-2.5 w-2.5 animate-pulse fill-current" />Recording</span>
             <button type="button" className="text-muted-foreground underline hover:text-foreground" onClick={stop}>Stop</button>
