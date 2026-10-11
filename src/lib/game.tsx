@@ -93,6 +93,12 @@ export function GameProvider({
     document.documentElement.classList.toggle("reduce-motion", reducedMotion);
   }, [reducedMotion]);
 
+  // Store-bought dashboard theme.
+  useEffect(() => {
+    if (activeTheme === "default") document.documentElement.removeAttribute("data-theme");
+    else document.documentElement.setAttribute("data-theme", activeTheme);
+  }, [activeTheme]);
+
   // Writes go to Neon optimistically; a rejected write rolls the screen back.
   const rejected = (res: SaveResult | undefined, rollback: () => void) => {
     if (res && !res.ok) {
@@ -115,6 +121,7 @@ export function GameProvider({
 
   const value: Game = {
     name, title, xp, quests, roast, reducedMotion, lastGain,
+    activeTitle, activeTheme, setActiveTitle, setActiveTheme,
     level: Math.floor(xp / XP_PER_LEVEL) + 1,
     levelXp: xp % XP_PER_LEVEL,
     setProfile: async (n, t) => {
