@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Check, Copy, Loader2, Mic, MicOff, Phone, PhoneOff, Send, ShieldAlert, Square, Timer, Users } from "lucide-react";
+import { Check, Copy, Loader2, Mic, MicOff, Phone, PhoneOff, Send, ShieldAlert, Square, Timer, Users, Video, VideoOff } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Max } from "@/components/Max";
@@ -14,7 +14,7 @@ import { useGame } from "@/lib/game";
 import { generateInterviewQuestions, parseJobDescription } from "@/lib/interview.functions";
 import { createBrowserVoice, type VoiceAgent } from "@/lib/interview/voice";
 import {
-  createPeerSession, getPeerSession, joinPeerSession, peerAskNext, peerEndSession, peerGrade, peerSay, peerSetChecks,
+  createPeerSession, getPeerSession, joinPeerSession, peerAskNext, peerEndSession, peerGrade, peerSay, peerSetChecks, peerVideoConsent,
   type PeerSession,
 } from "@/lib/peer.functions";
 import { LENGTHS, type InterviewLength, type InterviewType, type ParsedJob } from "@/lib/interview/types";
@@ -63,7 +63,10 @@ function Page() {
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
   const myRole = session ? ((session.meIsHost === (session.hostRole === "interviewer")) ? "interviewer" : "candidate") : null;
-  const call = usePeerCall({ sessionId, isHost: !!session?.meIsHost, live: stage === "live", signal: session?.signal ?? {} });
+  const videoConsent = session?.signal.video ?? {};
+  const myVideoConsent = session ? (session.meIsHost ? videoConsent.host : videoConsent.guest) : false;
+  const bothVideoConsent = !!(videoConsent.host && videoConsent.guest);
+  const call = usePeerCall({ sessionId, isHost: !!session?.meIsHost, live: stage === "live", signal: session?.signal ?? {}, video: bothVideoConsent });
 
   const refresh = async (id = sessionId) => {
     if (!id) return;
