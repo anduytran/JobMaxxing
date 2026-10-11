@@ -60,15 +60,22 @@ function LockIn() {
   const { note, next } = useRandomMaxNote();
   return (
     <div className="-mx-4 -mb-8 md:-mx-8">
-      <div className="mx-auto max-w-6xl px-4 md:px-8">
-        <h1 className="text-4xl font-bold md:text-5xl">Choose your mode</h1>
-        <MaxNote note={note} onCycle={next} className="mt-4" />
-      </div>
-
       {/* The desk: surface fills most of the screen, then the table edge, then the ground. */}
-      <div className="desk-scene mt-8">
+      <div className="desk-scene">
         <div className="desk-surface">
-          <div className="mx-auto grid w-full max-w-6xl flex-1 content-end items-end gap-10 px-4 pb-14 md:grid-cols-3 md:px-8">
+          {/* scattered loose papers */}
+          <span aria-hidden className="desk-paper left-[4%] top-[12%] h-40 w-32 -rotate-6" />
+          <span aria-hidden className="desk-paper left-[16%] top-[46%] h-32 w-24 rotate-3" />
+          <span aria-hidden className="desk-paper right-[6%] top-[9%] h-44 w-36 rotate-6" />
+          <span aria-hidden className="desk-paper right-[20%] top-[52%] h-28 w-24 -rotate-3" />
+          <span aria-hidden className="desk-paper left-[42%] top-[6%] h-36 w-28 rotate-2" />
+
+          <div className="relative z-10 mx-auto w-full max-w-6xl px-4 pt-10 md:px-8">
+            <h1 className="text-4xl font-bold md:text-5xl">Choose your mode</h1>
+            <MaxNote note={note} onCycle={next} className="mt-4" />
+          </div>
+
+          <div className="relative z-10 mx-auto grid w-full max-w-6xl flex-1 content-end items-end gap-10 px-4 pb-14 md:grid-cols-3 md:px-8">
             {MODES.map((m, i) => {
               const folder = <ModeFolder m={m} recommended={i === 0} />;
               return m.to === "/interview" ? (
