@@ -136,3 +136,9 @@
 - [x] Point the app's prompt at the bank and pass each planned question's Probe into the live conversation context.
 - [x] Replace the fallback templates with the bank: behavioral questions from B- records, technical from T- records matched to the job's stacks, openers separate, C-/P- records excluded from the fallback.
 - [x] Verify the agent answers from the bank on a sample job (openers/technical/behavioral all matched bank records); typecheck and build clean.
+
+## Job Parser prompt
+- [x] Replace the Job Parser agent's instructions with the uploaded Job Expert Parser prompt (security, level/track classification, skill normalization, competencies, benchmark check, flags, fairness), keeping the app's six-field output contract.
+- [x] Widen the agent's enforced JSON output schema to include location and specialNotes so those app fields stop being dropped.
+- [x] Simplify the app-side parseJob prompt to defer to the agent's instructions.
+- [x] Verify on a sample posting: all six fields returned, prompt-injection text inside the posting flagged in specialNotes instead of followed.
