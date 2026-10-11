@@ -206,6 +206,25 @@ function Interview() {
     finally { if (generation === captureGeneration.current) setListening(false); }
   };
 
+  // Hold Space to answer, release to send — mirrors the hold-to-answer button.
+  useEffect(() => {
+    if (stage !== "live" && stage !== "your_questions") return;
+    const down = (e: KeyboardEvent) => {
+      if (e.code !== "Space" || e.repeat) return;
+      const target = e.target as HTMLElement | null;
+      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA")) return;
+      e.preventDefault();
+      if (!listening && !thinking && playback === "ready") void speak();
+    };
+    const up = (e: KeyboardEvent) => {
+      if (e.code !== "Space") return;
+      if (listening) voice.current?.finishListening();
+    };
+    window.addEventListener("keydown", down);
+    window.addEventListener("keyup", up);
+    return () => { window.removeEventListener("keydown", down); window.removeEventListener("keyup", up); };
+  }); // no deps: always reads the latest state via closure refresh each render
+
   const finish = async () => {
     stopVoice();
     if (!job) return;
