@@ -81,7 +81,10 @@ function titleFit(title: string, role: string): number {
   const tw = new Set(words(title));
   const rw = words(role);
   if (!rw.length) return 0;
-  const hit = rw.filter((w) => tw.has(w) || [...tw].some((x) => x.startsWith(w) || w.startsWith(x) && x.length > 3)).length / rw.length;
+  // Exact word, or a prefix match where both words are long enough to be meaningful
+  // ("architect" ~ "architecture"). Short words like "ai" must match exactly, so
+  // "aide"/"airport" never count as "ai".
+  const hit = rw.filter((w) => tw.has(w) || (w.length > 3 && [...tw].some((x) => x.length > 3 && (x.startsWith(w) || w.startsWith(x))))).length / rw.length;
   return hit === 1 ? 0.75 : hit >= 0.5 && rw.length > 2 ? 0.4 : 0;
 }
 
@@ -166,8 +169,11 @@ async function fetchAdzuna(prefs: JobPrefs): Promise<{ listings: AdzunaListing[]
   // Too few exact titles (rare roles): widen to the exact phrase anywhere, then keep only
   // listings whose title shares the role's key words.
   if (jobs.length < 8) for (const role of roles) await search({ what_phrase: role }, 1);
+  // Always keep only listings whose title fits a target role — never fall back to the
+  // unfiltered set, or a rare role ("AI Architect") floods the radar with anything
+  // that mentioned the words in its description.
   const filtered = jobs.filter((l) => roles.some((r) => titleFit(String(l.title ?? ""), r) > 0));
-  return { listings: filtered.length >= 3 ? filtered : jobs };
+  return { listings: filtered };
 }
 
 const clean = (v: unknown, max: number): string | null => {
