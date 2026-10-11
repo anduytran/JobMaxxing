@@ -176,7 +176,9 @@ export function withScribeListening(base: VoiceAgent, getToken: () => Promise<st
         let opened = false;
         let flushTimer: ReturnType<typeof setTimeout> | undefined;
         const text = () => [...committed, partial].join(" ").replace(/\s+/g, " ").trim();
-        const terms = keyterms().filter(Boolean).slice(0, 50);
+        // Filler words are always biased in so the transcript stays verbatim (graders count them).
+        const FILLERS = ["um", "uh", "uhm", "erm", "hmm", "like", "you know", "I mean", "sort of", "kind of", "basically", "actually"];
+        const terms = [...FILLERS, ...keyterms().filter(Boolean)].slice(0, 50);
         const conn = Scribe.connect({
           token, modelId: "scribe_v2_realtime", commitStrategy: CommitStrategy.VAD,
           ...(terms.length ? { keyterms: terms } : {}),
