@@ -16,8 +16,10 @@ export const parseJobDescription = createServerFn({ method: "POST" })
     return { jd };
   })
   .handler(async ({ data }) => {
+    const { currentUser } = await import("./auth.server");
+    const user = await currentUser();
     const { parseJob } = await import("./interview/agents.server");
-    return parseJob(data.jd);
+    return parseJob(data.jd, user?.id);
   });
 
 // Fetches a public job posting URL server-side and extracts readable text so
@@ -63,8 +65,10 @@ export const parseJobUrl = createServerFn({ method: "POST" })
     return { url: parsed.toString(), hint };
   })
   .handler(async ({ data }) => {
+    const { currentUser } = await import("./auth.server");
+    const user = await currentUser();
     const { parseJobFromUrl } = await import("./interview/agents.server");
-    const job = await parseJobFromUrl(data.url, data.hint || undefined);
+    const job = await parseJobFromUrl(data.url, data.hint || undefined, user?.id);
     if (!job) throw new Error("Couldn't read that posting, even with a web search. Paste the description instead.");
     return job;
   });
