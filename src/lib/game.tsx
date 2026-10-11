@@ -6,6 +6,7 @@ import {
   completeQuest as completeQuestFn,
   gainXp as gainXpFn,
   saveProfile as saveProfileFn,
+  saveAvatar as saveAvatarFn,
   saveRoast as saveRoastFn,
   saveReducedMotion as saveReducedMotionFn,
   saveLargeText as saveLargeTextFn,
@@ -82,6 +83,7 @@ export function GameProvider({
   const [largeText, setLargeTextState] = useState(loaded?.largeText ?? false);
   const [activeTitle, setActiveTitle] = useState<string | null>(loaded?.activeTitle ?? null);
   const [activeTheme, setActiveTheme] = useState(loaded?.activeTheme ?? "default");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(loaded?.avatarUrl ?? null);
   const [details, setDetails] = useState<Details>({
     skills: loaded?.skills ?? [], student: loaded?.student ?? {}, jobPrefs: loaded?.jobPrefs ?? {}, resume: loaded?.resume ?? null,
   });
@@ -129,7 +131,13 @@ export function GameProvider({
 
   const value: Game = {
     name, title, xp, quests, roast, reducedMotion, largeText, lastGain,
-    activeTitle, activeTheme, setActiveTitle, setActiveTheme,
+    activeTitle, activeTheme, avatarUrl, setActiveTitle, setActiveTheme,
+    setAvatar: async (dataUrl) => {
+      const prev = avatarUrl;
+      setAvatarUrl(dataUrl);
+      const res = await saveAvatarFn({ data: { avatarUrl: dataUrl } });
+      return !rejected(res, () => setAvatarUrl(prev));
+    },
     level: Math.floor(xp / XP_PER_LEVEL) + 1,
     levelXp: xp % XP_PER_LEVEL,
     setProfile: async (n, t) => {
