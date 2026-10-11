@@ -11,6 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
 import { usePeerCall } from "@/hooks/use-peer-call";
+import { InterviewRecorder, RecordingPlayer } from "@/components/InterviewRecorder";
+import { useRecordings } from "@/lib/interview-recordings";
 import { useGame } from "@/lib/game";
 import { generateInterviewQuestions, getScribeToken, parseJobDescription } from "@/lib/interview.functions";
 import { createBrowserVoice, withScribeListening, type VoiceAgent } from "@/lib/interview/voice";
@@ -64,6 +66,8 @@ function Page() {
   const gradeAsked = useRef<string | null>(null);
   const gradeTries = useRef(0);
   const xpPaid = useRef<string | null>(null);
+  const [recId, setRecId] = useState<string | null>(null);
+  const myRecording = useRecordings().find((r) => r.id === recId);
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
   const myRole = session ? ((session.meIsHost === (session.hostRole === "interviewer")) ? "interviewer" : "candidate") : null;
@@ -190,7 +194,7 @@ function Page() {
   const reset = () => {
     call.hangUp();
     setStage("intro"); setSession(null); setSessionId(null); setCode(""); setJob(null); setJd(""); setJoinCode("");
-    gradeAsked.current = null; xpPaid.current = null;
+    gradeAsked.current = null; xpPaid.current = null; setRecId(null);
   };
 
   const askedCount = session?.transcript?.filter((t) => t.speaker === "interviewer" && t.phase === "interview").length ?? 0;
@@ -204,6 +208,7 @@ function Page() {
 
   return (
     <div className="mx-auto max-w-[1500px] space-y-4">
+      <InterviewRecorder active={stage === "live"} kind="peer" title={`Peer interview${session?.job?.title ? ` · ${session.job.title}` : ""}`} onSaved={setRecId} />
       <PageHeader eyebrow="Build your next chapter" title="Peer Interviews" sub="AI-planned questions, a live voice call with a friend, and graded feedback for both of you." />
 
       {stage === "intro" && (
@@ -476,6 +481,7 @@ function Page() {
 
       {stage === "report" && session && (
         <section className="panel space-y-5 p-6">
+          {myRecording && <div className="space-y-2"><h3 className="font-display text-lg">Rewatch your interview</h3><RecordingPlayer r={myRecording} compact /></div>}
           {session.flag ? (
             <div className="flex flex-col items-center gap-2 py-10 text-center">
               <ShieldAlert className="h-10 w-10 text-destructive" />

@@ -5,7 +5,7 @@ import { PageHeader } from "@/components/AppShell";
 import { ResumeScoreCard } from "@/components/ResumeScoreCard";
 import { SkillRadar } from "@/components/SkillRadar";
 import { useInterviewModePicker } from "@/components/InterviewModePicker";
-import { ApplicationTracker, CareerProgressCard, RecentXpCard, SavedInterviewsCard, StreakCard } from "@/components/CareerBoard";
+import { ApplicationTracker, CareerProgressCard, RecentXpCard, RecordingsCard, SavedInterviewsCard, StreakCard } from "@/components/CareerBoard";
 import { getLatestResumeReview } from "@/lib/resume.functions";
 import { getCareerDashboard, type CareerDashboard } from "@/lib/career.functions";
 import type { StoredReview } from "@/lib/resume";
@@ -60,6 +60,7 @@ function ProgressPage() {
         </div>
         <div className="min-w-0 lg:col-span-2">
           {career && <SavedInterviewsCard items={career.solo} onChanged={load} />}
+          <RecordingsCard />
         </div>
       </div>
       {interviewModeDialog}
