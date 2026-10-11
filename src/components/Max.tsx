@@ -6,8 +6,9 @@ import skillsAsset from "@/assets/max/sized-skills.png.asset.json";
 import hunt from "@/assets/max/max-hunt.svg";
 import dapAsset from "@/assets/max/sized-dap-clean.png.asset.json";
 import dizzyAsset from "@/assets/max/sized-dizzy.png.asset.json";
+import emptyAsset from "@/assets/max/sized-empty.png.asset.json";
 
-export const MAX_POSES = { wave: waveAsset.url, resume: resumeAsset.url, interview: interviewAsset.url, skills: skillsAsset.url, hunt, dap: dapAsset.url, dizzy: dizzyAsset.url } as const;
+export const MAX_POSES = { wave: waveAsset.url, resume: resumeAsset.url, interview: interviewAsset.url, skills: skillsAsset.url, hunt, dap: dapAsset.url, dizzy: dizzyAsset.url, empty: emptyAsset.url } as const;
 export type MaxPose = keyof typeof MAX_POSES;
 
 // Every pose PNG carries a different amount of transparent padding around Max, so
@@ -23,6 +24,9 @@ export const MAX_SCALE: Record<MaxPose, number> = {
   skills: 1.16,
   wave: 1.16,
   hunt: 1.23,
+  // The empty pose was cropped to wave's framing (body height 0.824 vs 0.826, same
+  // foot line), so it needs exactly wave's factor to render at the same visible size.
+  empty: 1.16,
 };
 
 
