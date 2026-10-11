@@ -9,11 +9,12 @@ import {
   applyResumeSuggestion,
   getResumeState,
   getResumeVersion,
+  moreResumeSuggestions,
   saveResumeVersion,
   scanResume,
 } from "@/lib/resume.functions";
 import {
-  CATEGORY_LABEL, GRADE_META, XP_RULES,
+  CATEGORY_LABEL, GRADE_META, SUGGESTION_BATCH, XP_RULES,
   type ResumeSection, type ResumeSuggestion, type ResumeVersion, type StoredReview,
 } from "@/lib/resume";
 import { cn } from "@/lib/utils";
@@ -82,6 +83,7 @@ function Setup() {
   const [busy, setBusy] = useState<null | "scan" | "save">(null);
   const [seconds, setSeconds] = useState(0);
   const [applying, setApplying] = useState<string | null>(null);
+  const [moreBusy, setMoreBusy] = useState(false);
   const [focusLine, setFocusLine] = useState<string | null>(null);
   const [paste, setPaste] = useState(false);
   const [text, setText] = useState("");
@@ -177,6 +179,17 @@ function Setup() {
     if (res.version) void refresh();
   };
 
+  /** Asks for the next batch — the server refuses while any of the current fixes is still open. */
+  const generateMore = async () => {
+    if (!review) return;
+    setMoreBusy(true);
+    const res = await moreResumeSuggestions({ data: { reviewId: review.id, sections } });
+    setMoreBusy(false);
+    if (!res.ok) return void toast.error(res.error);
+    toast.success(`${res.added} more fixes unlocked`, { description: `Each is worth +${XP_RULES.perFix} XP once integrated.` });
+    await refresh();
+  };
+
   const restore = async (v: ResumeVersion) => {
     const res = await getResumeVersion({ data: { id: v.id } });
     if (!res.ok) return void toast.error(res.error);
@@ -201,7 +214,7 @@ function Setup() {
       <div>
         <h1 className="text-4xl font-bold md:text-5xl">Resume Lab</h1>
         <p className="text-muted-foreground">
-          Upload a PDF or a photo of your resume. An AI recruiter grades it, checks it for applicant tracking systems, and suggests fixes worth XP.
+          Upload a PDF or a photo of your resume. An AI recruiter grades it, checks it for applicant tracking systems, and hands you the {SUGGESTION_BATCH} fixes worth the most XP — integrate them and the next {SUGGESTION_BATCH} unlock.
         </p>
       </div>
 
@@ -255,7 +268,8 @@ function Setup() {
               <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
                 <GradeHeader review={review} />
                 <AtsPanel review={review} />
-                <SuggestionList review={review} sections={sections} applying={applying} onApply={apply} onFocus={setFocusLine} />
+                <SuggestionList review={review} sections={sections} applying={applying} onApply={apply} onFocus={setFocusLine}
+                  open={review.suggestions.filter((s) => !s.applied).length} moreBusy={moreBusy} onMore={() => void generateMore()} />
               </motion.div>
             )}
           </AnimatePresence>
@@ -372,13 +386,19 @@ function AtsPanel({ review }: { review: StoredReview }) {
 
 const TYPE_LABEL: Record<string, string> = { rewrite: "Action verb", metric: "Metric gap", ats: "ATS", general: "General" };
 
-function SuggestionList({ review, sections, applying, onApply, onFocus }: {
+function SuggestionList({ review, sections, applying, onApply, onFocus, open, moreBusy, onMore }: {
   review: StoredReview; sections: ResumeSection[]; applying: string | null;
   onApply: (s: ResumeSuggestion) => Promise<void>; onFocus: (id: string | null) => void;
+  open: number; moreBusy: boolean; onMore: () => void;
 }) {
   if (!review.suggestions.length) return null;
   const earned = review.suggestions.filter((s) => s.applied).reduce((a, s) => a + s.xp, 0);
   const total = review.suggestions.reduce((a, s) => a + s.xp, 0);
+  const hint = open === 0
+    ? `All ${SUGGESTION_BATCH} integrated — pull the next ${SUGGESTION_BATCH} highest-impact fixes.`
+    : open === 1
+      ? "Integrate this fix to unlock the next batch."
+      : `Integrate these ${open} fixes to unlock the next ${SUGGESTION_BATCH}.`;
   return (
     <div className="space-y-3">
       <div className="flex items-baseline justify-between gap-3">
@@ -425,6 +445,17 @@ function SuggestionList({ review, sections, applying, onApply, onFocus }: {
           </div>
         );
       })}
+      <div className="panel flex flex-wrap items-center gap-3 p-4">
+        <Sparkle className={cn("h-5 w-5 shrink-0", open ? "text-muted-foreground" : "text-primary")} />
+        <div className="min-w-0 flex-1">
+          <p className="font-semibold">Next {SUGGESTION_BATCH} fixes</p>
+          <p className="text-sm text-muted-foreground">{hint}</p>
+        </div>
+        <Button size="sm" variant={open ? "outline" : "default"} disabled={!!open || moreBusy} onClick={onMore}>
+          {moreBusy ? <Loader2 className="animate-spin" /> : <Sparkle className="h-3.5 w-3.5" />}
+          {open ? `${open} open` : `Generate ${SUGGESTION_BATCH} more`}
+        </Button>
+      </div>
     </div>
   );
 }

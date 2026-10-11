@@ -109,3 +109,9 @@
 - [x] Verify on the live signed-in dashboard that the button is the first item of the tab group (Lock In ends 4px before Home begins), spans the nav's full 64px height flush with the tabs, carries only `ArrowRight`, and that `/lock-in` still opens the mode picker; temporary sign-in removed, build clean.
 
 
+
+## Top 3 resume fixes
+- [x] Cap every grade at the three highest-impact fixes: the grader task asks for exactly three, and `normalizeReview` and the offline fallback clamp to `SUGGESTION_BATCH`.
+- [x] Gate the next batch behind integration: `moreResumeSuggestions` re-checks the stored review and refuses while any current fix is unapplied, appending only genuinely new fixes with ids that can't collide.
+- [x] Show the gate in Resume Lab — a "Next 3 fixes" card whose button stays locked and names the open fixes until all three are in.
+- [x] Verify against the live grader: a sample student resume came back with exactly 3 ranked fixes; integrating all 3 unlocked "Generate 3 more", which added 3 new ones; replaying the generate request while fixes were open was refused server-side; the throwaway account used for the run was deleted and the build is clean.
