@@ -93,6 +93,15 @@ async function me() {
   return (await requireUser()) as { id: string; name?: string; email?: string };
 }
 
+/** Same rule as the friends list: the profile name when set, else a prettified email. */
+async function labelFor(user: { id: string; name?: string; email?: string }) {
+  if (user.name) return user.name;
+  const { neonQuery } = await import("./neon.server");
+  const { displayName } = await import("./friends.functions");
+  const { rows } = await neonQuery("select name from public.devup_profile where id = $1", [user.id]);
+  return displayName(user.email ?? "", (rows[0]?.["name"] as string | null) ?? null);
+}
+
 async function loadForUser(id: string, userId: string): Promise<PeerSession> {
   if (!/^[0-9a-f-]{36}$/i.test(id)) throw new Error("Invalid session.");
   const { neonQuery } = await import("./neon.server");
@@ -118,7 +127,7 @@ export const createPeerSession = createServerFn({ method: "POST" })
     const { neonExecute } = await import("./neon.server");
     const { checklistFor } = await import("./interview/agents.server");
     const questions: PeerQuestion[] = data.questions.map((q) => ({ ...q, checklist: checklistFor(q) }));
-    const name = user.name ?? user.email?.split("@")[0] ?? "Host";
+    const name = await labelFor(user);
     for (let attempt = 0; attempt < 3; attempt++) {
       const code = makeCode();
       try {
@@ -150,7 +159,7 @@ export const joinPeerSession = createServerFn({ method: "POST" })
     if (s.hostId === user.id) return { id: s.id };
     if (s.guestId && s.guestId !== user.id) throw new Error("That session already has two people.");
     if (s.status === "done") throw new Error("That session is already finished.");
-    const name = user.name ?? user.email?.split("@")[0] ?? "Guest";
+    const name = await labelFor(user);
     // The clock does NOT start here — it starts when both sides mark ready (peerReady).
     await neonExecute(
       "update public.devup_peer_session set guest_id = $2::uuid, guest_name = $3, status = 'live' where id = $1::uuid",
