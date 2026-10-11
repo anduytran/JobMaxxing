@@ -302,10 +302,18 @@ function Page() {
                 </div>
               </div>
               <div className="flex items-center gap-4 font-mono text-sm">
-                <span className={cn("flex items-center gap-1", askedCount && qLeft < 30 && "text-destructive")} title="This question">
-                  <Timer className="h-4 w-4" /> Q {fmt(askedCount ? qLeft : QUESTION_SECONDS)}
-                </span>
-                <span className={cn("text-muted-foreground", totalLeft < 60 && "text-destructive")} title="Whole interview">Total {fmt(totalLeft)}</span>
+                {bothReady ? (
+                  <>
+                    <span className={cn("flex items-center gap-1", askedCount && qLeft < 30 && "text-destructive")} title="This question">
+                      <Timer className="h-4 w-4" /> Q {fmt(askedCount ? qLeft : QUESTION_SECONDS)}
+                    </span>
+                    <span className={cn("text-muted-foreground", totalLeft < 60 && "text-destructive")} title="Whole interview">Total {fmt(totalLeft)}</span>
+                  </>
+                ) : (
+                  <span className="flex items-center gap-1 text-muted-foreground" title="The clock starts once you're both ready">
+                    <Timer className="h-4 w-4" /> Starts when you're both ready
+                  </span>
+                )}
               </div>
             </div>
             <Progress value={(askedCount / Math.max(1, session.questions.length)) * 100} className="h-1 rounded-none" />
