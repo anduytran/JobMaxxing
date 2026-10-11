@@ -101,7 +101,7 @@ export const generateInterviewQuestions = createServerFn({ method: "POST" })
         }
       } catch (e) { console.error("resume fetch for interview failed", e); }
     }
-    return generateQuestions(data.job, data.type, data.length, data.roast, resumeText);
+    return generateQuestions(data.job, data.type, data.length, data.roast, resumeText, user?.id);
   });
 
 // Saves the interview the moment it starts (score 0, empty transcript) so it
@@ -139,12 +139,12 @@ export const gradeInterviewTranscript = createServerFn({ method: "POST" })
     };
   })
   .handler(async ({ data }) => {
+    const { currentUser } = await import("./auth.server");
+    const user = await currentUser();
     const { gradeInterview } = await import("./interview/agents.server");
-    const grade = await gradeInterview(data.transcript, data.job);
+    const grade = await gradeInterview(data.transcript, data.job, user?.id);
     let ratings: import("./mmr.server").RatingChange[] = [];
     try {
-      const { currentUser } = await import("./auth.server");
-      const user = await currentUser();
       const answered = data.transcript.filter((t) => t.speaker === "candidate" && t.phase === "interview").length;
       if (user && answered > 0) {
         const { applySessionRatings, scoredItems } = await import("./mmr.server");
