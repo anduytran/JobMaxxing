@@ -89,7 +89,7 @@ export async function parseJob(jd: string, userId?: string): Promise<ParsedJob> 
   const ai = await askRaia<ParsedJob>(ENV.parser, jd,
     "Parse this job posting following your own instructions (security, fairness and flag rules included). " +
     "Reply with JSON only using your output schema: {title, summary, skills, qualifications, location, specialNotes} — " +
-    "null for anything the posting does not state.", 45_000, undefined, { userId, action: "job parse" });
+    "null for anything the posting does not state.", 90_000, undefined, { userId, action: "job parse" });
   if (ai && Array.isArray(ai.skills)) {
     return {
       title: ai.title ?? null,
