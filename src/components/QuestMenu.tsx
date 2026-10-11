@@ -17,8 +17,8 @@ export function QuestMenu() {
   const hide = () => { cancel(); timer.current = setTimeout(() => setOpen(false), 200); };
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
   const groups: { label: string; period: ResetPeriod; limit: number }[] = [{ label: "Daily", period: "daily", limit: 2 }, { label: "Weekly", period: "weekly", limit: 3 }];
-  const tracked = quests.filter(q => q.period === "daily" || q.period === "weekly");
-  const doneCount = tracked.filter(q => q.done).length;
+  const shown = groups.flatMap(g => quests.filter(q => q.period === g.period).sort((a, b) => Number(a.done) - Number(b.done)).slice(0, g.limit));
+  const doneCount = shown.filter(q => q.done).length;
   return <Popover open={open} onOpenChange={setOpen}>
     <PopoverTrigger asChild><Button variant="outline" aria-label={`Daily and weekly quests: ${doneCount} of ${tracked.length} done`} onPointerEnter={e => { if (e.pointerType === "mouse") show(); }} onPointerLeave={hide} className="gap-2 rounded-md"><Swords className="h-4 w-4" /><span className="text-sm font-semibold tabular-nums" title={`${doneCount} of ${tracked.length} quests done`}>{doneCount}<span className="text-muted-foreground">/{tracked.length}</span></span></Button></PopoverTrigger>
     <PopoverContent align="end" sideOffset={10} onPointerEnter={cancel} onPointerLeave={hide} onOpenAutoFocus={e => e.preventDefault()} className="w-[min(380px,calc(100vw-24px))] overflow-hidden p-0">
