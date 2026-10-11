@@ -221,7 +221,17 @@ function Market() {
                   <Button size="sm" onClick={() => practice(j)}>
                     <Mic className="h-4 w-4" /> Practice interview
                   </Button>
-                    <StatusMenu status={j.status} busy={busyId.current === j.id} onPick={(s) => applyStatus(j.id, s)} onRemove={() => removeMatch(j.id)} />
+                    <StatusMenu status={j.status} busy={busyId.current === j.id} onPick={(s) => applyStatus(j.id, s)} />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-muted-foreground hover:text-destructive"
+                      disabled={busyId.current === j.id}
+                      onClick={() => removeMatch(j.id)}
+                      aria-label="Remove from radar"
+                    >
+                      <Trash2 className="h-4 w-4" /> Remove
+                    </Button>
                 </div>
               </div>
             ))}
@@ -271,7 +281,7 @@ function Market() {
   );
 }
 
-function StatusMenu({ status, busy, onPick, onRemove }: { status: RadarStatus; busy: boolean; onPick: (s: RadarStatus) => void; onRemove: () => void }) {
+function StatusMenu({ status, busy, onPick }: { status: RadarStatus; busy: boolean; onPick: (s: RadarStatus) => void }) {
   const [open, setOpen] = useState(false);
   const options: RadarStatus[] = ["saved", "applied", "interviewing", "dismissed"];
   return (
@@ -287,10 +297,6 @@ function StatusMenu({ status, busy, onPick, onRemove }: { status: RadarStatus; b
               {STATUS_LABEL[s]}
             </button>
           ))}
-          <div className="my-1 border-t" />
-          <button className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-destructive hover:bg-muted" onClick={() => { setOpen(false); onRemove(); }}>
-            <Trash2 className="h-4 w-4" /> Remove from radar
-          </button>
         </div>
       )}
     </div>
