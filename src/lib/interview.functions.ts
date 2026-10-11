@@ -54,16 +54,17 @@ export const fetchJobPosting = createServerFn({ method: "POST" })
 // walls), the Job Parser agent itself web-searches the URL and parses what it
 // finds. Returns null when the agent can't find the posting either.
 export const parseJobUrl = createServerFn({ method: "POST" })
-  .inputValidator((i: { url: unknown }) => {
+  .inputValidator((i: { url: unknown; hint?: unknown }) => {
     const url = typeof i.url === "string" ? i.url.trim() : "";
     let parsed: URL;
     try { parsed = new URL(url); } catch { throw new Error("That job link doesn't look valid."); }
     if (parsed.protocol !== "http:" && parsed.protocol !== "https:") throw new Error("That job link doesn't look valid.");
-    return { url: parsed.toString() };
+    const hint = typeof i.hint === "string" ? i.hint.trim().slice(0, 400) : "";
+    return { url: parsed.toString(), hint };
   })
   .handler(async ({ data }) => {
     const { parseJobFromUrl } = await import("./interview/agents.server");
-    const job = await parseJobFromUrl(data.url);
+    const job = await parseJobFromUrl(data.url, data.hint || undefined);
     if (!job) throw new Error("Couldn't read that posting, even with a web search. Paste the description instead.");
     return job;
   });

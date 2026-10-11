@@ -137,7 +137,7 @@ function Interview() {
       fetchJobPosting({ data: { url } })
         .then(({ text }) => { setJd(text); return analyze(text); })
         .catch(async () => {
-          const job = await parseJobUrl({ data: { url } }).catch(() => null);
+          const job = await parseJobUrl({ data: { url, hint: stored } }).catch(() => null);
           if (job) {
             setJob(job);
             setMine(job.skills.filter((s) => details.skills.some((u) => u.toLowerCase() === s.toLowerCase())));

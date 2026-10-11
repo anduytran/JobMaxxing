@@ -104,11 +104,12 @@ export async function parseJob(jd: string): Promise<ParsedJob> {
  * of the posting URL fails or returns unreadable text. Returns null when the
  * agent can't find the posting, so the caller can ask the user to paste it.
  */
-export async function parseJobFromUrl(url: string): Promise<ParsedJob | null> {
+export async function parseJobFromUrl(url: string, hint?: string): Promise<ParsedJob | null> {
   const ai = await askRaia<ParsedJob>(ENV.parser,
-    `JOB URL\n${url}`,
-    "This is a URL MODE request per your instructions. Use web search to open or find this job posting, " +
-    "then parse it and reply with JSON only using your output schema: {title, summary, skills, qualifications, location, specialNotes}. " +
+    `JOB URL\n${url}${hint ? `\n\nHint: this link is for a role described as: ${hint.slice(0, 400)}` : ""}`,
+    "This is a URL MODE request per your instructions. Use web search to open or find this job posting — " +
+    "if the link itself is a redirect or not indexed, search for the company and role from the hint instead. " +
+    "Then parse it and reply with JSON only using your output schema: {title, summary, skills, qualifications, location, specialNotes}. " +
     "If you cannot find readable content for it, reply with title null and empty lists.",
     60_000);
   if (!ai || !Array.isArray(ai.skills) || (!ai.title && !ai.skills.length)) return null;
