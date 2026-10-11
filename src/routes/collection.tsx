@@ -1,9 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { Backpack, Check, Snowflake, Zap, Package, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MaxFigure, WearableArt } from "@/components/Wearables";
+import { Max } from "@/components/Max";
 import {
   equipItem,
   equipWearables,
@@ -35,6 +36,7 @@ const spring = { type: "spring", stiffness: 320, damping: 26 } as const;
 function Collection() {
   const [state, setState] = useState<StoreState | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const reducedMotion = useReducedMotion();
 
   useEffect(() => {
     getStore().then((res) => {
@@ -60,9 +62,6 @@ function Collection() {
   const ownedPacks = state.items.filter(
     (i) => i.category === "content_pack" && state.owned.includes(i.id),
   );
-  const empty =
-    !ownedWearables.length && !ownedTitles.length && !ownedThemes.length && !ownedPacks.length &&
-    !state.freezeCount && !state.boosterExpiresAt;
 
   const toggleWearable = (id: string) => {
     const on = state.activeWearables.includes(id);
@@ -120,11 +119,19 @@ function Collection() {
         </Button>
       </div>
 
-      {empty && (
-        <div className="panel p-10 text-center">
-          <p className="text-lg font-semibold">Nothing here yet</p>
-          <p className="mt-1 text-muted-foreground">
-            Earn XP, then roll the capsule machine or grab something from the Store.
+      {ownedWearables.length === 0 && (
+        <div className="panel p-8 text-center sm:p-10">
+          <motion.div
+            animate={reducedMotion ? undefined : { y: [0, 6, 0] }}
+            transition={{ duration: 3.4, repeat: Infinity, ease: "easeInOut" }}
+            className="mx-auto w-[170px] sm:w-[190px]"
+          >
+            <Max pose="empty" alt="Max with his lid wide open and nothing inside" className="w-full" />
+          </motion.div>
+          <p className="mt-2 text-lg font-semibold">Nothing to wear yet</p>
+          <p className="mx-auto mt-1 max-w-md text-muted-foreground">
+            Max's lid is open and the box is empty. Earn XP, roll the mimic chest, or grab
+            something from the Store — then he'll finally have a hat, horns, or at least glasses.
           </p>
           <Button asChild className="mt-4">
             <Link to="/store">Open the Store</Link>
