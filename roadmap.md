@@ -129,3 +129,10 @@
 - [x] Move the pictured personal overview from Home to Career, retaining Career milestones.
 - [x] Check navigation targets against existing pages and verify the preview has no public runtime errors.
 - [ ] Verify Start clicks and Career overview signed-in — blocked by unavailable account session.
+
+## Question bank for the Question agent
+- [x] Upload `interview_question_bank.md` to the Question agent's vector store (76 usable O/B/T/R records; upload done and indexed).
+- [x] Enable file search on the agent (max 10 results) and rewrite its instructions to draw questions from the bank, use Listen-for/Probe, and obey the style and never-ask rules.
+- [x] Point the app's prompt at the bank and pass each planned question's Probe into the live conversation context.
+- [x] Replace the fallback templates with the bank: behavioral questions from B- records, technical from T- records matched to the job's stacks, openers separate, C-/P- records excluded from the fallback.
+- [x] Verify the agent answers from the bank on a sample job (openers/technical/behavioral all matched bank records); typecheck and build clean.
