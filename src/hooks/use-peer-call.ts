@@ -12,6 +12,7 @@ const ICE: RTCConfiguration = {
   iceServers: [{ urls: ["stun:stun.l.google.com:19302", "stun:stun1.l.google.com:19302", "stun:stun.cloudflare.com:3478"] }],
 };
 const CONNECT_TIMEOUT_MS = 25000;
+const STALE = "__stale_call_attempt__";
 
 function gathered(pc: RTCPeerConnection) {
   return new Promise<void>((resolve) => {
@@ -63,6 +64,8 @@ export function usePeerCall(opts: {
     if (lv && lv.srcObject !== want) { lv.srcObject = want; if (want) void lv.play().catch(() => {}); }
   });
 
+  // Bumped by every start/hang-up so slower, superseded attempts abandon themselves.
+  const gen = useRef(0);
   const closePc = () => {
     const pc = pcRef.current;
     if (pc) { pc.ontrack = null; pc.onconnectionstatechange = null; pc.close(); }
@@ -71,6 +74,7 @@ export function usePeerCall(opts: {
 
   const hangUp = useCallback(() => {
     userLeft.current = true;
+    gen.current++;
     closePc();
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
@@ -81,16 +85,19 @@ export function usePeerCall(opts: {
   }, []);
 
   const makePc = useCallback(async () => {
+    const g = gen.current;
     closePc();
     let stream = streamRef.current;
     const wantVideo = videoRef.current;
     const hasVideo = !!stream?.getVideoTracks().some((t) => t.readyState === "live");
     if (!stream || wantVideo !== hasVideo) {
       stream?.getTracks().forEach((t) => t.stop());
-      stream = await navigator.mediaDevices.getUserMedia({
+      const got = await navigator.mediaDevices.getUserMedia({
         audio: { echoCancellation: true, noiseSuppression: true },
         video: wantVideo ? { width: { ideal: 640 }, height: { ideal: 480 } } : false,
       });
+      if (g !== gen.current) { got.getTracks().forEach((t) => t.stop()); throw new Error(STALE); }
+      stream = got;
       streamRef.current = stream;
     }
     stream.getAudioTracks().forEach((t) => (t.enabled = !mutedRef.current));
@@ -134,6 +141,7 @@ export function usePeerCall(opts: {
   const start = useCallback(async () => {
     if (!sessionId) return;
     userLeft.current = false;
+    const g = ++gen.current;
     setError(null);
     setState("connecting");
     try {
@@ -141,6 +149,7 @@ export function usePeerCall(opts: {
       if (isHost) {
         await pc.setLocalDescription(await pc.createOffer());
         await gathered(pc);
+        if (g !== gen.current || pcRef.current !== pc) return;
         const sdp = pc.localDescription!.sdp;
         myOffer.current = sdp;
         appliedAnswer.current = null;
@@ -149,6 +158,7 @@ export function usePeerCall(opts: {
         answeredOffer.current = null; // answer whatever offer is current
       }
     } catch (e) {
+      if ((e as Error).message === STALE || g !== gen.current) return;
       setState("failed");
       setError((e as Error).name === "NotAllowedError" ? "Camera/microphone blocked — allow them in your browser to talk." : (e as Error).message);
     }
@@ -191,10 +201,11 @@ export function usePeerCall(opts: {
           await fresh.setRemoteDescription({ type: "offer", sdp: signal.offer });
           await fresh.setLocalDescription(await fresh.createAnswer());
           await gathered(fresh);
+          if (pcRef.current !== fresh) return;
           await peerSignal({ data: { id: sessionId, sdp: fresh.localDescription!.sdp, forOffer: signal.offer } });
         }
       } catch (e) {
-        setError((e as Error).message);
+        if ((e as Error).message !== STALE) setError((e as Error).message);
       } finally {
         busy.current = false;
         // Re-evaluate only if new signals arrived while we were busy.
