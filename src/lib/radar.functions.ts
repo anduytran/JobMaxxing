@@ -351,29 +351,29 @@ export const getRadar = createServerFn({ method: "POST" })
 
       let fetchError: string | undefined;
       if (data.refresh) {
-        const { listings, error } = await fetchAdzuna(prefs);
+        const { listings, error } = await fetchJobs(prefs);
         fetchError = error;
         if (listings.length) {
           const statements = listings.slice(0, 40).map((l) => ({
             query:
               "insert into public.devup_job_radar (user_id, job_id, data) values ($1, $2, $3::jsonb) " +
               "on conflict (user_id, job_id) do update set data = excluded.data, updated_at = now()",
-            params: [uid, String(l.id), JSON.stringify({
+            params: [uid, l.id, JSON.stringify({
               title: clean(l.title, 200) ?? "Untitled role",
-              company: clean(l.company?.display_name, 120) ?? "Unknown company",
-              location: clean(l.location?.display_name, 160) ?? "",
-              description: (l.description ?? "").replace(/\s+/g, " ").slice(0, 6000),
-              url: clean(l.redirect_url, 600) ?? "",
-              salaryMin: typeof l.salary_min === "number" ? Math.round(l.salary_min) : null,
-              salaryMax: typeof l.salary_max === "number" ? Math.round(l.salary_max) : null,
-              postedAt: clean(l.created, 40) ?? "",
-              contractTime: clean(l.contract_time, 40) ?? null,
+              company: clean(l.company, 120) ?? "Unknown company",
+              location: clean(l.location, 160) ?? "",
+              description: l.description.replace(/\s+/g, " ").slice(0, 6000),
+              url: clean(l.url, 600) ?? "",
+              salaryMin: l.salaryMin,
+              salaryMax: l.salaryMax,
+              postedAt: clean(l.postedAt, 40) ?? "",
+              contractTime: clean(l.contractTime, 40) ?? null,
             })],
           }));
           // Drop untouched listings from earlier searches so old titles stop crowding the radar.
           statements.push({
             query: "delete from public.devup_job_radar where user_id = $1 and status = 'new' and not (job_id = any($2::text[]))",
-            params: [uid, listings.slice(0, 40).map((l) => String(l.id))],
+            params: [uid, listings.slice(0, 40).map((l) => l.id)],
           } as never);
           await neonExecute(statements);
         }
