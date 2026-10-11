@@ -285,10 +285,7 @@ export async function startInterviewConversation(opts: {
   const secret = key(ENV.questions);
   if (!secret) return null;
   try {
-    const [first = "Candidate", ...rest] = opts.name.trim().split(/\s+/);
-    const user = await raiaPost<{ id: string }>(secret, "/users", {
-      firstName: first, lastName: rest.join(" ") || "Candidate", fkId: opts.userId, source: "devup",
-    });
+    const user = await ensureConversationUser(secret, { userId: opts.userId, name: opts.name });
     const context =
       `${TURN_RULES}\nTone: ${opts.roast ? "tough and blunt" : "friendly and professional"}. Interview type: ${opts.type}. ${typeFocus(opts.type)} ` +
       `Budget: about ${LENGTHS[opts.length].questions} questions in ~${Math.round(LENGTHS[opts.length].seconds / 60)} minutes.\n` +
