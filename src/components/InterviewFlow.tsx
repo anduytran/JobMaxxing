@@ -400,64 +400,57 @@ export function InterviewFlow({ agents, api, radar, profileSkills = [], captions
 
       {(stage === "live" || stage === "your_questions" || stage === "grading") && (
         <section aria-label="Live interview" className="flex min-h-[calc(100svh-4rem)] w-full flex-col bg-background">
-          {/* Compact header: role, progress, time */}
-          <header className="flex flex-wrap items-center gap-x-6 gap-y-2 border-b px-5 py-3">
-            <div className="min-w-0 flex-1">
-              <div className="truncate text-sm font-semibold">{job?.title || "Mock interview"}</div>
-              <div className="text-xs text-muted-foreground">{LENGTHS[length].label} {type} · with Ava</div>
-            </div>
-            <div className="order-last w-full sm:order-none sm:w-auto" aria-label="Interview progress">
-              <div className="mb-1 text-center text-xs font-medium text-muted-foreground">
-                {stage === "live" ? `Question ${Math.min(qi + 1, questions.length)} of ${questions.length}` : stage === "grading" ? "Wrapping up" : "Your questions"}
+          {/* Header */}
+          <div className="flex items-center justify-between gap-4 p-5">
+            <div>
+              <div className="text-sm font-semibold">Ava, Friendly Recruiter</div>
+              <div className="text-xs text-muted-foreground">
+                {job?.title ? `${job.title}. ` : ""}{LENGTHS[length].label} {type} interview.
               </div>
-              <ol className="flex gap-1">
-                {questions.map((_, i) => {
-                  const done = stage !== "live" || i < qi;
-                  return <li key={i} aria-current={stage === "live" && i === qi ? "step" : undefined}
-                    className={cn("h-1.5 w-full rounded-full sm:w-10", done ? "bg-primary" : stage === "live" && i === qi ? "bg-primary/45" : "bg-muted")} />;
-                })}
-              </ol>
             </div>
             <div className="flex items-center gap-3">
-              <span className={cn("font-mono text-sm tabular-nums", left < 30 && stage === "live" && "text-destructive")}>{fmt(Math.max(0, left))}</span>
-              <Button variant="ghost" size="sm" disabled={stage === "grading" || thinking} onClick={finish}>End</Button>
+              <span className={cn("font-mono text-sm", left < 30 && stage === "live" && "text-destructive")}>{fmt(Math.max(0, left))} left</span>
+              <Button variant="outline" size="sm" disabled={stage === "grading" || thinking} onClick={finish}>End interview</Button>
             </div>
-          </header>
-
-          {/* Question */}
-          <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col justify-center px-6 py-8">
-            <div className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              {stage === "grading" ? "Interview complete" : stage === "your_questions" ? "Your turn to ask" : questions[qi]?.kind === "technical" ? "Technical question" : "Behavioral question"}
-            </div>
-            {currentCaption && stage !== "grading" ? (
-              <p ref={captionBox} className="max-h-[40svh] overflow-hidden scroll-smooth break-words text-2xl font-medium leading-relaxed text-foreground md:text-4xl md:leading-snug" aria-label="Current question">
-                <SpokenQuestion text={currentCaption} activeWord={spokenWord} />
-              </p>
-            ) : (
-              <p className="text-2xl font-medium text-muted-foreground">{stage === "grading" ? "Reviewing your answers…" : "Getting the next question ready…"}</p>
-            )}
           </div>
 
-          {/* Answer area */}
-          <div className="mx-auto mb-6 flex w-full max-w-4xl flex-col items-center gap-4 border-t px-6 pt-6 text-center">
-            <div className="shrink-0 scale-75 sm:scale-90"><InterviewVoicePresence state={voiceState} /></div>
-            <div>
-              <div className="text-sm font-semibold">
-                {voiceState === "speaking" || voiceState === "preparing" ? "Ava is asking…" : listening ? "Listening — take your time" : thinking ? "Thinking it over" : "Your turn to answer"}
-              </div>
-              <p className="mt-1 text-xs text-muted-foreground">Click the mic or press Space to start, and again when you're done.</p>
+          {currentCaption && stage !== "grading" && (
+            <div className="mx-auto w-full max-w-4xl px-6 py-6 md:py-8">
+              <p ref={captionBox} className="max-h-48 overflow-hidden scroll-smooth break-words text-center text-2xl font-medium leading-relaxed text-foreground md:text-3xl" aria-label="Current question">
+                <SpokenQuestion text={currentCaption} activeWord={spokenWord} />
+              </p>
             </div>
-            <button
-              type="button"
-              aria-label={listening ? "Click to end your answer" : "Click to answer"}
-              disabled={thinking || stage === "grading" || playback !== "ready"}
-              onClick={() => { if (listening) voice.current?.finishListening(); else void speak(); }}
-              className={cn("grid h-14 w-14 shrink-0 place-items-center rounded-full border-2 transition",
-                listening ? "border-primary bg-primary text-primary-foreground" : "border-foreground/60 hover:border-primary hover:text-primary",
-                (thinking || stage === "grading" || playback !== "ready") && "opacity-40")}
-            >
-              {listening ? <Square className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
-            </button>
+          )}
+
+          {/* Orb stage */}
+          <div className="relative grid min-h-72 flex-1 grid-cols-1 items-center justify-items-center gap-8 px-6 py-8 md:grid-cols-[1fr_240px_1fr]">
+            <div className="hidden w-full max-w-64 justify-self-start md:block">
+              <div className="mb-2 h-px w-6 bg-foreground/40" />
+              <div className="text-sm font-semibold">
+                {stage === "live" ? `Question ${qi + 1} of ${questions.length}` : stage === "grading" ? "Interview complete" : "Your questions"}
+              </div>
+              <div className="mt-1 text-xs text-muted-foreground">
+                {stage === "grading" ? "Reviewing your interview."
+                  : stage === "your_questions" ? "Ask the interviewer anything."
+                  : `${questions[qi]?.kind === "technical" ? "Technical" : "Behavioral"}. ${voiceState === "speaking" || voiceState === "preparing" ? "The interviewer is speaking." : voiceState === "listening" ? "Listening to you." : voiceState === "thinking" ? "Thinking." : "Your turn to answer."}`}
+              </div>
+            </div>
+            <InterviewVoicePresence state={voiceState} />
+            <div className="hidden w-full max-w-64 flex-col items-center gap-3 text-center md:flex">
+              <button
+                type="button"
+                aria-label={listening ? "Click to end your answer" : "Click to answer"}
+                disabled={thinking || stage === "grading" || playback !== "ready"}
+                onClick={() => { if (listening) voice.current?.finishListening(); else void speak(); }}
+                className={cn("grid h-14 w-14 place-items-center rounded-full border-2 transition",
+                  listening ? "border-primary bg-primary text-primary-foreground" : "border-foreground/60 hover:border-primary hover:text-primary",
+                  (thinking || stage === "grading" || playback !== "ready") && "opacity-40")}
+              >
+                {listening ? <Square className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+              </button>
+              <div className="text-sm font-semibold">{listening ? "Click to end" : "Click to answer"}</div>
+              <p className="text-xs text-muted-foreground">Click the mic or press Space to start talking, then click again (or press Space) when you're done.</p>
+            </div>
           </div>
 
           {/* Caption bubble */}
@@ -500,6 +493,7 @@ export function InterviewFlow({ agents, api, radar, profileSkills = [], captions
                 </Button>
               </span>
             </div>
+            <span>{stage === "live" ? `Question ${qi + 1} of ${questions.length}` : stage === "grading" ? "Reviewing interview" : "Your questions"}</span>
           </div>
         </section>
       )}
