@@ -3,7 +3,7 @@ import { Captions, Keyboard, Loader2, Mic, RotateCcw, Send, Square, Volume2, Vol
 import { InterviewVoicePresence, type InterviewVoiceState } from "@/components/InterviewVoicePresence";
 import { InterviewMicrophoneCheck } from "@/components/InterviewMicrophoneCheck";
 import { WornMax } from "@/components/Wearables";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 import { toast } from "sonner";
 import { AcknowledgeDisclosure, InterviewDisclosure } from "@/components/InterviewDisclosure";
 import { SkillText } from "@/components/skill-text";
@@ -103,6 +103,7 @@ function Interview() {
   // plays out, then the interview ends itself — no End press needed.
   const autoFinish = useRef(false);
   const captionBox = useRef<HTMLParagraphElement>(null);
+  useFollowWord(captionBox, spokenWord, currentCaption ?? "");
 
   const say = (t: string, phase: TranscriptTurn["phase"], questionId?: string) => {
     setTurns((x) => [...x, { speaker: "interviewer", phase, text: t, questionId }]);
@@ -595,7 +596,7 @@ function Metric({ label, m }: { label: string; m: { score: number; feedback: str
 }
 
 
-function useFollowWord(box: React.RefObject<HTMLElement | null>, word: number, text: string) {
+function useFollowWord(box: RefObject<HTMLElement | null>, word: number, text: string) {
   useEffect(() => {
     const el = box.current;
     if (!el) return;
