@@ -20,7 +20,7 @@ export function QuestList({ limit, showDone = true }: { limit?: number; showDone
               {q.category}{q.period !== "once" && <span className="ml-1 text-primary/80">· resets {q.period}</span>}
             </div>
           </div>
-          {(q.id.startsWith("resume-ai-") || q.category === "resume") ? null : <span className="font-mono text-xs font-bold text-success">+{q.xp} XP</span>}
+          <span className="font-mono text-xs font-bold text-success">+{q.xp} XP</span>
         </motion.li>
       ))}
       {list.length === 0 && <li className="text-sm text-muted-foreground">All quests cleared. Legendary.</li>}

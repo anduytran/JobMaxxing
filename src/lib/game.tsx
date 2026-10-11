@@ -179,14 +179,10 @@ export function GameProvider({
     completeQuest: (id) => {
       const q = quests.find((q) => q.id === id);
       if (!q || q.done) return;
-      // Resume quests award nothing: resume XP only comes from the upload itself.
-      const resumeQuest = q.id.startsWith("resume-ai-") || q.category === "resume";
       const prevXp = xp;
       setQuests((qs) => qs.map((x) => (x.id === id ? { ...x, done: true } : x)));
-      if (!resumeQuest) {
-        setXpState((x) => x + q.xp);
-        setLastGain({ amount: q.xp, key: Date.now() });
-      }
+      setXpState((x) => x + q.xp);
+      setLastGain({ amount: q.xp, key: Date.now() });
       completeQuestFn({ data: { id } }).then((res) => {
         if (
           rejected(res, () => {
@@ -197,7 +193,7 @@ export function GameProvider({
         )
           return;
         if (res.ok && typeof res.xp === "number") setXpState(res.xp);
-        toast.success(`Quest complete: ${q.title}`, resumeQuest ? undefined : { description: `+${q.xp} XP saved` });
+        toast.success(`Quest complete: ${q.title}`, { description: `+${q.xp} XP saved` });
       });
     },
     addQuest: (q) => {

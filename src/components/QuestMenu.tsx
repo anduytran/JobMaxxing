@@ -34,7 +34,7 @@ export function QuestMenu() {
           {rows.length ? <div className="space-y-3">{rows.map(q => <div key={q.id} title={q.title} className="flex items-center gap-3">
             <span className={`grid h-8 w-8 shrink-0 place-items-center border ${q.done ? "border-success/40 bg-success/10 text-success" : "border-primary/30 bg-primary/10 text-primary"}`}>{q.done ? <Check className="h-4 w-4" /> : <Zap className="h-4 w-4" />}</span>
             <div className="min-w-0 flex-1"><p className="min-h-[2.75em] text-sm font-medium leading-snug"><span className="block">{questTitleLines(q.title)[0]}</span><span className="block">{questTitleLines(q.title)[1]}</span></p><div className="mt-1.5 h-1 bg-muted"><div className={`h-full bg-success ${q.done ? "w-full" : "w-0"}`} /></div></div>
-            {(q.id.startsWith("resume-ai-") || q.category === "resume") ? null : <span className="shrink-0 text-xs font-semibold text-muted-foreground">+{q.xp} XP</span>}
+            <span className="shrink-0 text-xs font-semibold text-muted-foreground">+{q.xp} XP</span>
           </div>)}</div> : <p className="text-sm text-muted-foreground">No {group.period} quests yet.</p>}
         </section>;
       })}

@@ -298,19 +298,16 @@ export const completeQuest = createServerFn({ method: "POST" })
     try {
       const PROFILE_ID = (await requireUser()).id;
       const boost = await xpBoost(PROFILE_ID);
-      // Resume quests pay nothing here: resume XP comes only from the upload
-      // (first scan, integrated fixes, score milestones). Grader-confirmed
-      // resume quests just clear off the board.
       const { rows } = await neonExecute(
         `with q as (
            update public.devup_quest
               set done = true, completed_at = now()
             where id = $1 and user_id = $2 and done = false
-            returning (case when category = 'resume' or left(id, 10) = 'resume-ai-' then 0 else xp end)::int as xp
+            returning xp
          ),
          e as (
            insert into public.devup_xp_event (amount, reason, user_id)
-            select (xp * $3)::int, 'quest:' || $1, $2 from q
+           select (xp * $3)::int, 'quest:' || $1, $2 from q
          ),
          p as (
            update public.devup_profile
