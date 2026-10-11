@@ -799,7 +799,21 @@ export async function gradeInterviewer(transcript: TranscriptTurn[], job: Parsed
     "Score the quality and relevance of the questions and follow-ups they asked, accuracy, conciseness (clear, to the point, little jargon), and tone if measurable. " +
     "Reply JSON {overall,xp,metrics:{quality:{score,feedback},conciseness:{score,feedback},followUps:{score,feedback},tone:null|{score,feedback}},strengths[],improvements[]}; scores 0-100, xp 0-150.");
   if (ai && typeof ai.overall === "number" && ai.metrics?.quality) {
-    return { ...ai, overall: clamp(ai.overall), xp: clamp(ai.xp, 150) };
+    const m = ai.metrics as Record<string, MetricLike | null | undefined>;
+    const fix = (x: MetricLike | null | undefined): MetricLike | null =>
+      x && typeof x === "object" ? { score: clamp(x.score), feedback: String(x.feedback ?? "") } : null;
+    const quality = fix(m.quality)!;
+    return {
+      ...ai, overall: clamp(ai.overall), xp: clamp(ai.xp, 150),
+      metrics: {
+        quality,
+        conciseness: fix(m.conciseness) ?? { score: quality.score, feedback: "" },
+        followUps: fix(m.followUps) ?? fix(m.candidateQuestions) ?? { score: quality.score, feedback: "No follow-up rating returned." },
+        tone: fix(m.tone),
+      },
+      strengths: Array.isArray(ai.strengths) ? ai.strengths : [],
+      improvements: Array.isArray(ai.improvements) ? ai.improvements : [],
+    };
   }
   const mine = transcript.filter((t) => t.speaker === "interviewer");
   const followUps = Math.max(0, mine.length - checks.asked - 1);

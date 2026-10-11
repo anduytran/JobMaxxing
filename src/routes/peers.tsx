@@ -105,7 +105,7 @@ function Page() {
     if (stage !== "report" || !session || session.flag || session.grade || session.grading) return;
     if (gradeAsked.current === session.id) return;
     gradeAsked.current = session.id;
-    void peerGrade({ data: { id: session.id } }).then(() => refresh()).catch((e) => toast.error((e as Error).message));
+    void peerGrade({ data: { id: session.id } }).then(() => refresh()).catch((e) => { gradeAsked.current = null; toast.error(`Grading failed — retrying shortly. ${(e as Error).message}`); });
   }, [stage, session]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Feed each side's score into XP once.
@@ -540,7 +540,8 @@ function Choice<T extends string>({ label, value, onChange, options }: { label: 
   );
 }
 
-function Metric({ label, m }: { label: string; m: { score: number; feedback: string } }) {
+function Metric({ label, m }: { label: string; m: { score: number; feedback: string } | null | undefined }) {
+  if (!m) return null;
   return (
     <div className="rounded border p-3">
       <div className="mb-1 flex justify-between text-sm"><span>{label}</span><span className="font-mono">{m.score}</span></div>
