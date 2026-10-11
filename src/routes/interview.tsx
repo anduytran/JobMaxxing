@@ -2,7 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Bot, Flame, Keyboard, Loader2, Mic, Send, Square, Timer, Volume2, VolumeX } from "lucide-react";
 import { InterviewVoicePresence, type InterviewVoiceState } from "@/components/InterviewVoicePresence";
 import { InterviewMicrophoneCheck } from "@/components/InterviewMicrophoneCheck";
-import { InterviewAnswerReview } from "@/components/InterviewAnswerReview";
 import { Max } from "@/components/Max";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -354,8 +353,7 @@ function Interview() {
               {listening ? <Square /> : <Mic />} {listening ? "Done speaking" : "Speak"}
             </Button>
             {listening && <Button variant="outline" onClick={stopVoice}>Cancel answer</Button>}
-            <Button variant="outline" size="icon" title="Type an answer" aria-label="Type an answer" aria-pressed={typing} onClick={() => setTyping(!typing)} disabled={Boolean(capturedAnswer) || listening || thinking || stage === "grading"}><Keyboard /></Button>
-            {capturedAnswer && <InterviewAnswerReview key={capturedAnswer} original={capturedAnswer} onDiscard={() => setCapturedAnswer(null)} onSend={(value) => { setCapturedAnswer(null); void answer(value); }} />}
+            <Button variant="outline" size="icon" title="Type an answer" aria-label="Type an answer" aria-pressed={typing} onClick={() => setTyping(!typing)} disabled={listening || thinking || stage === "grading"}><Keyboard /></Button>
             {typing && <form className="flex w-full gap-2" onSubmit={(e) => { e.preventDefault(); void answer(text); }}>
               <Input aria-label="Your answer" value={text} onChange={(e) => setText(e.target.value)} disabled={thinking || stage === "grading" || playback !== "ready"}
                 placeholder={stage === "live" ? "Type your answer…" : "Ask the interviewer a question…"} />
