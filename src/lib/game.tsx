@@ -42,6 +42,8 @@ export const ACHIEVEMENTS = [
 type Game = {
   name: string; title: string; xp: number; level: number; levelXp: number;
   quests: Quest[]; roast: boolean; reducedMotion: boolean; lastGain: { amount: number; key: number } | null;
+  activeTitle: string | null; activeTheme: string;
+  setActiveTitle: (t: string | null) => void; setActiveTheme: (t: string) => void;
   setProfile: (n: string, t: string) => Promise<boolean>;
   completeQuest: (id: string) => void;
   addQuest: (q: Omit<Quest, "done">) => void;
@@ -74,6 +76,8 @@ export function GameProvider({
   const [quests, setQuests] = useState<Quest[]>(loaded?.quests ?? FALLBACK_QUESTS);
   const [roast, setRoastState] = useState(false);
   const [reducedMotion, setReducedMotionState] = useState(loaded?.reducedMotion ?? false);
+  const [activeTitle, setActiveTitle] = useState<string | null>(loaded?.activeTitle ?? null);
+  const [activeTheme, setActiveTheme] = useState(loaded?.activeTheme ?? "default");
   const [details, setDetails] = useState<Details>({
     skills: loaded?.skills ?? [], student: loaded?.student ?? {}, jobPrefs: loaded?.jobPrefs ?? {}, resume: loaded?.resume ?? null,
   });
