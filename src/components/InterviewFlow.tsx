@@ -432,9 +432,9 @@ export function InterviewFlow({ agents, api, radar, profileSkills = [], captions
           </div>
 
           {/* Answer area */}
-          <div className="mx-auto mb-6 flex w-full max-w-4xl flex-col items-center gap-6 border-t px-6 pt-6 sm:flex-row">
+          <div className="mx-auto mb-6 flex w-full max-w-4xl flex-col items-center gap-4 border-t px-6 pt-6 text-center">
             <div className="shrink-0 scale-75 sm:scale-90"><InterviewVoicePresence state={voiceState} /></div>
-            <div className="flex-1 text-center sm:text-left">
+            <div>
               <div className="text-sm font-semibold">
                 {voiceState === "speaking" || voiceState === "preparing" ? "Ava is asking…" : listening ? "Listening — take your time" : thinking ? "Thinking it over" : "Your turn to answer"}
               </div>
@@ -445,7 +445,7 @@ export function InterviewFlow({ agents, api, radar, profileSkills = [], captions
               aria-label={listening ? "Click to end your answer" : "Click to answer"}
               disabled={thinking || stage === "grading" || playback !== "ready"}
               onClick={() => { if (listening) voice.current?.finishListening(); else void speak(); }}
-              className={cn("hidden h-14 w-14 shrink-0 place-items-center rounded-full border-2 transition md:grid",
+              className={cn("grid h-14 w-14 shrink-0 place-items-center rounded-full border-2 transition",
                 listening ? "border-primary bg-primary text-primary-foreground" : "border-foreground/60 hover:border-primary hover:text-primary",
                 (thinking || stage === "grading" || playback !== "ready") && "opacity-40")}
             >
