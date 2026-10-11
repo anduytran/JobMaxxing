@@ -126,17 +126,17 @@ function AddQuests() {
         )}
       </div>
 
-      <div className="grid items-start gap-x-5 gap-y-10 pt-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-x-5 gap-y-10 pt-4 md:grid-cols-2 xl:grid-cols-4">
         {drawers(packs).map((d) => {
           const count = d.quests.filter((q) => owned.has(q.id)).length;
           const all = count === d.quests.length;
           return (
-            <section key={d.key} className="relative">
+            <section key={d.key} className="relative flex flex-col">
               {/* folder tab */}
               <div className="absolute -top-7 left-5 flex h-8 items-center gap-2 rounded-t-lg border border-b-0 bg-secondary px-4 text-xs font-semibold uppercase tracking-wide text-secondary-foreground">
                 <d.icon className="h-3.5 w-3.5" /> {d.name}
               </div>
-              <div className="rounded-2xl rounded-tl-none border bg-secondary/60 p-4 pt-5">
+              <div className="flex flex-1 flex-col rounded-2xl rounded-tl-none border bg-secondary/60 p-4 pt-5">
                 <div className="mb-3 flex items-center justify-between gap-3 px-1">
                   <p className="text-xs text-muted-foreground">{d.blurb} · {count}/{d.quests.length} pinned</p>
                   <button onClick={() => togglePack({ ...d, quests: d.quests })} className="text-xs font-semibold text-primary hover:underline">
@@ -174,7 +174,7 @@ function AddQuests() {
             <p className="text-sm text-muted-foreground">Write your own. Custom quests earn a smaller +{CUSTOM_XP} XP.</p>
           </div>
         </div>
-        <form className="flex flex-col gap-2 sm:flex-row" onSubmit={(e) => { e.preventDefault(); addCustom(); }}>
+        <form className="flex max-w-3xl flex-col gap-2 sm:flex-row" onSubmit={(e) => { e.preventDefault(); addCustom(); }}>
           <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Read one system design chapter" maxLength={120} className="flex-1" aria-label="Custom quest title" />
           <select value={period} onChange={(e) => setPeriod(e.target.value as QuestPeriod)} className="h-10 rounded-md border border-input bg-background px-3 text-sm" aria-label="How often it resets">
             <option value="daily">Daily</option>
@@ -184,7 +184,7 @@ function AddQuests() {
           <Button type="submit" disabled={!title.trim()}><Plus className="h-4 w-4" /> Add quest</Button>
         </form>
         {customs.length > 0 && (
-          <ul className="mt-4 space-y-2">
+          <ul className="mt-4 max-w-3xl space-y-2">
             {customs.map((q) => (
               <li key={q.id} className="flex items-center gap-3 rounded-xl border border-border p-3">
                 <span className="flex-1 text-sm">{q.title} <span className="text-xs text-muted-foreground">· {PERIOD_LABEL[q.period]} · +{q.xp} XP</span></span>
