@@ -46,7 +46,7 @@ async function xpBoost(userId: string): Promise<number> {
     "select multiplier from public.devup_booster where user_id = $1 and expires_at > now() order by expires_at desc limit 1",
     [userId],
   );
-  return Number(rows[0]?.multiplier ?? 1) || 1;
+  return Number(rows[0]?.["multiplier"] ?? 1) || 1;
 }
 
 function fail(err: unknown): SaveResult {

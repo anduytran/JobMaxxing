@@ -147,7 +147,7 @@ function StorePage() {
                 </Button>
               ) : (
                 <Button variant="outline" size="sm" className="w-full" disabled={busy !== null}
-                  onClick={() => equip(isTitle ? "title" : "theme", isTitle ? TITLE_BADGES[item.id] : THEME_ITEMS[item.id])}>
+                  onClick={() => equip(isTitle ? "title" : "theme", (isTitle ? TITLE_BADGES[item.id] : THEME_ITEMS[item.id]) ?? "")}>
                   Equip
                 </Button>
               )
