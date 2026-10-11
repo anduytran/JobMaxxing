@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { Captions, Flame, Keyboard, Loader2, Mic, RotateCcw, Send, Square, Volume2, VolumeX } from "lucide-react";
 import { InterviewVoicePresence, type InterviewVoiceState } from "@/components/InterviewVoicePresence";
 import { InterviewMicrophoneCheck } from "@/components/InterviewMicrophoneCheck";
@@ -447,30 +447,65 @@ function Interview() {
         </section>
       )}
 
-      {stage === "report" && grade && (
-        <section className="panel space-y-5 p-6">
-          <div className="text-center">
-            <div className="font-display text-6xl font-bold text-primary text-glow">{grade.overall}</div>
-            <div className="font-mono text-xs text-muted-foreground">OVERALL SCORE · +{grade.xp} XP EARNED</div>
-          </div>
-          <div className="grid gap-4 md:grid-cols-2">
-            <Metric label="Quality & accuracy" m={grade.metrics.quality} />
-            <Metric label="Conciseness" m={grade.metrics.conciseness} />
-            <Metric label="Your questions" m={grade.metrics.candidateQuestions} />
-            {grade.metrics.tone ? <Metric label="Tone" m={grade.metrics.tone} />
-              : <div className="rounded border border-dashed p-3 text-sm text-muted-foreground">Tone scoring — coming soon</div>}
-          </div>
-          <div className="grid gap-4 md:grid-cols-2 text-sm">
-            <ul className="space-y-1">{grade.strengths.map((s) => <li key={s}>✓ {s}</li>)}</ul>
-            <ul className="space-y-1 text-muted-foreground">{grade.improvements.map((s) => <li key={s}>→ {s}</li>)}</ul>
-          </div>
-          <details className="text-sm">
-            <summary className="cursor-pointer font-mono text-xs text-muted-foreground">TRANSCRIPT</summary>
-            <div className="mt-2 space-y-1">{turns.map((t, i) => <p key={i}><b>{t.speaker === "interviewer" ? "Interviewer" : "You"}:</b> {t.text}</p>)}</div>
-          </details>
-          <Button onClick={reset}>New interview</Button>
-        </section>
-      )}
+      {stage === "report" && grade && (() => {
+        const used = Math.max(0, LENGTHS[length].seconds - left);
+        const asked = turns.filter((t) => t.speaker === "interviewer").length;
+        const metrics: [string, { score: number; feedback: string }][] = [
+          ["Answer quality", grade.metrics.quality],
+          ["Conciseness", grade.metrics.conciseness],
+          ["Your questions", grade.metrics.candidateQuestions],
+          ...(grade.metrics.tone ? [["Tone", grade.metrics.tone] as [string, { score: number; feedback: string }]] : []),
+        ];
+        const work = grade.improvements.slice(0, 3);
+        return (
+          <section className="space-y-6">
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <h1 className="font-display text-4xl font-bold tracking-tight sm:text-5xl">Interview complete. {grade.overall}%.</h1>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  {job?.title ?? "Mock interview"}. {Math.min(asked, questions.length)} questions in {Math.floor(used / 60)} minutes {used % 60} seconds.
+                </p>
+              </div>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-accent px-3 py-1 text-xs font-semibold text-accent-foreground">
+                <span className="text-primary">◆</span> +{grade.xp} XP earned
+              </span>
+            </div>
+            <div className={cn("grid gap-4", metrics.length === 4 ? "md:grid-cols-4" : "md:grid-cols-3")}>
+              {metrics.map(([l, m]) => <Metric key={l} label={l} m={m} />)}
+            </div>
+            <div className="grid gap-4 md:grid-cols-[1.6fr_1fr]">
+              <div className="rounded-2xl border bg-card p-6">
+                <h2 className="font-display text-2xl font-bold">What to work on</h2>
+                <ol className="mt-4 space-y-3">
+                  {work.map((s, i) => (
+                    <li key={s} className="flex gap-3 rounded-xl bg-muted p-4">
+                      <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-primary/15 text-xs font-semibold text-primary">{i + 1}</span>
+                      <span className="text-sm">{s}</span>
+                    </li>
+                  ))}
+                  {!work.length && <li className="text-sm text-muted-foreground">Nothing major — keep it up.</li>}
+                </ol>
+                {grade.strengths.length > 0 && (
+                  <>
+                    <h3 className="mt-6 text-sm font-semibold">What went well</h3>
+                    <ul className="mt-2 space-y-1 text-sm text-muted-foreground">{grade.strengths.map((s) => <li key={s}>✓ {s}</li>)}</ul>
+                  </>
+                )}
+              </div>
+              <div className="flex flex-col items-start gap-3 rounded-2xl border bg-card p-6">
+                <h2 className="font-display text-2xl font-bold">Keep the streak going</h2>
+                <p className="text-sm text-muted-foreground">Another session on the same role is the fastest way to lift your weakest score.</p>
+                <Button onClick={reset} className="mt-1">New interview</Button>
+                <details className="w-full text-sm">
+                  <summary className="inline-flex cursor-pointer list-none rounded-md border bg-background px-4 py-2 font-medium">Read full transcript</summary>
+                  <div className="mt-3 max-h-80 space-y-2 overflow-y-auto">{turns.map((t, i) => <p key={i}><b>{t.speaker === "interviewer" ? "Interviewer" : "You"}:</b> {t.text}</p>)}</div>
+                </details>
+                <Link to="/" className="px-4 py-2 text-sm font-medium">Back to Home</Link>
+              </div>
+            </div>
+          </section>
+        );
+      })()}
     </div>
   );
 }
@@ -495,11 +530,15 @@ function Choice<T extends string>({ label, value, onChange, options }: { label: 
 }
 
 function Metric({ label, m }: { label: string; m: { score: number; feedback: string } }) {
+  const good = m.score >= 80;
   return (
-    <div className="rounded border p-3">
-      <div className="mb-1 flex justify-between text-sm"><span>{label}</span><span className="font-mono">{m.score}</span></div>
-      <Progress value={m.score} />
-      <p className="mt-2 text-xs text-muted-foreground">{m.feedback}</p>
+    <div className="rounded-2xl border bg-card p-6">
+      <div className="text-sm font-medium text-muted-foreground">{label}</div>
+      <div className="mt-2 flex items-baseline gap-1"><span className="font-display text-5xl font-bold">{m.score}</span><span className="text-sm text-muted-foreground">%</span></div>
+      <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+        <div className={cn("h-full rounded-full", good ? "bg-secondary" : "bg-primary")} style={{ width: `${m.score}%` }} />
+      </div>
+      <p className="mt-3 text-sm text-muted-foreground">{m.feedback}</p>
     </div>
   );
 }
