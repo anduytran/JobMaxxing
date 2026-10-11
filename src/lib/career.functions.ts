@@ -5,12 +5,13 @@ import { createServerFn } from "@tanstack/react-start";
 import { neonExecute, neonQuery } from "./neon.server";
 import { requireUser } from "./auth.server";
 import { DEFAULT_RATING } from "./mmr.shared";
+import { STREAK_BONUS_XP } from "./streak.shared";
 
 export const GOAL_LEVELS = ["internship", "new_grad", "experienced"] as const;
 export type GoalLevel = (typeof GOAL_LEVELS)[number];
 export const LEVEL_BUMPS: Record<GoalLevel, number> = { internship: 50, new_grad: 125, experienced: 150 };
 
-export type StreakInfo = { current: number; longest: number; lastActivity: string | null; freezes: number };
+export type StreakInfo = { current: number; longest: number; lastActivity: string | null; freezes: number; bonusPaid: number };
 export type EloPoint = { t: string; rating: number };
 export type EloSeries = { skill: string; points: EloPoint[] };
 export type RadarTrackerRow = {
@@ -41,30 +42,54 @@ export type SoloInterview = {
 };
 export type XpEvent = { label: string; amount: number; at: string };
 
-const EMPTY_STREAK: StreakInfo = { current: 0, longest: 0, lastActivity: null, freezes: 0 };
+const EMPTY_STREAK: StreakInfo = { current: 0, longest: 0, lastActivity: null, freezes: 0, bonusPaid: 0 };
 
 /** One row per active day. Yesterday continues the streak; one missed day burns a
- *  streak freeze; anything longer restarts at 1. */
-export async function bumpStreak(userId: string): Promise<void> {
+ *  streak freeze; anything longer restarts at 1. Crossing a 7-day mark pays a bonus
+ *  once — the partial unique index on `streak:%` reasons makes a replay a no-op. */
+export async function bumpStreak(userId: string): Promise<{ streak: number; bonus: number }> {
   const next = `case
     when public.devup_activity_streak.last_activity_date = current_date then public.devup_activity_streak.current_streak
     when public.devup_activity_streak.last_activity_date = current_date - 1 then public.devup_activity_streak.current_streak + 1
     when public.devup_activity_streak.last_activity_date = current_date - 2 and public.devup_activity_streak.streak_freeze_count > 0 then public.devup_activity_streak.current_streak + 1
     else 1 end`;
-  await neonExecute(
-    `insert into public.devup_activity_streak (user_id, current_streak, longest_streak, last_activity_date, streak_freeze_count)
-     values ($1, 1, 1, current_date, 1)
-     on conflict (user_id) do update set
-       current_streak = ${next},
-       longest_streak = greatest(public.devup_activity_streak.longest_streak, ${next}),
-       streak_freeze_count = case
-         when public.devup_activity_streak.last_activity_date = current_date - 2 and public.devup_activity_streak.streak_freeze_count > 0
-           then public.devup_activity_streak.streak_freeze_count - 1
-         else public.devup_activity_streak.streak_freeze_count end,
-       last_activity_date = current_date,
-       updated_at = now()`,
-    [userId],
+  const { rows } = await neonExecute<{ rows: { streak: number; bonus: number }[] }>(
+    `with s as (
+       insert into public.devup_activity_streak (user_id, current_streak, longest_streak, last_activity_date, streak_freeze_count)
+       values ($1, 1, 1, current_date, 1)
+       on conflict (user_id) do update set
+         current_streak = ${next},
+         longest_streak = greatest(public.devup_activity_streak.longest_streak, ${next}),
+         streak_freeze_count = case
+           when public.devup_activity_streak.last_activity_date = current_date - 2 and public.devup_activity_streak.streak_freeze_count > 0
+             then public.devup_activity_streak.streak_freeze_count - 1
+           else public.devup_activity_streak.streak_freeze_count end,
+         last_activity_date = current_date,
+         updated_at = now()
+       returning user_id, current_streak
+     ),
+     m as (
+       select user_id, (current_streak / 7) * 7 as milestone from s where current_streak >= 7
+     ),
+     e as (
+       insert into public.devup_xp_event (amount, reason, user_id)
+       select $2, 'streak:' || milestone, user_id from m
+       on conflict (user_id, reason) where reason like 'streak:%' do nothing
+       returning amount, user_id
+     ),
+     p as (
+       update public.devup_profile
+          set xp = xp + (select coalesce(sum(amount), 0) from e), updated_at = now()
+        where id = (select user_id from e limit 1)
+        returning xp
+     )
+     select (select current_streak from s)::int as streak,
+            coalesce((select sum(amount) from e), 0)::int as bonus`,
+    [userId, STREAK_BONUS_XP],
   );
+  const streak = Number(rows[0]?.streak ?? 0);
+  const bonus = Number(rows[0]?.bonus ?? 0);
+  return { streak, bonus };
 }
 
 /** A stored streak only counts if activity was today, yesterday, or one missed
@@ -83,8 +108,10 @@ export const getStreak = createServerFn({ method: "GET" }).handler(async (): Pro
   const user = await currentUser();
   if (!user) return EMPTY_STREAK;
   try {
-    const res = await neonQuery<{ rows: { current_streak: number; longest_streak: number; last: string | null; streak_freeze_count: number }[] }>(
-      `select current_streak, longest_streak, to_json(last_activity_date) as last, streak_freeze_count
+    const res = await neonQuery<{ rows: { current_streak: number; longest_streak: number; last: string | null; streak_freeze_count: number; bonus_paid: number }[] }>(
+      `select current_streak, longest_streak, to_json(last_activity_date) as last, streak_freeze_count,
+              coalesce((select max(split_part(reason, ':', 2)::int) from public.devup_xp_event
+                         where user_id = $1 and reason like 'streak:%'), 0)::int as bonus_paid
          from public.devup_activity_streak where user_id = $1`,
       [user.id],
     );
@@ -95,6 +122,7 @@ export const getStreak = createServerFn({ method: "GET" }).handler(async (): Pro
       longest: Number(s.longest_streak),
       lastActivity: s.last ? String(s.last) : null,
       freezes: Number(s.streak_freeze_count),
+      bonusPaid: Number(s.bonus_paid) || 0,
     };
     return { ...info, current: effectiveStreak(info) };
   } catch {
@@ -109,7 +137,9 @@ export const getCareerDashboard = createServerFn({ method: "GET" }).handler(asyn
   try {
     const [streak, goal, log, ratings, profile, radar, peers, solos, xpEvents, interviewCount] = await Promise.all([
       neonQuery(
-        `select current_streak, longest_streak, to_json(last_activity_date) as last, streak_freeze_count
+        `select current_streak, longest_streak, to_json(last_activity_date) as last, streak_freeze_count,
+                coalesce((select max(split_part(reason, ':', 2)::int) from public.devup_xp_event
+                           where user_id = $1 and reason like 'streak:%'), 0)::int as bonus_paid
            from public.devup_activity_streak where user_id = $1`,
         [user.id],
       ),
@@ -230,7 +260,7 @@ export const getCareerDashboard = createServerFn({ method: "GET" }).handler(asyn
 
     const s = streak.rows[0];
     const streakInfo: StreakInfo = s
-      ? { current: Number(s["current_streak"]), longest: Number(s["longest_streak"]), lastActivity: (s["last"] as string | null) ?? null, freezes: Number(s["streak_freeze_count"]) }
+      ? { current: Number(s["current_streak"]), longest: Number(s["longest_streak"]), lastActivity: (s["last"] as string | null) ?? null, freezes: Number(s["streak_freeze_count"]), bonusPaid: Number(s["bonus_paid"]) || 0 }
       : EMPTY_STREAK;
     return {
       streak: { ...streakInfo, current: effectiveStreak(streakInfo) },
@@ -265,6 +295,7 @@ export const getCareerDashboard = createServerFn({ method: "GET" }).handler(asyn
           : reason.startsWith("radar:practice:") ? "Practiced for a saved role"
           : reason.startsWith("resume:") ? "Accepted a resume fix"
           : reason.startsWith("milestone:") ? "Milestone reached"
+          : reason.startsWith("streak:") ? `${reason.slice(7)}-day streak bonus`
           : reason || "XP earned";
         return { label, amount: Number(r["amount"] ?? 0), at: String(r["at"] ?? "") };
       }),

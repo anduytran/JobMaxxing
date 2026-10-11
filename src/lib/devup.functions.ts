@@ -321,7 +321,13 @@ export const completeQuest = createServerFn({ method: "POST" })
       );
       const awarded = Number(rows[0]?.["awarded"] ?? 0);
       if (awarded === 0) return { ok: true }; // already done — nothing to award
-      return { ok: true, xp: Number(rows[0]?.["xp"] ?? 0) };
+      // Clearing a quest is career activity: it keeps the streak alive and can pay the 7-day bonus.
+      const { bumpStreak } = await import("./career.functions");
+      const st = await bumpStreak(PROFILE_ID).catch((e) => {
+        console.error("streak update failed", e);
+        return { streak: 0, bonus: 0 };
+      });
+      return { ok: true, xp: Number(rows[0]?.["xp"] ?? 0) + st.bonus };
     } catch (err) {
       return fail(err);
     }

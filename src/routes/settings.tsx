@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { AvatarPicker } from "@/components/AvatarPicker";
+import { TokenUsagePanel } from "@/components/TokenUsagePanel";
 import { useGame } from "@/lib/game";
 
 export const Route = createFileRoute("/settings")({
@@ -112,6 +113,7 @@ function SettingsPage() {
           <Switch checked={g.captions} onCheckedChange={g.setCaptions} />
         </div>
       </div>
+      <TokenUsagePanel />
     </div>
   );
 }

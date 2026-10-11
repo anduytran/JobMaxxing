@@ -26,7 +26,7 @@ export type IncomingInvite = {
   expiresAt: string;
 };
 
-const displayName = (email: string, name: string | null) =>
+export const displayName = (email: string, name: string | null) =>
   (name ?? "").trim() || email.split("@")[0]!.replace(/[._-]+/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
 export const searchUsers = createServerFn({ method: "POST" })
