@@ -5,7 +5,7 @@ import type {
   AgentStatus, InterviewGrade, InterviewLength, InterviewQuestion, InterviewType, ParsedJob, TranscriptTurn,
 } from "./types";
 import { LENGTHS } from "./types";
-import {
+import { QUESTION_BANK } from "./question-bank";
   GRADES, gradeFromScore, SUGGESTION_BATCH, XP_RULES, type AtsCheck, type Grade, type ResumeFields, type ResumeLine, type ResumeReview,
   type ResumeSection, type ResumeSuggestion, type SuggestionType,
 } from "../resume";
