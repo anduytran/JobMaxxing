@@ -7,17 +7,25 @@ export interface VoiceAgent {
 }
 
 type SR = { new (): any };
+export type VoicePlaybackState = "ready" | "preparing" | "speaking";
+type PlaybackObserver = (state: VoicePlaybackState) => void;
 
-export function createBrowserVoice(): VoiceAgent {
+export function createBrowserVoice(onPlayback?: PlaybackObserver): VoiceAgent {
   let rec: any = null;
+  let settlePlayback: (() => void) | undefined;
   return {
     speak: (text) =>
       new Promise((resolve) => {
         if (typeof window === "undefined" || !window.speechSynthesis) return resolve();
+        settlePlayback?.();
+        onPlayback?.("preparing");
         const u = new SpeechSynthesisUtterance(text);
         u.rate = 1.05;
-        u.onend = () => resolve();
-        u.onerror = () => resolve();
+        const finish = () => { onPlayback?.("ready"); resolve(); };
+        settlePlayback = finish;
+        u.onstart = () => onPlayback?.("speaking");
+        u.onend = finish;
+        u.onerror = finish;
         window.speechSynthesis.cancel();
         window.speechSynthesis.speak(u);
       }),
@@ -66,28 +74,39 @@ export function createBrowserVoice(): VoiceAgent {
     stop: () => {
       rec?.abort?.();
       if (typeof window !== "undefined") window.speechSynthesis?.cancel();
+      settlePlayback?.();
+      onPlayback?.("ready");
     },
   };
 }
 
 /** ElevenLabs voice: the server synthesizes each line; listening still uses browser speech recognition.
  *  Falls back to the browser voice for any line ElevenLabs can't produce. */
-export function createElevenLabsVoice(synth: (text: string) => Promise<string | null>): VoiceAgent {
-  const browser = createBrowserVoice();
+export function createElevenLabsVoice(synth: (text: string) => Promise<string | null>, onPlayback?: PlaybackObserver): VoiceAgent {
+  const browser = createBrowserVoice(onPlayback);
   let audio: HTMLAudioElement | null = null;
+  let generation = 0;
+  let settlePlayback: (() => void) | undefined;
   return {
     speak: async (text) => {
+      const current = ++generation;
       audio?.pause();
+      settlePlayback?.();
+      onPlayback?.("preparing");
       const b64 = await synth(text).catch(() => null);
+      if (current !== generation) return;
       if (!b64) return browser.speak(text);
       await new Promise<void>((resolve) => {
         audio = new Audio(`data:audio/mpeg;base64,${b64}`);
-        audio.onended = () => resolve();
-        audio.onerror = () => resolve();
-        audio.play().catch(() => resolve());
+        const finish = () => { onPlayback?.("ready"); resolve(); };
+        settlePlayback = finish;
+        audio.onplaying = () => onPlayback?.("speaking");
+        audio.onended = finish;
+        audio.onerror = finish;
+        audio.play().catch(finish);
       });
     },
     listen: () => { audio?.pause(); return browser.listen(); },
-    stop: () => { audio?.pause(); browser.stop(); },
+    stop: () => { generation++; audio?.pause(); settlePlayback?.(); browser.stop(); onPlayback?.("ready"); },
   };
 }

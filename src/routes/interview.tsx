@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Bot, Flame, Loader2, Mic, Send, Square, Timer, Volume2, VolumeX } from "lucide-react";
+import { Bot, Flame, Keyboard, Loader2, Mic, Send, Square, Timer, Volume2, VolumeX } from "lucide-react";
+import { InterviewVoicePresence, type InterviewVoiceState } from "@/components/InterviewVoicePresence";
 import { Max } from "@/components/Max";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -19,7 +20,7 @@ import {
   LENGTHS, type AgentStatus, type InterviewGrade, type InterviewLength, type InterviewQuestion,
   type InterviewType, type ParsedJob, type TranscriptTurn,
 } from "@/lib/interview/types";
-import { createBrowserVoice, createElevenLabsVoice, type VoiceAgent } from "@/lib/interview/voice";
+import { createBrowserVoice, createElevenLabsVoice, type VoiceAgent, type VoicePlaybackState } from "@/lib/interview/voice";
 import { cn } from "@/lib/utils";
 
 
@@ -68,17 +69,26 @@ function Interview() {
   const [left, setLeft] = useState(LENGTHS.standard.seconds);
   const [ack, setAck] = useState(false);
   const voice = useRef<VoiceAgent | null>(null);
-  const scroller = useRef<HTMLDivElement>(null);
+  const [playback, setPlayback] = useState<VoicePlaybackState>("ready");
+  const [typing, setTyping] = useState(false);
+  const captureGeneration = useRef(0);
 
   const [convId, setConvId] = useState<string | null>(null);
   const [thinking, setThinking] = useState(false);
   useEffect(() => {
     voice.current = agents.voice === "elevenlabs"
-      ? createElevenLabsVoice(async (t) => (await speakInterviewLine({ data: { text: t } })).audio)
-      : createBrowserVoice();
-    return () => voice.current?.stop();
+      ? createElevenLabsVoice(async (t) => (await speakInterviewLine({ data: { text: t } })).audio, setPlayback)
+      : createBrowserVoice(setPlayback);
+    return () => { captureGeneration.current++; voice.current?.stop(); };
   }, [agents.voice]);
-  useEffect(() => { scroller.current?.scrollTo({ top: 1e6, behavior: "smooth" }); }, [turns]);
+  const stopVoice = () => {
+    captureGeneration.current++;
+    voice.current?.stop();
+    setListening(false);
+    setPlayback("ready");
+  };
+  const voiceState: InterviewVoiceState = stage === "grading" ? "grading" : listening ? "listening" : thinking ? "thinking" : playback;
+  const currentCaption = [...turns].reverse().find((turn) => turn.speaker === "interviewer")?.text;
 
   const say = (t: string, phase: TranscriptTurn["phase"], questionId?: string) => {
     setTurns((x) => [...x, { speaker: "interviewer", phase, text: t, questionId }]);
@@ -123,13 +133,16 @@ function Interview() {
     try {
       const qs = await generateInterviewQuestions({ data: { job, type, length, roast } });
       const live = await startLiveInterview({ data: { job, type, length, roast, plan: qs } }).catch(() => null);
+      const first = qs[0];
+      if (!first) throw new Error("No interview questions were returned. Please try again.");
       setConvId(live?.conversationId ?? null);
       setQuestions(qs); setQi(0); setTurns([]); setLeft(LENGTHS[length].seconds); setStage("live");
-      say(live?.reply ?? qs[0]!.text, "interview", qs[0]!.id);
+      say(live?.reply ?? first.text, "interview", first.id);
     } catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
   };
 
   const toTail = (lead: string) => {
+    stopVoice();
     setStage("your_questions");
     say(`${lead} Before we wrap up — do you have any questions for me?`, "candidate_questions");
   };
@@ -157,7 +170,8 @@ function Interview() {
       }
       if (last) return toTail("Thanks, that covers my questions.");
       setQi(next);
-      say(questions[next]!.text, "interview", questions[next]!.id);
+      const nextQuestion = questions[next];
+      if (nextQuestion) say(nextQuestion.text, "interview", nextQuestion.id);
     } else if (stage === "your_questions") {
       setTurns((x) => [...x, { speaker: "candidate", phase: "candidate_questions", text: v }]);
       if (convId) {
@@ -171,14 +185,23 @@ function Interview() {
   };
 
   const speak = async () => {
+    const currentVoice = voice.current;
+    if (!currentVoice) return;
+    const generation = ++captureGeneration.current;
+    currentVoice.stop();
     setListening(true);
-    try { answer(await voice.current!.listen()); }
-    catch (e) { toast.error((e as Error).message); }
-    finally { setListening(false); }
+    try {
+      const captured = await currentVoice.listen();
+      if (generation === captureGeneration.current) {
+        setListening(false);
+        await answer(captured);
+      }
+    } catch (e) { if (generation === captureGeneration.current) toast.error((e as Error).message); }
+    finally { if (generation === captureGeneration.current) setListening(false); }
   };
 
   const finish = async () => {
-    voice.current?.stop();
+    stopVoice();
     if (!job) return;
     setStage("grading");
     try {
@@ -198,7 +221,7 @@ function Interview() {
     } catch (e) { toast.error((e as Error).message); setStage("your_questions"); }
   };
 
-  const reset = () => { setConvId(null); setStage("intro"); setGrade(null); setTurns([]); setJob(null); setAck(false); radarJobId.current = null; };
+  const reset = () => { stopVoice(); setTyping(false); setConvId(null); setStage("intro"); setGrade(null); setTurns([]); setJob(null); setAck(false); radarJobId.current = null; };
 
   return (
     <div className="mx-auto max-w-6xl space-y-4">
@@ -298,39 +321,38 @@ function Interview() {
       )}
 
       {(stage === "live" || stage === "your_questions" || stage === "grading") && (
-        <section className="panel flex h-[36rem] flex-col">
+        <section className="flex min-h-[36rem] flex-col border-y bg-card">
           <div className="flex items-center gap-3 border-b p-4">
             <div className="grid h-9 w-9 place-items-center rounded bg-primary text-primary-foreground"><Bot className="h-4 w-4" /></div>
             <div className="flex-1">
               <div className="text-sm font-semibold">{roast ? "Gordon, Senior Hiring Manager" : "Ava, Friendly Recruiter"}</div>
               <div className="font-mono text-[10px] text-muted-foreground">
-                {stage === "live" ? `Question ${qi + 1} / ${questions.length}` : "Your questions for the interviewer"}
+                {stage === "grading" ? "Interview complete" : stage === "live" ? `Question ${qi + 1} / ${questions.length}` : "Your questions for the interviewer"}
               </div>
             </div>
             <div className={cn("flex items-center gap-1 font-mono text-sm", left < 30 && stage === "live" && "text-destructive")}>
               <Timer className="h-4 w-4" /> {fmt(Math.max(0, left))}
             </div>
-            <Button variant="ghost" size="icon" onClick={() => { setVoiceOn(!voiceOn); voice.current?.stop(); }} aria-label="Toggle interviewer voice">
+            <Button variant="ghost" size="icon" onClick={() => { setVoiceOn(!voiceOn); stopVoice(); }} aria-label="Toggle interviewer voice" aria-pressed={voiceOn}>
               {voiceOn ? <Volume2 /> : <VolumeX />}
             </Button>
           </div>
           {stage === "live" && <Progress value={(qi / Math.max(1, questions.length)) * 100} className="h-1 rounded-none" />}
-          <div ref={scroller} className="flex-1 space-y-3 overflow-y-auto p-4">
-            {turns.map((m, i) => (
-              <div key={i} className={cn("max-w-[85%] rounded-lg px-3 py-2 text-sm", m.speaker === "interviewer" ? "border bg-secondary/50" : "ml-auto bg-primary text-primary-foreground")}>{m.text}</div>
-            ))}
-            {thinking && <div className="max-w-[85%] animate-pulse rounded-lg border bg-secondary/50 px-3 py-2 text-sm text-muted-foreground">Interviewer is thinking…</div>}
-            {stage === "grading" && <div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Grading your interview…</div>}
+          <div className="flex flex-1 items-center justify-center">
+            <InterviewVoicePresence state={voiceState} caption={stage === "grading" ? undefined : currentCaption} />
           </div>
-          <div className="flex flex-wrap gap-2 border-t p-3">
-            <Button variant="outline" onClick={speak} disabled={listening || thinking || stage === "grading"}><Mic /> {listening ? "Listening…" : "Speak"}</Button>
-            <form className="flex min-w-[12rem] flex-1 gap-2" onSubmit={(e) => { e.preventDefault(); answer(text); }}>
-              <Input value={text} onChange={(e) => setText(e.target.value)} disabled={stage === "grading"}
+          <div className="flex flex-wrap items-center justify-center gap-2 border-t p-4">
+            <Button onClick={listening ? stopVoice : speak} disabled={thinking || stage === "grading" || playback !== "ready"}>
+              {listening ? <Square /> : <Mic />} {listening ? "Cancel answer" : "Speak"}
+            </Button>
+            <Button variant="outline" size="icon" title="Type an answer" aria-label="Type an answer" aria-pressed={typing} onClick={() => setTyping(!typing)} disabled={listening || thinking || stage === "grading"}><Keyboard /></Button>
+            {typing && <form className="flex w-full gap-2" onSubmit={(e) => { e.preventDefault(); void answer(text); }}>
+              <Input aria-label="Your answer" value={text} onChange={(e) => setText(e.target.value)} disabled={thinking || stage === "grading" || playback !== "ready"}
                 placeholder={stage === "live" ? "Type your answer…" : "Ask the interviewer a question…"} />
-              <Button type="submit" size="icon" aria-label="Send" disabled={stage === "grading"}><Send /></Button>
-            </form>
-            {stage === "live" && <Button variant="secondary" onClick={() => toTail("Let's stop the questions here.")}>Skip to my questions</Button>}
-            {stage === "your_questions" && <Button variant="destructive" onClick={finish}><Square /> End interview</Button>}
+              <Button type="submit" size="icon" aria-label="Send" disabled={!text.trim() || thinking || stage === "grading" || playback !== "ready"}><Send /></Button>
+            </form>}
+            {stage === "live" && <Button variant="secondary" disabled={thinking} onClick={() => toTail("Let's stop the questions here.")}>Skip to my questions</Button>}
+            {stage === "your_questions" && <Button variant="destructive" disabled={thinking} onClick={finish}><Square /> End interview</Button>}
           </div>
         </section>
       )}
