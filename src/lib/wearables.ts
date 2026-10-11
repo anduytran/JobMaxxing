@@ -2,7 +2,7 @@
 // src/assets/wearables (CDN pointers) and is imported by components/Wearables.tsx;
 // this module stays asset-free so server functions can validate ids.
 
-export type WearableSlot = "eyes" | "handle" | "head" | "head+handle";
+export type WearableSlot = "eyes" | "handle" | "head" | "head+handle" | "body";
 
 export type WearableDef = {
   id: string; // store item id, e.g. wearable_bow
@@ -24,6 +24,7 @@ export const WEARABLES: WearableDef[] = [
   { id: "wearable_horns", name: "Devil horns", slots: ["head"], left: 24, top: 7, width: 52 },
   { id: "wearable_mcap", name: "M cap", slots: ["head", "handle"], left: 28, top: 0, width: 44 },
   { id: "wearable_afro", name: "Green afro", slots: ["head", "handle"], left: 6, top: -3, width: 88 },
+  { id: "wearable_gem", name: "Green gem", slots: ["body"], left: 43, top: 60, width: 14 },
 ];
 
 export const WEARABLE_IDS = WEARABLES.map((w) => w.id);
