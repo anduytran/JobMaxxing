@@ -10,6 +10,7 @@ import { XpCareerCard } from "@/components/DashboardProgressCards";
 import { getLatestResumeReview } from "@/lib/resume.functions";
 import type { StoredReview } from "@/lib/resume";
 import { useInterviewModePicker } from "@/components/InterviewModePicker";
+import { SkillRadar } from "@/components/SkillRadar";
 
 export const Route = createFileRoute("/progress")({
   head: () => ({
@@ -74,6 +75,8 @@ function Page() {
           <ResumeScoreCard review={review} score={resumeScore} loading={reviewLoading} />
           <XpCareerCard xp={xp} level={level} levelXp={levelXp} lastGain={lastGain} title={title} />
         </div>
+
+        <SkillRadar />
 
         <div className="flex items-center gap-5 rounded-2xl border bg-hero/60 p-6">
           <Button variant="ghost" aria-label="Another thought from Max" title="Another thought from Max" className="h-20 w-20 shrink-0 p-0 hover:bg-transparent" onClick={() => setTip((t) => (t + 1) % tips.length)}><Mascot className="h-20 w-20" /></Button>
