@@ -6,7 +6,6 @@ import { MAX_NOTES, nextMaxNote } from "@/lib/max-notes";
 
 import { useGame } from "@/lib/game";
 import { useEffect, useState } from "react";
-import { motion, useReducedMotion } from "framer-motion";
 import { ResumeScoreCard } from "@/components/ResumeScoreCard";
 import { XpCareerCard } from "@/components/DashboardProgressCards";
 import { getLatestResumeReview } from "@/lib/resume.functions";
