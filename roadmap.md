@@ -96,3 +96,7 @@
 - [x] Cap the featured card's text column to Max's centred footprint so the headline and paragraph clear him at desktop and phone sizes.
 - [x] Stop the interview-category daily quest from repeating the mock-interview scene in the carousel.
 - [x] Verify all four slides render at matching rendered heights (within 4%), with clear text and arrow spacing, and the temporary verification sign-in removed.
+
+## Lock In tab
+- [x] Hang Lock In at the featured card's top-left as a hard-edged rectangle and point it at where the featured quest is completed.
+- [x] Verify on the live signed-in dashboard that every slide's tab is square-cornered, flush to the card's top edge, clear of the eyebrow, Max and the arrows, and carries that quest's destination; temporary sign-in removed, build clean.
