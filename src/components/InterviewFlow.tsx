@@ -300,7 +300,7 @@ export function InterviewFlow({ agents, api, radar, profileSkills = [], captions
   const reset = () => { stopVoice(); setTyping(false); setConvId(null); setStage("setup"); setGrade(null); setTurns([]); setJob(null); setAck(false); setRecId(null); radarJobId.current = null; autoFinish.current = false; };
 
   return (
-    <div className={cn(immersive ? "w-full" : "mx-auto max-w-[1500px] space-y-4 px-4 py-6 md:px-10 md:py-10")}>
+    <div className={cn("interview-fonts", immersive ? "w-full" : "mx-auto max-w-[1500px] space-y-4 px-4 py-6 md:px-10 md:py-10")}>
       <InterviewRecorder active={stage === "live" || stage === "your_questions"} kind={demo ? "demo" : "solo"} title={job?.title ?? "Mock interview"}
         onSaved={(id) => { setRecId(id); if (savedRef.current) linkRecording(id, savedRef.current); }} />
       {!immersive && stage !== "report" && <div className="flex flex-wrap items-center justify-between gap-4">
