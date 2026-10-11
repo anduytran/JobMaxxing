@@ -119,4 +119,5 @@
 ## Featured quest Start and Career overview
 - [x] Add Start links and visible XP to every featured slide without changing quest rewards.
 - [x] Move the pictured personal overview from Home to Career, retaining Career milestones.
-- [ ] Verify page placement and Start destinations in the preview.
+- [x] Check navigation targets against existing pages and verify the preview has no public runtime errors.
+- [ ] Verify Start clicks and Career overview signed-in — blocked by unavailable account session.
