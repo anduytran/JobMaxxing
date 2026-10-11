@@ -99,6 +99,10 @@ function Interview() {
   const voiceState: InterviewVoiceState = stage === "grading" ? "grading" : listening ? "listening" : thinking ? "thinking" : playback;
   const currentCaption = [...turns].reverse().find((turn) => turn.speaker === "interviewer")?.text;
 
+  // Set when the Question agent concludes the interview: the closing line
+  // plays out, then the interview ends itself — no End press needed.
+  const autoFinish = useRef(false);
+
   const say = (t: string, phase: TranscriptTurn["phase"], questionId?: string) => {
     setTurns((x) => [...x, { speaker: "interviewer", phase, text: t, questionId }]);
     if (voiceOn) void voice.current?.speak(t);
@@ -191,13 +195,15 @@ function Interview() {
       if (convId) {
         // The Question agent writes the next spoken line from the running conversation.
         setThinking(true);
-        const reply = await sendInterviewTurn({ data: { conversationId: convId, text: v, phase: "interview", secondsLeft: left, lastQuestion: last } }).catch(() => null);
+        const turn = await sendInterviewTurn({ data: { conversationId: convId, text: v, phase: "interview", secondsLeft: left, lastQuestion: last } }).catch(() => null);
         setThinking(false);
-        if (reply) {
+        if (turn) {
           // Guardrail: question budget — the agent was told to wrap up and invite questions.
-          if (last) { setStage("your_questions"); return say(reply, "candidate_questions"); }
+          if (last) { setStage("your_questions"); return say(turn.reply, "candidate_questions"); }
+          // The agent concluded the candidate is done: closing line, then auto-end.
+          if (turn.done) { autoFinish.current = true; return say(turn.reply, "interview"); }
           setQi(next);
-          return say(reply, "interview", questions[next]?.id);
+          return say(turn.reply, "interview", questions[next]?.id);
         }
       }
       if (last) return toTail("Thanks, that covers my questions.");
@@ -208,9 +214,12 @@ function Interview() {
       setTurns((x) => [...x, { speaker: "candidate", phase: "candidate_questions", text: v }]);
       if (convId) {
         setThinking(true);
-        const reply = await sendInterviewTurn({ data: { conversationId: convId, text: v, phase: "candidate_questions", secondsLeft: 0, lastQuestion: true } }).catch(() => null);
+        const turn = await sendInterviewTurn({ data: { conversationId: convId, text: v, phase: "candidate_questions", secondsLeft: 0, lastQuestion: true } }).catch(() => null);
         setThinking(false);
-        if (reply) return say(reply, "candidate_questions");
+        if (turn) {
+          if (turn.done) { autoFinish.current = true; return say(turn.reply, "candidate_questions"); }
+          return say(turn.reply, "candidate_questions");
+        }
       }
       say("Great question — the team would love to dig into that. Anything else?", "candidate_questions");
     }
@@ -271,7 +280,18 @@ function Interview() {
     } catch (e) { toast.error((e as Error).message); setStage("your_questions"); }
   };
 
-  const reset = () => { stopVoice(); setTyping(false); setConvId(null); setStage("intro"); setGrade(null); setTurns([]); setJob(null); setAck(false); radarJobId.current = null; };
+  // Auto-end: once the agent's closing line has finished playing (or right
+  // away when voice is off), run the same finish flow as the End button.
+  useEffect(() => {
+    if (!autoFinish.current || thinking) return;
+    if (stage !== "live" && stage !== "your_questions") return;
+    if (voiceOn && playback !== "ready") return;
+    autoFinish.current = false;
+    const t = setTimeout(() => void finish(), 700);
+    return () => clearTimeout(t);
+  }, [thinking, playback, stage, turns, voiceOn]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const reset = () => { stopVoice(); setTyping(false); setConvId(null); setStage("intro"); setGrade(null); setTurns([]); setJob(null); setAck(false); radarJobId.current = null; autoFinish.current = false; };
 
   return (
     <div className={cn(immersive ? "w-full" : "mx-auto max-w-6xl space-y-4 px-4 py-6 md:px-10 md:py-10")}>
