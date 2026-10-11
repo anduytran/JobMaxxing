@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { signIn, signUp } from "@/lib/auth.functions";
 import { MAX_POSES } from "@/components/Max";
+import interviewShot from "@/assets/landing/interview-review.asset.json";
 
 const spring = { type: "spring" as const, stiffness: 380, damping: 30 };
 const rise = {
@@ -286,6 +287,54 @@ export function AuthScreen() {
             </div>
             <div className="mt-2"><XpBadge amount="+25 XP" /></div>
           </motion.div>
+        </div>
+      </section>
+
+      {/* Feature spotlight: AI interviewing */}
+      <section className="mx-auto max-w-6xl px-6 py-20">
+        <div className="grid items-center gap-10 md:grid-cols-2">
+          <motion.div {...rise} className="flex flex-col gap-4">
+            <div className="flex items-center gap-2">
+              <QuestTag type="Main quest" />
+              <XpBadge amount="+50 XP" />
+            </div>
+            <h2 className="font-display text-3xl font-bold tracking-tight md:text-4xl">An interviewer that actually interviews you.</h2>
+            <p className="text-lg text-muted-foreground">
+              Paste a real job posting and Max pulls out the role, the skills, and what they really care about — then runs a live voice interview built around it.
+            </p>
+            <ul className="flex flex-col gap-2.5 text-sm">
+              {[
+                "Answer out loud — your words are transcribed as you speak",
+                "Follow-up questions react to what you actually said",
+                "Graded on quality, conciseness, and the questions you ask back",
+              ].map((line) => (
+                <li key={line} className="flex items-start gap-2.5">
+                  <span className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full bg-secondary text-secondary-foreground">
+                    <Check className="size-3" />
+                  </span>
+                  <span className="text-muted-foreground">{line}</span>
+                </li>
+              ))}
+            </ul>
+          </motion.div>
+          <motion.figure
+            {...rise}
+            transition={{ ...rise.transition, delay: 0.1 }}
+            className="group overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-hover)] transition-transform hover:-translate-y-1"
+          >
+            <div className="flex items-center gap-1.5 border-b border-border/60 bg-muted/50 px-4 py-2.5">
+              <span className="size-2.5 rounded-full bg-primary/70" />
+              <span className="size-2.5 rounded-full bg-accent/70" />
+              <span className="size-2.5 rounded-full bg-secondary" />
+              <span className="ml-3 text-xs text-muted-foreground">jobmaxxing.work/interview</span>
+            </div>
+            <img
+              src={interviewShot.url}
+              alt="The JobMaxxing interview setup screen after analyzing a real job posting, showing the detected role, skills, and qualifications"
+              className="w-full transition-transform duration-500 group-hover:scale-[1.02]"
+              loading="lazy"
+            />
+          </motion.figure>
         </div>
       </section>
 
