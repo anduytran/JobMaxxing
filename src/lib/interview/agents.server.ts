@@ -82,10 +82,9 @@ function fallbackParse(jd: string): ParsedJob {
 
 export async function parseJob(jd: string): Promise<ParsedJob> {
   const ai = await askRaia<ParsedJob>(ENV.parser, jd,
-    "Extract from this job description: title (role title or null), summary (2-3 sentence description of the role), " +
-    "skills[] (every skill, tool, or technology listed), qualifications[] (requirements like years of experience or degrees), " +
-    "location (city/region/remote status or null), specialNotes[] (anything notable: visa, travel, on-call, clearance, perks). " +
-    "Reply with JSON only: {title, summary, skills, qualifications, location, specialNotes}.");
+    "Parse this job posting following your own instructions (security, fairness and flag rules included). " +
+    "Reply with JSON only using your output schema: {title, summary, skills, qualifications, location, specialNotes} — " +
+    "null for anything the posting does not state.");
   if (ai && Array.isArray(ai.skills)) {
     return {
       title: ai.title ?? null,
