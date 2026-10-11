@@ -388,33 +388,72 @@ html.dyslexia-font em, html.dyslexia-font i { font-style: normal; }
   --input: oklch(0.37 0.02 260);
 }
 
-/* Lock In: each mode is a pile of sheets on a desk, not a card. */
-.paper-stack { position: relative; }
-.paper-sheet, .paper-under {
-  background-color: var(--color-card);
-  border: 1px solid var(--color-border);
-  border-radius: 3px;
-  box-shadow: var(--glow);
+/* Lock In: colored folders standing on a desk. The desk surface fills most of
+   the screen, a table edge strip sits below it, then the ground. */
+.desk-scene { display: flex; flex-direction: column; min-height: 78svh; }
+.desk-surface {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background:
+    radial-gradient(120% 90% at 50% 0%, color-mix(in oklab, var(--color-primary) 14%, transparent), transparent 60%),
+    repeating-linear-gradient(90deg, transparent 0 120px, color-mix(in oklab, var(--color-foreground) 4%, transparent) 120px 122px),
+    linear-gradient(180deg,
+      color-mix(in oklab, var(--color-primary) 22%, var(--color-card)),
+      color-mix(in oklab, var(--color-primary) 30%, var(--color-muted)));
+  border-top: 1px solid var(--color-border);
 }
-.paper-under {
+.desk-edge {
+  height: 22px;
+  background: linear-gradient(180deg,
+    color-mix(in oklab, var(--color-foreground) 22%, var(--color-muted)),
+    color-mix(in oklab, var(--color-foreground) 34%, var(--color-muted)));
+  border-top: 2px solid color-mix(in oklab, var(--color-foreground) 30%, transparent);
+  box-shadow: 0 6px 10px -4px color-mix(in oklab, var(--color-foreground) 35%, transparent);
+}
+.desk-ground {
+  height: 12vh;
+  background: linear-gradient(180deg,
+    color-mix(in oklab, var(--color-foreground) 12%, var(--color-background)),
+    var(--color-background));
+}
+
+/* A folder: darker back panel with a tab, lighter front panel, contents inside. */
+.folder { --folder-c: var(--color-primary); position: relative; }
+.folder-accent { --folder-c: var(--color-accent); }
+.folder-success { --folder-c: var(--color-success); }
+.folder-back {
   position: absolute;
-  inset: 0;
-  transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+  inset: 0 0 auto 0;
+  height: 100%;
+  border-radius: 6px 10px 6px 6px;
+  background: color-mix(in oklab, var(--folder-c) 55%, var(--color-foreground));
 }
-.paper-under-1 { transform: translate(7px, 9px) rotate(-1.3deg); }
-.paper-under-2 { transform: translate(-6px, 17px) rotate(1deg); }
-.paper-sheet {
-  position: relative;
+.folder-tab {
+  position: absolute;
+  top: -16px;
+  left: 10px;
+  width: 42%;
+  height: 22px;
+  border-radius: 8px 12px 0 0;
+  background: color-mix(in oklab, var(--folder-c) 55%, var(--color-foreground));
+}
+.folder-front {
+  margin-top: 14px;
+  border-radius: 4px 8px 6px 6px;
+  background: linear-gradient(180deg,
+    color-mix(in oklab, var(--folder-c) 78%, var(--color-card)),
+    color-mix(in oklab, var(--folder-c) 62%, var(--color-card)));
+  color: var(--color-accent-foreground);
+  box-shadow: var(--glow);
   transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.28s;
 }
-.paper-rules {
-  background-image: repeating-linear-gradient(180deg, transparent 0 27px, color-mix(in oklab, var(--color-border) 65%, transparent) 27px 28px);
-}
+.folder-icon { background: color-mix(in oklab, var(--color-card) 55%, transparent); }
+.folder-peek { transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1); }
 @media (hover: hover) {
-  html:not(.reduce-motion) .paper-stack:hover .paper-sheet { transform: translateY(-5px); box-shadow: var(--shadow-hover); }
-  html:not(.reduce-motion) .paper-stack:hover .paper-under-1 { transform: translate(13px, 16px) rotate(-2.4deg); }
-  html:not(.reduce-motion) .paper-stack:hover .paper-under-2 { transform: translate(-11px, 24px) rotate(1.9deg); }
+  html:not(.reduce-motion) .folder:hover .folder-front { transform: translateY(-6px); box-shadow: var(--shadow-hover); }
+  html:not(.reduce-motion) .folder:hover .folder-peek { transform: translateY(-10px); }
 }
-html.reduce-motion .paper-sheet, html.reduce-motion .paper-under { transition: none; }
-html.high-contrast .paper-sheet, html.high-contrast .paper-under { border-width: 2px; }
+html.reduce-motion .folder-front, html.reduce-motion .folder-peek { transition: none; }
+html.high-contrast .folder-front, html.high-contrast .folder-back, html.high-contrast .folder-tab { outline: 2px solid var(--color-foreground); }
 
