@@ -184,6 +184,7 @@
 }
 .interview-voice-listening .interview-voice-ring, .interview-voice-speaking .interview-voice-ring { animation: voice-ripple 1.8s ease-out infinite; }
 @keyframes voice-breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.07); } }
+@keyframes voice-draw { 0%, 100% { transform: scale(1); } 50% { transform: scale(.92); } }
 @keyframes voice-ripple { from { transform: scale(.85); opacity: .8; } to { transform: scale(1.12); opacity: .15; } }
 @keyframes voice-turn { to { transform: rotate(360deg); } }
 @utility animate-scan { animation: scan 2.6s linear infinite alternate; }
