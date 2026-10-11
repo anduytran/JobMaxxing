@@ -2,7 +2,7 @@ import { Link, useLocation, useRouter, useRouterState } from "@tanstack/react-ro
 import { signOut } from "@/lib/auth.functions";
 import { AnimatePresence, motion, MotionConfig, useReducedMotion } from "framer-motion";
 import {
-  LayoutGrid, FileText, Mic, Radar, LineChart, Network, UsersRound, Swords, Settings, Menu, LogOut, Zap, Flame, CircleHelp, X, Store, ArrowRight,
+  LayoutGrid, FileText, Mic, Radar, LineChart, Network, UsersRound, Swords, Settings, Menu, LogOut, Zap, Flame, CircleHelp, X, Store, ArrowRight, ImagePlus, ImageOff,
 } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
@@ -184,7 +184,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                   );
                 })}
                 <div className="mt-3 flex items-center gap-3 rounded-xl border bg-background p-3 text-sm">
-                  <div className="grid h-9 w-9 place-items-center rounded-full bg-sidebar-accent text-xs font-semibold text-primary">{initials}</div>
+                  <AvatarFace url={avatarUrl} initials={initials} className="h-9 w-9 text-xs" />
                   <div className="min-w-0 flex-1">
                     <div className="truncate font-medium">{name}</div>
                     <div className="text-xs text-muted-foreground">Level {level} · {levelTitle(level)}</div>
@@ -237,6 +237,12 @@ function TopTab({ item: { to, label }, active }: { item: Item; active: boolean }
 }
 
 function CheckReward() { return <Zap className="h-5 w-5 text-primary" />; }
+
+/** Round profile photo, falling back to initials when none is set. */
+function AvatarFace({ url, initials, className }: { url: string | null; initials: string; className?: string }) {
+  if (url) return <img src={url} alt="" className={cn("shrink-0 rounded-full object-cover", className)} />;
+  return <span className={cn("grid shrink-0 place-items-center rounded-full bg-sidebar-accent font-semibold text-primary", className)}>{initials}</span>;
+}
 
 export function PanelHead({ title, level }: { title: string; level: number }) {
   return (
