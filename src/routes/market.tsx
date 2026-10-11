@@ -221,7 +221,17 @@ function Market() {
                   <Button size="sm" onClick={() => practice(j)}>
                     <Mic className="h-4 w-4" /> Practice interview
                   </Button>
-                    <StatusMenu status={j.status} busy={busyId.current === j.id} onPick={(s) => applyStatus(j.id, s)} onRemove={() => removeMatch(j.id)} />
+                    <StatusMenu status={j.status} busy={busyId.current === j.id} onPick={(s) => applyStatus(j.id, s)} />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-muted-foreground hover:text-destructive"
+                      disabled={busyId.current === j.id}
+                      onClick={() => removeMatch(j.id)}
+                      aria-label="Remove from radar"
+                    >
+                      <Trash2 className="h-4 w-4" /> Remove
+                    </Button>
                 </div>
               </div>
             ))}
