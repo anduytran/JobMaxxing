@@ -36,7 +36,7 @@ export type PeerSession = {
   interviewerGrade: PeerInterviewerGrade | null;
   grading: boolean;
   checks: Record<string, number[]>;
-  signal: { offer?: string; answer?: string; video?: { host?: boolean; guest?: boolean } };
+  signal: { offer?: string; answer?: string; video?: { host?: boolean; guest?: boolean }; ready?: { host?: boolean; guest?: boolean } };
   flag: string | null;
   strikes: Record<string, number>;
   startedAt: string | null;
@@ -151,8 +151,9 @@ export const joinPeerSession = createServerFn({ method: "POST" })
     if (s.guestId && s.guestId !== user.id) throw new Error("That session already has two people.");
     if (s.status === "done") throw new Error("That session is already finished.");
     const name = user.name ?? user.email?.split("@")[0] ?? "Guest";
+    // The clock does NOT start here — it starts when both sides mark ready (peerReady).
     await neonExecute(
-      "update public.devup_peer_session set guest_id = $2::uuid, guest_name = $3, status = 'live', started_at = coalesce(started_at, now()) where id = $1::uuid",
+      "update public.devup_peer_session set guest_id = $2::uuid, guest_name = $3, status = 'live' where id = $1::uuid",
       [s.id, user.id, name],
     );
     return { id: s.id };
@@ -280,6 +281,27 @@ export const peerVideoConsent = createServerFn({ method: "POST" })
       [s.id, JSON.stringify(video)],
     );
     return { ok: true };
+  });
+
+// Ready handshake: each side opts in once the call is connected. The interview
+// clock (started_at) only starts when both flags are true.
+export const peerReady = createServerFn({ method: "POST" })
+  .inputValidator((i: { id: unknown; on: unknown }) => ({ id: String(i.id ?? ""), on: !!i.on }))
+  .handler(async ({ data }) => {
+    const user = await me();
+    const s = await loadForUser(data.id, user.id);
+    if (s.status !== "live") throw new Error("The session is not live.");
+    const { neonExecute } = await import("./neon.server");
+    const ready = { ...(s.signal.ready ?? {}), [s.meIsHost ? "host" : "guest"]: data.on };
+    const both = !!(ready.host && ready.guest);
+    await neonExecute(
+      `update public.devup_peer_session
+       set signal = jsonb_set(signal, '{ready}', $2::jsonb),
+           started_at = case when $3 and started_at is null then now() else started_at end
+       where id = $1::uuid`,
+      [s.id, JSON.stringify(ready), both],
+    );
+    return { ok: true, both };
   });
 
 export const peerEndSession = createServerFn({ method: "POST" })

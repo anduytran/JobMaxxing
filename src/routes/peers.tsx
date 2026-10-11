@@ -14,7 +14,7 @@ import { useGame } from "@/lib/game";
 import { generateInterviewQuestions, parseJobDescription } from "@/lib/interview.functions";
 import { createBrowserVoice, type VoiceAgent } from "@/lib/interview/voice";
 import {
-  createPeerSession, getPeerSession, joinPeerSession, peerAskNext, peerEndSession, peerGrade, peerSay, peerSetChecks, peerVideoConsent,
+  createPeerSession, getPeerSession, joinPeerSession, peerAskNext, peerEndSession, peerGrade, peerReady, peerSay, peerSetChecks, peerVideoConsent,
   type PeerSession,
 } from "@/lib/peer.functions";
 import { LENGTHS, type InterviewLength, type InterviewType, type ParsedJob } from "@/lib/interview/types";
@@ -66,6 +66,9 @@ function Page() {
   const videoConsent = session?.signal.video ?? {};
   const myVideoConsent = session ? (session.meIsHost ? videoConsent.host : videoConsent.guest) : false;
   const bothVideoConsent = !!(videoConsent.host && videoConsent.guest);
+  const readyFlags = session?.signal.ready ?? {};
+  const myReady = session ? !!(session.meIsHost ? readyFlags.host : readyFlags.guest) : false;
+  const bothReady = !!(readyFlags.host && readyFlags.guest);
   const call = usePeerCall({ sessionId, isHost: !!session?.meIsHost, live: stage === "live", signal: session?.signal ?? {}, video: bothVideoConsent });
 
   const refresh = async (id = sessionId) => {
@@ -299,10 +302,18 @@ function Page() {
                 </div>
               </div>
               <div className="flex items-center gap-4 font-mono text-sm">
-                <span className={cn("flex items-center gap-1", askedCount && qLeft < 30 && "text-destructive")} title="This question">
-                  <Timer className="h-4 w-4" /> Q {fmt(askedCount ? qLeft : QUESTION_SECONDS)}
-                </span>
-                <span className={cn("text-muted-foreground", totalLeft < 60 && "text-destructive")} title="Whole interview">Total {fmt(totalLeft)}</span>
+                {bothReady ? (
+                  <>
+                    <span className={cn("flex items-center gap-1", askedCount && qLeft < 30 && "text-destructive")} title="This question">
+                      <Timer className="h-4 w-4" /> Q {fmt(askedCount ? qLeft : QUESTION_SECONDS)}
+                    </span>
+                    <span className={cn("text-muted-foreground", totalLeft < 60 && "text-destructive")} title="Whole interview">Total {fmt(totalLeft)}</span>
+                  </>
+                ) : (
+                  <span className="flex items-center gap-1 text-muted-foreground" title="The clock starts once you're both ready">
+                    <Timer className="h-4 w-4" /> Starts when you're both ready
+                  </span>
+                )}
               </div>
             </div>
             <Progress value={(askedCount / Math.max(1, session.questions.length)) * 100} className="h-1 rounded-none" />
@@ -318,6 +329,16 @@ function Page() {
                   <span className={cn("font-mono", call.state === "connected" ? "text-accent" : "text-muted-foreground")}>
                     {call.state === "connected" ? "● Live audio" : "Connecting audio…"}
                   </span>
+                  {call.state === "connected" && !bothReady && (
+                    myReady ? (
+                      <span className="flex items-center gap-1 text-muted-foreground"><Loader2 className="h-3.5 w-3.5 animate-spin" /> Waiting for {partner ?? "your friend"} to ready up…</span>
+                    ) : (
+                      <Button size="sm" onClick={() => void act(() => peerReady({ data: { id: session.id, on: true } }))} disabled={busy}>
+                        <Check /> I'm ready
+                      </Button>
+                    )
+                  )}
+                  {bothReady && <span className="font-mono text-accent">● Both ready</span>}
                   <Button size="sm" variant="ghost" onClick={() => call.setMuted(!call.muted)}>{call.muted ? <MicOff /> : <Mic />} {call.muted ? "Unmute" : "Mute"}</Button>
                   <Button size="sm" variant="ghost" onClick={call.hangUp}><PhoneOff /> Leave call</Button>
                 </>
@@ -354,7 +375,9 @@ function Page() {
             <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto p-4">
               {session.transcript.length === 0 && (
                 <p className="py-12 text-center text-sm text-muted-foreground">
-                  {myRole === "interviewer" ? "Start the call, then reveal the first question and read it aloud." : "Start the call and wait for the first question…"}
+                  {!bothReady
+                    ? "Once the call connects, both of you press \"I'm ready\" — the clock starts then."
+                    : myRole === "interviewer" ? "Reveal the first question and read it aloud." : "Wait for the first question…"}
                 </p>
               )}
               {session.transcript.map((t, i) => (
@@ -376,7 +399,8 @@ function Page() {
                   </Button>
                 )}
                 {myRole === "interviewer" && !allAsked && (
-                  <Button onClick={() => void act(() => peerAskNext({ data: { id: session.id } }))} disabled={busy}>
+                  <Button onClick={() => void act(() => peerAskNext({ data: { id: session.id } }))} disabled={busy || !bothReady}
+                    title={bothReady ? undefined : "The interview starts once you're both ready"}>
                     {busy && <Loader2 className="animate-spin" />} {askedCount === 0 ? "Reveal first question" : "Next question"}
                   </Button>
                 )}
