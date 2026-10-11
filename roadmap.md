@@ -100,3 +100,8 @@
 ## Lock In tab
 - [x] Hang Lock In at the featured card's top-left as a hard-edged rectangle and point it at where the featured quest is completed.
 - [x] Verify on the live signed-in dashboard that every slide's tab is square-cornered, flush to the card's top edge, clear of the eyebrow, Max and the arrows, and carries that quest's destination; temporary sign-in removed, build clean.
+
+## Lock In in the nav
+- [x] Move the `Lock In` button to the far left of the top nav, straight after the brand, with the section tabs centred behind it.
+- [x] Take the hanging `Lock In` tab off the featured card and drop the now-unused card helpers (`LOCK_IN_TAB`, `QUEST_LINK`, `featLink`), restoring the card's original top padding.
+- [x] Verify on the live signed-in dashboard that the nav reads Lock In · Home · Collection · Career · Store left to right, that no `Lock In` control remains inside the card, and that `/lock-in` still opens the mode picker; temporary sign-in removed, build clean.
