@@ -121,7 +121,12 @@ function Dashboard() {
   const [pick, setPick] = useState<number | null>(null);
   const [dir, setDir] = useState(1);
   // One slide per quest type — the carousel never shows two of the same kind.
-  const featuredOpen = open.filter((q, i) => open.findIndex((o) => o.category === q.category) === i);
+  // One slide per quest type. The mock-interview slide already owns the interview
+  // scene, so an interview-category quest doesn't get a second, identical card.
+  const featuredOpen = open.filter(
+    (q, i) => open.findIndex((o) => o.category === q.category) === i &&
+      MAX_ART[(q.category ?? "").toLowerCase()] !== "interview",
+  );
   // Slide 0 is always the mock interview — the core product; quest slides follow.
   const total = featuredOpen.length + 1;
   const featIdx = pick === null ? 0 : Math.min(pick, total - 1);
