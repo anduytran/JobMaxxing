@@ -261,6 +261,28 @@ export const saveReducedMotion = createServerFn({ method: "POST" })
     }
   });
 
+// The remaining accessibility switches travel together: high contrast,
+// dyslexia-friendly text, and interview captions.
+export const saveAccessibility = createServerFn({ method: "POST" })
+  .inputValidator((input: { highContrast: unknown; dyslexiaFont: unknown; captions: unknown }) => {
+    for (const k of ["highContrast", "dyslexiaFont", "captions"] as const) {
+      if (typeof input[k] !== "boolean") throw new Error("Accessibility preferences must be true or false.");
+    }
+    return { highContrast: input.highContrast, dyslexiaFont: input.dyslexiaFont, captions: input.captions };
+  })
+  .handler(async ({ data }): Promise<SaveResult> => {
+    try {
+      const PROFILE_ID = (await requireUser()).id;
+      await neonExecute(
+        "update public.devup_profile set high_contrast = $1, dyslexia_font = $2, captions = $3, updated_at = now() where id = $4",
+        [data.highContrast, data.dyslexiaFont, data.captions, PROFILE_ID],
+      );
+      return { ok: true };
+    } catch (err) {
+      return fail(err);
+    }
+  });
+
 /**
  * Marks one quest done and awards its XP in a single transaction. The CTE only
  * returns a row when the quest flips from not-done to done, so a double click
