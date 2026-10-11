@@ -129,7 +129,8 @@ function Market() {
       sessionStorage.setItem("jobmaxxing:radar-jd", `${job.title}\n${job.company}\n${job.location}\n\n${job.description}`);
       if (job.url) sessionStorage.setItem("jobmaxxing:radar-url", job.url);
     } catch { /* storage unavailable — the interview still opens on the paste step */ }
-    applyStatus(job.id, "interviewing");
+    // Practicing is not the same as being in a real interview loop — the
+    // "Interviewing" status stays a thing you mark yourself.
     nav({ to: "/interview", search: { radar: job.id } });
   };
 
