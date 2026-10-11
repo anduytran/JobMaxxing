@@ -322,8 +322,34 @@ function Page() {
                   <Button size="sm" variant="ghost" onClick={call.hangUp}><PhoneOff /> Leave call</Button>
                 </>
               )}
+              {myVideoConsent ? (
+                bothVideoConsent ? (
+                  <Button size="sm" variant="ghost" onClick={() => void act(() => peerVideoConsent({ data: { id: session.id, on: false } }))} disabled={busy}>
+                    <VideoOff /> Camera off
+                  </Button>
+                ) : (
+                  <span className="flex items-center gap-1 text-muted-foreground"><Video className="h-3.5 w-3.5" /> Waiting for {partner ?? "your friend"} to allow camera…</span>
+                )
+              ) : (
+                <Button size="sm" variant="outline" onClick={() => void act(() => peerVideoConsent({ data: { id: session.id, on: true } }))} disabled={busy}>
+                  <Video /> Turn on camera
+                </Button>
+              )}
               {call.error && <span className="text-destructive">{call.error}</span>}
             </div>
+
+            {bothVideoConsent && (
+              <div className="grid grid-cols-2 gap-2 border-b bg-muted/30 p-2">
+                <div className="relative overflow-hidden rounded-lg border bg-black/80">
+                  <video ref={call.remoteVideoRef} autoPlay playsInline className="aspect-[4/3] w-full object-cover" aria-label={`${partner ?? "Partner"}'s camera`} />
+                  <span className="absolute bottom-1 left-1 rounded bg-black/60 px-1.5 py-0.5 font-mono text-[10px] text-white">{partner ?? "Partner"}</span>
+                </div>
+                <div className="relative overflow-hidden rounded-lg border bg-black/80">
+                  <video ref={call.localVideoRef} autoPlay playsInline muted className="aspect-[4/3] w-full -scale-x-100 object-cover" aria-label="Your camera" />
+                  <span className="absolute bottom-1 left-1 rounded bg-black/60 px-1.5 py-0.5 font-mono text-[10px] text-white">You</span>
+                </div>
+              </div>
+            )}
 
             <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto p-4">
               {session.transcript.length === 0 && (
