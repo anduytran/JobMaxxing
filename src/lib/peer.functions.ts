@@ -334,23 +334,23 @@ export const peerGrade = createServerFn({ method: "POST" })
     const total = s.questions.slice(0, asked).reduce((n, q) => n + q.checklist.length, 0);
     const ticked = Object.values(s.checks).reduce((n, a) => n + a.length, 0);
     try {
-      const candidateId = s.hostRole === "candidate" ? s.hostId : s.guestId;
-      const interviewerId = s.hostRole === "interviewer" ? s.hostId : s.guestId;
       const [candidate, interviewer] = await Promise.all([
-        gradeInterview(s.transcript, s.job, candidateId ?? undefined),
-        gradeInterviewer(s.transcript, s.job, { asked, ticked, total }, interviewerId ?? undefined),
+        gradeInterview(s.transcript, s.job),
+        gradeInterviewer(s.transcript, s.job, { asked, ticked, total }),
       ]);
       await neonExecute(
         "update public.devup_peer_session set grade = $2::jsonb, interviewer_grade = $3::jsonb where id = $1::uuid",
         [s.id, JSON.stringify(candidate), JSON.stringify(interviewer)],
       );
       // Candidate's skill ratings move with the graded answer quality.
+      const candidateId = s.hostRole === "candidate" ? s.hostId : s.guestId;
       if (candidateId) {
         const { applySessionRatings, scoredItems } = await import("./mmr.server");
         await applySessionRatings(candidateId, scoredItems(s.questions, asked, candidate.metrics.quality.score))
           .catch((e) => console.error("rating update failed", e));
       }
       // Skill Expert re-rates both people (candidate and interviewer) from this session.
+      const interviewerId = s.hostRole === "interviewer" ? s.hostId : s.guestId;
       const { refreshSkills } = await import("./skills.server");
       const pick = (g: { overall: number; metrics: Record<string, { score: number } | null>; strengths: string[]; improvements: string[] }) => ({
         overall: g.overall, metrics: Object.fromEntries(Object.entries(g.metrics).map(([k, v]) => [k, v ? v.score : null])),

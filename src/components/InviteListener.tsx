@@ -4,7 +4,7 @@ import { Loader2, PhoneCall, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { listFriends, listIncomingInvites, listScheduledInterviews, respondInvite, type IncomingInvite } from "@/lib/friends.functions";
+import { listIncomingInvites, respondInvite, type IncomingInvite } from "@/lib/friends.functions";
 import { joinPeerSession } from "@/lib/peer.functions";
 
 const COUNTDOWN_SECONDS = 30;
@@ -17,17 +17,12 @@ export function InviteListener() {
   const [busy, setBusy] = useState(false);
   const [now, setNow] = useState(() => Date.now());
   const shown = useRef<Set<string>>(new Set());
-  const knownRequests = useRef<Set<string>>(new Set());
-  const knownScheduled = useRef<Set<string>>(new Set());
-  const firstRun = useRef(true);
 
   useEffect(() => {
     let stopped = false;
     const poll = async () => {
       try {
-        const [{ invites }, friends, scheduled] = await Promise.all([
-          listIncomingInvites(), listFriends(), listScheduledInterviews(),
-        ]);
+        const { invites } = await listIncomingInvites();
         if (stopped) return;
         const next = invites.find((i) => !shown.current.has(i.id));
         if (next) {
@@ -35,23 +30,6 @@ export function InviteListener() {
           setInvite(next);
           try { new Audio("data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=").play().catch(() => {}); } catch { /* no audio */ }
         }
-        // Friend requests and schedule asks only had a tiny badge before —
-        // toast them too (skip whatever already existed on first load).
-        const freshRequests = friends.requests.filter((r) => !knownRequests.current.has(r.id));
-        const freshScheduled = scheduled.filter((s) => !s.mine && s.status === "pending" && !knownScheduled.current.has(s.id));
-        friends.requests.forEach((r) => knownRequests.current.add(r.id));
-        scheduled.forEach((s) => knownScheduled.current.add(s.id));
-        if (!firstRun.current) {
-          for (const r of freshRequests) {
-            toast(`${r.name} sent you a friend request`, { description: "Open the Friends menu to accept." });
-          }
-          for (const s of freshScheduled) {
-            toast(`${s.withName} asked to schedule an interview`, {
-              description: new Date(s.at).toLocaleString([], { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }),
-            });
-          }
-        }
-        firstRun.current = false;
       } catch { /* signed out or network — stay quiet */ }
     };
     void poll();

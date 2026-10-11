@@ -25,7 +25,7 @@ export function SocialMenu() {
 
   useEffect(() => {
     void reload();
-    const t = setInterval(() => void reload(), 10000);
+    const t = setInterval(() => void reload(), 30000);
     return () => clearInterval(t);
   }, [reload]);
 
@@ -37,7 +37,7 @@ export function SocialMenu() {
   return (
     <Popover onOpenChange={(o) => o && void reload()}>
       <PopoverTrigger asChild>
-        <button className="relative flex items-center gap-2 rounded-full border bg-card px-3.5 py-1.5 text-sm font-semibold transition-shadow hover:shadow-md" aria-label="Friends">
+        <button className="relative hidden items-center gap-2 rounded-full border bg-card px-3.5 py-1.5 text-sm font-semibold transition-shadow hover:shadow-md md:flex" aria-label="Friends">
           <UsersRound className="h-4 w-4 text-primary" />
           Friends
           {online > 0 && <span className="flex items-center gap-1 text-xs text-muted-foreground"><span className="h-2 w-2 rounded-full bg-success" />{online}</span>}

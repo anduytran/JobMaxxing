@@ -16,10 +16,8 @@ export const parseJobDescription = createServerFn({ method: "POST" })
     return { jd };
   })
   .handler(async ({ data }) => {
-    const { currentUser } = await import("./auth.server");
-    const user = await currentUser();
     const { parseJob } = await import("./interview/agents.server");
-    return parseJob(data.jd, user?.id);
+    return parseJob(data.jd);
   });
 
 // Fetches a public job posting URL server-side and extracts readable text so
@@ -65,10 +63,8 @@ export const parseJobUrl = createServerFn({ method: "POST" })
     return { url: parsed.toString(), hint };
   })
   .handler(async ({ data }) => {
-    const { currentUser } = await import("./auth.server");
-    const user = await currentUser();
     const { parseJobFromUrl } = await import("./interview/agents.server");
-    const job = await parseJobFromUrl(data.url, data.hint || undefined, user?.id);
+    const job = await parseJobFromUrl(data.url, data.hint || undefined);
     if (!job) throw new Error("Couldn't read that posting, even with a web search. Paste the description instead.");
     return job;
   });
@@ -82,11 +78,11 @@ export const generateInterviewQuestions = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data }) => {
     const { generateQuestions } = await import("./interview/agents.server");
-    const { currentUser } = await import("./auth.server");
-    const user = await currentUser();
     let resumeText: string | undefined;
     if (data.type === "resume") {
       try {
+        const { currentUser } = await import("./auth.server");
+        const user = await currentUser();
         if (user) {
           const { neonExecute } = await import("./neon.server");
           const r = await neonExecute(
@@ -101,7 +97,7 @@ export const generateInterviewQuestions = createServerFn({ method: "POST" })
         }
       } catch (e) { console.error("resume fetch for interview failed", e); }
     }
-    return generateQuestions(data.job, data.type, data.length, data.roast, resumeText, user?.id);
+    return generateQuestions(data.job, data.type, data.length, data.roast, resumeText);
   });
 
 // Saves the interview the moment it starts (score 0, empty transcript) so it
@@ -139,12 +135,12 @@ export const gradeInterviewTranscript = createServerFn({ method: "POST" })
     };
   })
   .handler(async ({ data }) => {
-    const { currentUser } = await import("./auth.server");
-    const user = await currentUser();
     const { gradeInterview } = await import("./interview/agents.server");
-    const grade = await gradeInterview(data.transcript, data.job, user?.id);
+    const grade = await gradeInterview(data.transcript, data.job);
     let ratings: import("./mmr.server").RatingChange[] = [];
     try {
+      const { currentUser } = await import("./auth.server");
+      const user = await currentUser();
       const answered = data.transcript.filter((t) => t.speaker === "candidate" && t.phase === "interview").length;
       if (user && answered > 0) {
         const { applySessionRatings, scoredItems } = await import("./mmr.server");
@@ -230,9 +226,9 @@ export const checkCustomSkill = createServerFn({ method: "POST" })
   .inputValidator((i: { phrase: unknown }) => ({ phrase: String(i.phrase ?? "").slice(0, 80) }))
   .handler(async ({ data }) => {
     const { requireUser } = await import("./auth.server");
-    const user = await requireUser();
+    await requireUser();
     const { vetSkill } = await import("./skills.server");
-    return vetSkill(data.phrase, user.id);
+    return vetSkill(data.phrase);
   });
 
 export const saveTrackedSkills = createServerFn({ method: "POST" })
@@ -278,9 +274,9 @@ export const sendInterviewTurn = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }) => {
     const { requireUser } = await import("./auth.server");
-    const user = await requireUser();
+    await requireUser();
     const { continueInterviewConversation } = await import("./interview/agents.server");
-    return continueInterviewConversation({ ...data, userId: user.id });
+    return continueInterviewConversation(data);
   });
 
 export const speakInterviewLine = createServerFn({ method: "POST" })

@@ -1,9 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { FileText, Mic, Radar } from "lucide-react";
+import { ArrowRight, FileText, Mic, Radar } from "lucide-react";
 import { MAX_POSES } from "@/components/Max";
 import { useInterviewModePicker } from "@/components/InterviewModePicker";
 import { MaxNote, useRandomMaxNote } from "@/components/MaxNote";
-import penAsset from "@/assets/desk-pen.png.asset.json";
+
 
 export const Route = createFileRoute("/lock-in")({
   head: () => ({
@@ -20,102 +20,51 @@ export const Route = createFileRoute("/lock-in")({
 });
 
 const MODES = [
-  { to: "/interview" as const, title: "Interview", tag: "Main event", blurb: "Practice out loud with an AI recruiter or a friend, and get graded feedback.", icon: Mic, art: MAX_POSES.interview, folder: "folder-primary", xp: "+150 XP" },
-  { to: "/setup" as const, title: "Resume Lab", tag: "Polish", blurb: "Grade your resume, accept fixes and level it past 80.", icon: FileText, art: MAX_POSES.resume, folder: "folder-accent", xp: "+15 XP / fix" },
-  { to: "/market" as const, title: "Job Radar", tag: "Hunt", blurb: "Find roles matched to your resume and track where you applied.", icon: Radar, art: MAX_POSES.hunt, folder: "folder-success", xp: "+25 XP / save" },
+  { to: "/interview" as const, title: "Interview", tag: "Main event", blurb: "Practice out loud with an AI recruiter or a friend, and get graded feedback.", icon: Mic, art: MAX_POSES.interview, tint: "bg-primary/15 text-primary", xp: "+150 XP" },
+  { to: "/setup" as const, title: "Resume Lab", tag: "Polish", blurb: "Grade your resume, accept fixes and level it past 80.", icon: FileText, art: MAX_POSES.resume, tint: "bg-accent/20 text-accent-foreground", xp: "+15 XP / fix" },
+  { to: "/market" as const, title: "Job Radar", tag: "Hunt", blurb: "Find roles matched to your resume and track where you applied.", icon: Radar, art: MAX_POSES.hunt, tint: "bg-success/15 text-success", xp: "+25 XP / save" },
 ];
 
-/** A colored folder standing on the desk, Max peeking out of the top. */
-function ModeFolder({ m }: { m: (typeof MODES)[number] }) {
-  return (
-    <div className={`folder ${m.folder} relative flex h-full flex-col`}>
-      {/* back panel + tab */}
-      <span aria-hidden className="folder-back" />
-      <span aria-hidden className="folder-tab" />
-      {/* Max rising out of the folder */}
-      <div className="folder-peek relative z-10 mx-auto -mb-6 mt-2 grid h-36 w-36 place-items-end overflow-visible">
-        <img src={m.art} alt="" className="mascot-float h-36 w-36 object-contain drop-shadow-md" draggable={false} />
-      </div>
-      {/* front panel */}
-      <div className="folder-front relative z-20 flex flex-1 flex-col p-5 pt-8">
-        <div className="flex items-center gap-2">
-          <span className="folder-icon grid h-9 w-9 shrink-0 place-items-center rounded-[3px]"><m.icon className="h-5 w-5" /></span>
-          <span className="text-xs font-semibold uppercase tracking-[0.2em] opacity-70">{m.tag}</span>
-          <span className="ml-auto shrink-0 border border-dashed border-current px-2 py-1 text-xs font-bold opacity-80">{m.xp}</span>
-        </div>
-        <h2 className="mt-3 text-2xl font-bold">{m.title}</h2>
-        <p className="mt-2 flex-1 text-sm opacity-80">{m.blurb}</p>
-      </div>
-    </div>
-  );
-}
-
 function LockIn() {
-  // The Interview folder opens the solo / peer popup instead of going straight in.
+  // The Interview card opens the solo / peer popup instead of going straight in.
   const { openInterviewMode, interviewModeDialog } = useInterviewModePicker();
   const { note, next } = useRandomMaxNote();
   return (
-    <div className="-mx-4 -mb-8 md:-mx-8">
-      {/* The desk: surface fills most of the screen, then the table edge, then the ground. */}
-      <div className="desk-scene">
-        <div className="desk-surface">
-          {/* scattered loose papers */}
-          <DeskPaper className="left-[1.5%] top-[10%] h-40 w-32 -rotate-6" seed={1} />
-          <DeskPaper className="left-[3%] top-[48%] h-32 w-28 rotate-3" seed={2} />
-          <DeskPaper className="right-[1.5%] top-[8%] h-44 w-36 rotate-6" seed={3} />
-          <DeskPaper className="right-[3%] top-[52%] h-32 w-28 -rotate-3" seed={4} />
 
-          {/* Heading on the left, Max's note pinned to the desk on the right. */}
-          <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-wrap items-start justify-between gap-6 px-4 pt-10 md:px-8">
-            <div>
-              <h1 className="text-4xl font-bold md:text-5xl">Choose your mode</h1>
-              <div className="mt-2 h-10 w-64 overflow-hidden md:w-80">
-                <img
-                  src={penAsset.url}
-                  alt=""
-                  aria-hidden="true"
-                  className="pointer-events-none -my-[18%] w-full -rotate-2 select-none drop-shadow-md"
-                />
+    <div className="mx-auto max-w-6xl">
+      <h1 className="text-4xl font-bold md:text-5xl">Choose your mode</h1>
+      <MaxNote note={note} onCycle={next} className="mt-4" />
+
+
+      <div className="mt-8 grid gap-5 md:grid-cols-3">
+        {MODES.map((m, i) => {
+          const card = (
+            <>
+              <div className={`relative grid h-56 place-items-center ${m.tint.split(" ")[0]}`}>
+                {i === 0 && <span className="absolute left-4 top-4 rounded-full bg-primary px-3 py-1 text-xs font-bold uppercase tracking-wider text-primary-foreground">Recommended</span>}
+                <img src={m.art} alt="" className="mascot-float h-44 w-44 object-contain" draggable={false} />
               </div>
-            </div>
-            <MaxNote note={note} onCycle={next} className="-rotate-2" />
-          </div>
-
-          <div className="relative z-10 mx-auto grid w-full max-w-6xl flex-1 content-end items-end gap-10 px-4 pb-14 md:grid-cols-3 md:px-8">
-            {MODES.map((m) => {
-              const folder = <ModeFolder m={m} />;
-              return m.to === "/interview" ? (
-                <button key={m.to} type="button" onClick={openInterviewMode} className="text-left">{folder}</button>
-              ) : (
-                <Link key={m.to} to={m.to} search={{ radar: undefined } as never} className="text-left">{folder}</Link>
-              );
-            })}
-          </div>
-        </div>
-        <div aria-hidden className="desk-edge" />
-        <div aria-hidden className="desk-ground" />
+              <div className="flex flex-1 flex-col p-6">
+                <div className="flex items-center gap-2">
+                  <span className={`grid h-9 w-9 place-items-center rounded-lg ${m.tint}`}><m.icon className="h-5 w-5" /></span>
+                  <span className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">{m.tag}</span>
+                  <span className="ml-auto text-sm font-semibold text-success">{m.xp}</span>
+                </div>
+                <h2 className="mt-4 text-2xl font-bold">{m.title}</h2>
+                <p className="mt-2 flex-1 text-muted-foreground">{m.blurb}</p>
+                <span className="mt-6 flex items-center gap-2 font-semibold text-primary">Lock in <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" /></span>
+              </div>
+            </>
+          );
+          const cls = "hover-lift group flex flex-col overflow-hidden rounded-3xl border bg-card text-left";
+          return m.to === "/interview" ? (
+            <button key={m.to} type="button" onClick={openInterviewMode} className={cls}>{card}</button>
+          ) : (
+            <Link key={m.to} to={m.to} search={{ radar: undefined } as never} className={cls}>{card}</Link>
+          );
+        })}
       </div>
       {interviewModeDialog}
     </div>
-  );
-}
-
-/** Loose paper with handwriting-like scribbles; lives only in the desk's side gutters so it never sits under UI. */
-function DeskPaper({ className, seed }: { className: string; seed: number }) {
-  let x = seed * 9301 + 49297;
-  const rnd = () => ((x = (x * 9301 + 49297) % 233280) / 233280);
-  const lines = Array.from({ length: 7 }, (_, i) => {
-    const y = 14 + i * 11;
-    const end = 60 + rnd() * 30;
-    let d = `M8 ${y}`;
-    for (let px = 8; px < end; px += 4) d += ` q2 ${(rnd() * 6 - 3).toFixed(1)} 4 0`;
-    return <path key={i} d={d} />;
-  });
-  return (
-    <span aria-hidden className={`desk-paper hidden 2xl:block ${className}`}>
-      <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="h-full w-full" fill="none" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" style={{ color: "oklch(0.35 0.03 260 / 0.55)" }}>
-        {lines}
-      </svg>
-    </span>
   );
 }

@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,6 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { AvatarPicker } from "@/components/AvatarPicker";
 import { useGame } from "@/lib/game";
-import { getTokenUsage, type TokenUsage } from "@/lib/tokens.functions";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
@@ -113,54 +112,6 @@ function SettingsPage() {
           <Switch checked={g.captions} onCheckedChange={g.setCaptions} />
         </div>
       </div>
-      <TokenUsagePanel />
-    </div>
-  );
-}
-
-function TokenUsagePanel() {
-  const [usage, setUsage] = useState<TokenUsage | null>(null);
-  useEffect(() => {
-    getTokenUsage().then(setUsage).catch(() => setUsage(null));
-  }, []);
-  const fmt = (n: number) => n.toLocaleString();
-  return (
-    <div className="panel space-y-4 p-6">
-      <div>
-        <div className="font-semibold">AI usage</div>
-        <div className="text-sm text-muted-foreground">Estimated tokens your account has used across the AI agents (about 4 characters per token).</div>
-      </div>
-      {!usage ? (
-        <div className="text-sm text-muted-foreground">Loading usage…</div>
-      ) : usage.calls === 0 ? (
-        <div className="text-sm text-muted-foreground">No AI usage yet — run an interview, grade your resume, or refresh the Job Radar.</div>
-      ) : (
-        <>
-          <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-bold">{fmt(usage.total)}</span>
-            <span className="text-sm text-muted-foreground">tokens across {fmt(usage.calls)} agent calls</span>
-          </div>
-          <div className="space-y-2">
-            {usage.byAgent.map((a) => (
-              <div key={a.agent} className="flex items-center justify-between gap-4 text-sm">
-                <span>{a.label}</span>
-                <span className="text-muted-foreground">{fmt(a.tokens)} tokens · {fmt(a.calls)} calls</span>
-              </div>
-            ))}
-          </div>
-          {usage.recent.length > 0 && (
-            <div className="space-y-1 border-t pt-3">
-              <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Recent</div>
-              {usage.recent.map((r, i) => (
-                <div key={i} className="flex items-center justify-between gap-4 text-xs text-muted-foreground">
-                  <span>{r.label}</span>
-                  <span>{fmt(r.tokens)} · {new Date(r.at).toLocaleString()}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </>
-      )}
     </div>
   );
 }
