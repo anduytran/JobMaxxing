@@ -177,6 +177,30 @@ export const saveProfile = createServerFn({ method: "POST" })
     }
   });
 
+// Profile picture: stored as a small data URL (the client pre-resizes to
+// 256px), so no file storage is needed. Null clears it back to initials.
+export const saveAvatar = createServerFn({ method: "POST" })
+  .inputValidator((input: { avatarUrl: unknown }) => {
+    const v = input.avatarUrl;
+    if (v === null) return { avatarUrl: null };
+    if (typeof v !== "string" || !/^data:image\/(png|jpeg|webp);base64,/.test(v) || v.length > 400_000) {
+      throw new Error("Choose a PNG, JPG, or WebP image.");
+    }
+    return { avatarUrl: v };
+  })
+  .handler(async ({ data }): Promise<SaveResult> => {
+    try {
+      const PROFILE_ID = (await requireUser()).id;
+      await neonExecute(
+        "update public.devup_profile set avatar_url = $1, updated_at = now() where id = $2",
+        [data.avatarUrl, PROFILE_ID],
+      );
+      return { ok: true };
+    } catch (err) {
+      return fail(err);
+    }
+  });
+
 export const saveRoast = createServerFn({ method: "POST" })
   .inputValidator((input: { roast: unknown }) => {
     if (typeof input.roast !== "boolean") throw new Error("Roast must be true or false.");

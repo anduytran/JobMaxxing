@@ -43,8 +43,9 @@ export const ACHIEVEMENTS = [
 type Game = {
   name: string; title: string; xp: number; level: number; levelXp: number;
   quests: Quest[]; roast: boolean; reducedMotion: boolean; largeText: boolean; lastGain: { amount: number; key: number } | null;
-  activeTitle: string | null; activeTheme: string;
+  activeTitle: string | null; activeTheme: string; avatarUrl: string | null;
   setActiveTitle: (t: string | null) => void; setActiveTheme: (t: string) => void;
+  setAvatar: (dataUrl: string | null) => Promise<boolean>;
   setProfile: (n: string, t: string) => Promise<boolean>;
   completeQuest: (id: string) => void;
   addQuest: (q: Omit<Quest, "done">) => void;
