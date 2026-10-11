@@ -182,7 +182,7 @@ function Dashboard() {
           {/* The column stretches to the card so the pitch and the dots
               anchor the top and bottom of the screen. */}
           <div className="relative z-10 flex w-full max-w-2xl flex-col justify-start md:max-w-[calc(50%_-_13svh_-_1.5rem)] md:justify-between">
-            <div className="pb-8 pt-8 md:py-10">
+            <div className="flex flex-1 flex-col justify-center pb-8 pt-8 md:py-10">
               {featured ? (
                 <h2 ref={headRef} title={featured.title} className="min-h-[2.2em] break-words text-foreground text-3xl font-bold leading-[1.1] sm:text-4xl lg:text-5xl"><span className="block">{featLines[0]}</span><span className="block">{featLines[1]}</span></h2>
               ) : (
