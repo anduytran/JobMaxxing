@@ -99,9 +99,9 @@ export async function parseJob(jd: string): Promise<ParsedJob> {
 }
 
 /**
- * Job Radar title gate: the parser agent judges, strictly, which candidate job titles
- * are a genuine fit for the user's target roles. One batched call per refresh — skill
- * extraction stays regex-only, so this is the radar's only agent call.
+ * Job Radar title gate: the parser agent judges which candidate job titles are relevant
+ * to the user's target roles — relevance, not strict matching. One batched call per
+ * refresh — skill extraction stays regex-only, so this is the radar's only agent call.
  * Returns the indices to keep; on any failure the caller keeps its regex survivors.
  */
 export async function filterRadarTitles(titles: string[], roles: string[]): Promise<number[] | null> {
@@ -110,10 +110,11 @@ export async function filterRadarTitles(titles: string[], roles: string[]): Prom
   const ai = await askRaia<{ keep: number[] }>(
     ENV.parser,
     `Target roles: ${roles.join(", ")}\n\nJob titles:\n${list}`,
-    "You are screening job-board search results. For each numbered job title, decide strictly whether someone " +
-      "searching for the target roles would consider it a real match: the title must be the same kind of role " +
-      "(same function and seniority band), not merely a posting that mentions the words. Reject sales, warehouse, " +
-      "program-manager, consultant and other adjacent roles unless the title itself is the target role. " +
+    "You are screening job-board search results. For each numbered job title, decide whether it is relevant " +
+      "to someone searching for the target roles. Keep titles that are the same role, a close variant, or a " +
+      "genuinely adjacent role a candidate for the target would plausibly apply to (including a level up or down). " +
+      "Drop titles from unrelated functions (sales, warehouse, operations, recruiting, nursing) that merely share " +
+      "a word with the target. Use your judgment on the gray area — relevance, not exact wording. " +
       'Reply with JSON only: {"keep": [indices of titles to keep]}.',
     20_000,
   );
