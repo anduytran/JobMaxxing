@@ -12,6 +12,7 @@ import {
   saveResumeVersion,
   scanResume,
 } from "@/lib/resume.functions";
+import loadingVideo from "@/assets/max/max-loading.mp4.asset.json";
 import {
   CATEGORY_LABEL, GRADE_META, SUGGESTION_BATCH, XP_RULES,
   type ResumeSection, type ResumeSuggestion, type ResumeVersion, type StoredReview,
@@ -199,8 +200,10 @@ function Setup() {
             className={cn("panel grid cursor-pointer place-items-center border-2 border-dashed text-center transition hover:border-primary", hasResume ? "p-6" : "p-16")}
           >
             {busy === "scan" ? (
-              <div className="flex items-center gap-3 text-muted-foreground">
-                <Loader2 className="animate-spin text-primary" /> Reading and grading your resume… {seconds}s
+              <div className="flex flex-col items-center gap-2 text-center" role="status" aria-live="polite">
+                <video src={loadingVideo.url} autoPlay loop muted playsInline className="h-40 w-40 rounded-2xl object-contain" aria-label="Max is reading your resume" />
+                <p className="text-sm font-medium">Max is reading your resume…</p>
+                <p className="text-xs text-muted-foreground">{seconds}s — grading, ATS check and your best fixes</p>
               </div>
             ) : (
               <>
