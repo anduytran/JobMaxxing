@@ -38,3 +38,4 @@
 - `/demo/$token` runs `InterviewFlow` signed out via `demo.functions` only: secret links, per-run call budget, no user writes. Why: public demo, bounded cost
 - Wearable placement comes from `placeWearable` in `src/lib/wearable-fit.ts` (measured per-pose anchors + user-dragged spots in `devup_profile.wearable_spots`); every dressed Max uses it. Why: one fit per pose
 - Interviewer voice is a curated list in `src/lib/voices.ts`, saved in `devup_profile.interview_voice`; demo links keep the default voice. Why: server validates voice ids
+- Interview camera recordings are consent-gated by `InterviewRecorder` and live only in tab memory (`src/lib/interview-recordings.ts`, blob URLs), rewatchable/downloadable but never uploaded. Why: no file storage chosen yet
