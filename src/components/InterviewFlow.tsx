@@ -303,7 +303,7 @@ export function InterviewFlow({ agents, api, radar, profileSkills = [], captions
     <div className={cn(immersive ? "w-full" : "mx-auto max-w-[1500px] space-y-4 px-4 py-6 md:px-10 md:py-10")}>
       <InterviewRecorder active={stage === "live" || stage === "your_questions"} kind={demo ? "demo" : "solo"} title={job?.title ?? "Mock interview"}
         onSaved={(id) => { setRecId(id); if (savedRef.current) linkRecording(id, savedRef.current); }} />
-      {!immersive && <div className="flex flex-wrap items-center justify-between gap-4">
+      {!immersive && stage !== "report" && <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">Build your next chapter</p>
           <h1 className="mt-2 text-4xl font-bold md:text-5xl">Set Up Your Interview</h1>
@@ -511,7 +511,7 @@ export function InterviewFlow({ agents, api, radar, profileSkills = [], captions
         const next = grade.improvements.slice(0, 3).map((n) => ({ n, a: matchAnswer(n, answers) }));
         const changed = ratings.filter((r) => r.after !== r.before);
         return (
-          <section className="mx-auto max-w-4xl space-y-8">
+          <section className="space-y-8">
             <header>
               <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 {job?.title ?? "Mock interview"} · {Math.min(asked, questions.length)} questions · {Math.floor(used / 60)}m {used % 60}s
