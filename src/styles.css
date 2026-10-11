@@ -280,6 +280,26 @@ html.reduce-motion .tactile-control:hover:not(:disabled), html.reduce-motion .ta
 html.reduce-motion .reward-particle { display: none; }
 html.reduce-motion .animate-bob, html.reduce-motion .animate-flame, html.reduce-motion .mascot-float { animation: none; }
 
+/* Accessibility: high contrast pushes text/borders toward full strength. */
+html.high-contrast {
+  --muted-foreground: var(--foreground);
+  --border: color-mix(in oklab, var(--foreground) 55%, var(--background));
+  --input: color-mix(in oklab, var(--foreground) 55%, var(--background));
+}
+html.high-contrast .text-muted-foreground { color: color-mix(in oklab, var(--foreground) 85%, var(--background)); }
+html.high-contrast .panel, html.high-contrast .tactile-control { border-width: 2px; }
+html.high-contrast :focus-visible { outline: 3px solid var(--ring); outline-offset: 2px; }
+
+/* Accessibility: dyslexia-friendly text — clean sans, wider spacing, no italics. */
+html.dyslexia-font body {
+  font-family: "Verdana", "Tahoma", sans-serif;
+  letter-spacing: 0.04em;
+  word-spacing: 0.12em;
+  line-height: 1.7;
+  text-align: left;
+}
+html.dyslexia-font em, html.dyslexia-font i { font-style: normal; }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

@@ -154,6 +154,10 @@ export function GameProvider({
 
   const value: Game = {
     name, title, xp, quests, roast, reducedMotion, largeText, lastGain,
+    highContrast, dyslexiaFont, captions,
+    setHighContrast: (v) => { const prev = highContrast; setHighContrastState(v); saveA11y({ highContrast: v }, () => setHighContrastState(prev)); },
+    setDyslexiaFont: (v) => { const prev = dyslexiaFont; setDyslexiaFontState(v); saveA11y({ dyslexiaFont: v }, () => setDyslexiaFontState(prev)); },
+    setCaptions: (v) => { const prev = captions; setCaptionsState(v); saveA11y({ captions: v }, () => setCaptionsState(prev)); },
     activeTitle, activeTheme, avatarUrl, setActiveTitle, setActiveTheme,
     setAvatar: async (dataUrl) => {
       const prev = avatarUrl;
