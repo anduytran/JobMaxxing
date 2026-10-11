@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { AvatarPicker } from "@/components/AvatarPicker";
 import { useGame } from "@/lib/game";
+import { getTokenUsage, type TokenUsage } from "@/lib/tokens.functions";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
