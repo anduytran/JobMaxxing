@@ -302,15 +302,17 @@ export const gainXp = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<SaveResult> => {
     try {
       const PROFILE_ID = (await requireUser()).id;
+      const boost = await xpBoost(PROFILE_ID);
+      const amount = Math.round(data.amount * boost);
       const { results } = await neonExecute<{ results: any[] }>([
         {
           query: "insert into public.devup_xp_event (amount, reason, user_id) values ($1, $2, $3)",
-          params: [data.amount, data.reason, PROFILE_ID],
+          params: [amount, data.reason, PROFILE_ID],
         },
         {
           query:
             "update public.devup_profile set xp = xp + $1, updated_at = now() where id = $2 returning xp",
-          params: [data.amount, PROFILE_ID],
+          params: [amount, PROFILE_ID],
         },
       ]);
       return { ok: true, xp: Number(results[1]?.rows?.[0]?.xp ?? 0) };
