@@ -186,14 +186,14 @@ function PeerHub({ active, recent }: { active: CareerDashboard["peerActive"]; re
     <div className="panel p-6">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground"><Users className="h-4 w-4" />Peer interview hub</div>
-        <Button asChild size="sm"><Link to="/peers">Find an interview partner</Link></Button>
+        <Button asChild size="sm"><Link to="/peers" search={{ join: undefined }}>Find an interview partner</Link></Button>
       </div>
       {active.length > 0 && (
         <ul className="mt-3 space-y-2">
           {active.map((s) => (
             <li key={s.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-primary/5 px-4 py-3 text-sm">
               <span>{s.job ? <b>{s.job}</b> : "Practice session"} · <span className="font-mono tracking-widest text-primary">{s.code}</span></span>
-              <span className="text-xs text-muted-foreground">{s.status === "live" ? "Live now" : "Waiting for partner"} · <Link to="/peers" className="underline">Open</Link></span>
+              <span className="text-xs text-muted-foreground">{s.status === "live" ? "Live now" : "Waiting for partner"} · <Link to="/peers" search={{ join: undefined }} className="underline">Open</Link></span>
             </li>
           ))}
         </ul>
