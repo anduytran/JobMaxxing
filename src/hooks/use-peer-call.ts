@@ -3,12 +3,15 @@ import { peerSignal } from "@/lib/peer.functions";
 
 // Peer-to-peer audio (and webcam, when both sides consent) for peer interviews.
 // The host makes the WebRTC offer, the guest answers; full SDPs (ICE already
-// gathered) travel through the session row. Video is only ever requested when
-// `video` is true — i.e. both participants opted in — and revoking consent
-// disables the local track without renegotiation.
+// gathered) travel through the session row. Both sides join automatically when
+// the interview goes live. Video is only requested when `video` is true — i.e.
+// both participants opted in — and revoking consent stops the local camera.
 export type CallState = "idle" | "connecting" | "connected" | "failed";
 
-const ICE: RTCConfiguration = { iceServers: [{ urls: ["stun:stun.l.google.com:19302", "stun:stun1.l.google.com:19302"] }] };
+const ICE: RTCConfiguration = {
+  iceServers: [{ urls: ["stun:stun.l.google.com:19302", "stun:stun1.l.google.com:19302", "stun:stun.cloudflare.com:3478"] }],
+};
+const CONNECT_TIMEOUT_MS = 25000;
 
 function gathered(pc: RTCPeerConnection) {
   return new Promise<void>((resolve) => {
@@ -31,30 +34,58 @@ export function usePeerCall(opts: {
   const [state, setState] = useState<CallState>("idle");
   const [muted, setMuted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [localStream, setLocalStream] = useState<MediaStream | null>(null);
+  const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
-  const handled = useRef<string | null>(null);
+  const myOffer = useRef<string | null>(null); // host: the offer we last posted
+  const appliedAnswer = useRef<string | null>(null); // host: answer applied to myOffer
+  const answeredOffer = useRef<string | null>(null); // guest: offer we last answered
+  const userLeft = useRef(false);
+  const autoStarted = useRef(false);
+  const mutedRef = useRef(muted);
+  mutedRef.current = muted;
   const videoRef = useRef(video);
   videoRef.current = video;
 
-  const hangUp = useCallback(() => {
-    pcRef.current?.close();
+  // Media elements mount and unmount with the UI (video panels only render once
+  // both consent), so re-attach streams on every render instead of only in ontrack.
+  useEffect(() => {
+    const a = audioRef.current;
+    if (a && a.srcObject !== remoteStream) { a.srcObject = remoteStream; if (remoteStream) void a.play().catch(() => {}); }
+    const rv = remoteVideoRef.current;
+    if (rv && rv.srcObject !== remoteStream) { rv.srcObject = remoteStream; if (remoteStream) void rv.play().catch(() => {}); }
+    const lv = localVideoRef.current;
+    const want = video && localStream?.getVideoTracks().length ? localStream : null;
+    if (lv && lv.srcObject !== want) { lv.srcObject = want; if (want) void lv.play().catch(() => {}); }
+  });
+
+  const closePc = () => {
+    const pc = pcRef.current;
+    if (pc) { pc.ontrack = null; pc.onconnectionstatechange = null; pc.close(); }
     pcRef.current = null;
+  };
+
+  const hangUp = useCallback(() => {
+    userLeft.current = true;
+    closePc();
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
-    handled.current = null;
+    myOffer.current = appliedAnswer.current = answeredOffer.current = null;
+    setLocalStream(null);
+    setRemoteStream(null);
     setState("idle");
   }, []);
 
   const makePc = useCallback(async () => {
-    pcRef.current?.close();
+    closePc();
     let stream = streamRef.current;
     const wantVideo = videoRef.current;
-    const hasVideo = !!stream?.getVideoTracks().length;
-    if (!stream || (wantVideo && !hasVideo)) {
+    const hasVideo = !!stream?.getVideoTracks().some((t) => t.readyState === "live");
+    if (!stream || wantVideo !== hasVideo) {
       stream?.getTracks().forEach((t) => t.stop());
       stream = await navigator.mediaDevices.getUserMedia({
         audio: { echoCancellation: true, noiseSuppression: true },
@@ -62,31 +93,46 @@ export function usePeerCall(opts: {
       });
       streamRef.current = stream;
     }
-    stream.getAudioTracks().forEach((t) => (t.enabled = !muted));
-    if (localVideoRef.current) localVideoRef.current.srcObject = wantVideo ? stream : null;
+    stream.getAudioTracks().forEach((t) => (t.enabled = !mutedRef.current));
+    setLocalStream(stream);
     const pc = new RTCPeerConnection(ICE);
     stream.getTracks().forEach((t) => pc.addTrack(t, stream!));
+    // Always ask to receive audio + video so the other side's camera can arrive
+    // even when our own camera is off.
+    if (!stream.getVideoTracks().length) pc.addTransceiver("video", { direction: "recvonly" });
+    const remote = new MediaStream();
     pc.ontrack = (e) => {
-      const remote = e.streams[0] ?? null;
-      if (e.track.kind === "video" && remoteVideoRef.current) {
-        remoteVideoRef.current.srcObject = remote;
-        void remoteVideoRef.current.play().catch(() => {});
-      } else if (audioRef.current) {
-        audioRef.current.srcObject = remote;
-        void audioRef.current.play().catch(() => {});
-      }
+      if (pcRef.current !== pc) return;
+      remote.addTrack(e.track);
+      setRemoteStream(new MediaStream(remote.getTracks()));
     };
+    let timer: ReturnType<typeof setTimeout> | null = setTimeout(() => {
+      if (pcRef.current === pc && pc.connectionState !== "connected") {
+        setState("failed");
+        setError("Couldn't reach your friend — one of your networks may block direct calls. Retry, or keep going by typing.");
+      }
+    }, CONNECT_TIMEOUT_MS);
     pc.onconnectionstatechange = () => {
-      if (pc.connectionState === "connected") setState("connected");
-      if (pc.connectionState === "failed") { setState("failed"); setError("Couldn't connect — your networks may block direct calls. Keep going by typing."); }
+      if (pcRef.current !== pc) return;
+      if (pc.connectionState === "connected") {
+        if (timer) { clearTimeout(timer); timer = null; }
+        setError(null);
+        setState("connected");
+      }
+      if (pc.connectionState === "failed") {
+        setState("failed");
+        setError("Couldn't connect — your networks may block direct calls. Retry, or keep going by typing.");
+      }
+      if (pc.connectionState === "disconnected") setState("connecting");
     };
     pcRef.current = pc;
     return pc;
-  }, [muted]);
+  }, []);
 
-  // Host: start the call by posting an offer.
+  // Host posts a fresh offer; guest prepares a connection and waits for one.
   const start = useCallback(async () => {
     if (!sessionId) return;
+    userLeft.current = false;
     setError(null);
     setState("connecting");
     try {
@@ -94,8 +140,12 @@ export function usePeerCall(opts: {
       if (isHost) {
         await pc.setLocalDescription(await pc.createOffer());
         await gathered(pc);
-        await peerSignal({ data: { id: sessionId, sdp: pc.localDescription!.sdp, reset: true } });
-        handled.current = null;
+        const sdp = pc.localDescription!.sdp;
+        myOffer.current = sdp;
+        appliedAnswer.current = null;
+        await peerSignal({ data: { id: sessionId, sdp, reset: true } });
+      } else {
+        answeredOffer.current = null; // answer whatever offer is current
       }
     } catch (e) {
       setState("failed");
@@ -103,48 +153,65 @@ export function usePeerCall(opts: {
     }
   }, [sessionId, isHost, makePc]);
 
-  // Apply the other side's SDP when it arrives.
+  // Join automatically once the interview is live.
   useEffect(() => {
-    if (!live || !sessionId || state === "idle" || state === "failed") return;
+    if (!live) { autoStarted.current = false; return; }
+    if (autoStarted.current || !sessionId) return;
+    autoStarted.current = true;
+    void start();
+  }, [live, sessionId, start]);
+
+  // Apply the other side's SDP when it arrives.
+  const busy = useRef(false);
+  useEffect(() => {
+    if (!live || !sessionId || state === "idle" || state === "failed" || busy.current) return;
     const pc = pcRef.current;
     if (!pc) return;
     void (async () => {
+      busy.current = true;
       try {
-        if (isHost && signal.answer && handled.current !== signal.answer && pc.signalingState === "have-local-offer") {
-          handled.current = signal.answer;
-          await pc.setRemoteDescription({ type: "answer", sdp: signal.answer });
-        }
-        if (!isHost && signal.offer && handled.current !== signal.offer) {
-          handled.current = signal.offer;
+        if (isHost) {
+          // Only accept an answer to the offer we actually posted (the row may still be stale).
+          if (!signal.answer || signal.offer !== myOffer.current || signal.answer === appliedAnswer.current) return;
+          if (pc.signalingState === "have-local-offer") {
+            appliedAnswer.current = signal.answer;
+            await pc.setRemoteDescription({ type: "answer", sdp: signal.answer });
+          } else if (appliedAnswer.current) {
+            // Guest rejoined with a new answer to our old offer: renegotiate.
+            void start();
+          }
+        } else if (signal.offer && signal.offer !== answeredOffer.current) {
+          answeredOffer.current = signal.offer;
           const fresh = pc.signalingState === "stable" && !pc.remoteDescription ? pc : await makePc();
           await fresh.setRemoteDescription({ type: "offer", sdp: signal.offer });
           await fresh.setLocalDescription(await fresh.createAnswer());
           await gathered(fresh);
-          await peerSignal({ data: { id: sessionId, sdp: fresh.localDescription!.sdp } });
+          await peerSignal({ data: { id: sessionId, sdp: fresh.localDescription!.sdp, forOffer: signal.offer } });
         }
-      } catch (e) { setError((e as Error).message); }
+      } catch (e) {
+        setError((e as Error).message);
+      } finally {
+        busy.current = false;
+      }
     })();
-  }, [live, sessionId, isHost, signal.offer, signal.answer, state, makePc]);
+  }, [live, sessionId, isHost, signal.offer, signal.answer, state, makePc, start]);
 
-  // When mutual video consent arrives mid-call, the host re-offers with a video track.
-  const videoStarted = useRef(false);
+  // Mutual video consent changed mid-call: the host re-offers so camera tracks are added/removed.
+  const lastVideo = useRef(video);
   useEffect(() => {
-    if (!video) { videoStarted.current = false; return; }
-    if (videoStarted.current) return;
-    videoStarted.current = true;
-    if (state === "connected" || state === "connecting") {
-      if (isHost) void start();
-    } else if (state === "idle") {
-      void start();
+    if (lastVideo.current === video) return;
+    lastVideo.current = video;
+    if (!video) {
+      streamRef.current?.getVideoTracks().forEach((t) => { t.enabled = false; t.stop(); });
     }
-  }, [video, state, isHost, start]);
-
-  // Consent revoked: stop sending camera frames locally (no renegotiation needed).
-  useEffect(() => {
-    if (video) return;
-    streamRef.current?.getVideoTracks().forEach((t) => { t.enabled = false; t.stop(); });
-    if (localVideoRef.current) localVideoRef.current.srcObject = null;
-  }, [video]);
+    if (userLeft.current || !live) return;
+    if (state === "idle" || state === "failed") void start();
+    else if (isHost) void start();
+    else {
+      // Guest grabs the camera now; the host's fresh offer will carry it over.
+      answeredOffer.current = answeredOffer.current; // no-op, waits for re-offer
+    }
+  }, [video, state, isHost, live, start]);
 
   useEffect(() => {
     streamRef.current?.getAudioTracks().forEach((t) => (t.enabled = !muted));
