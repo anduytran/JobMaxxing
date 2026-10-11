@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Network, ShieldCheck } from "lucide-react";
 import { PageHeader, PanelHead } from "@/components/AppShell";
 import { useGame } from "@/lib/game";
+import { useEffect, useState } from "react";
+import { getSkillRatings } from "@/lib/interview.functions";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/skills")({
@@ -30,6 +32,8 @@ const TREE = [
 function Page() {
   const { details, level } = useGame();
   const skills = (details.skills ?? []).filter(Boolean);
+  const [ratings, setRatings] = useState<{ skill: string; rating: number; answered: number }[]>([]);
+  useEffect(() => { getSkillRatings().then(setRatings).catch(() => {}); }, []);
   return (
     <div className="mx-auto max-w-6xl">
       <PageHeader eyebrow="Build your next chapter" title="Skill Tree" sub="Turn your potential into progress, one step at a time." pose="skills" />
@@ -46,6 +50,21 @@ function Page() {
               <div className="mt-1 text-sm text-muted-foreground">{t.status}</div>
             </div>
           ))}
+        </div>
+        <div className="border-t px-8 py-6 md:px-12">
+          <h3 className="font-semibold">Skill ratings</h3>
+          <p className="text-sm text-muted-foreground">Ratings run 800–1600 and adjust after every graded interview answer.</p>
+          {ratings.length === 0
+            ? <p className="mt-3 text-sm text-muted-foreground">Finish a mock or peer interview to get your first ratings.</p>
+            : <div className="mt-4 grid gap-3 md:grid-cols-2">
+                {ratings.map((r) => (
+                  <div key={r.skill} className="rounded-xl bg-muted p-4">
+                    <div className="flex justify-between text-sm"><span className="font-medium">{r.skill}</span><span className="font-mono">{r.rating}</span></div>
+                    <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-background"><div className="h-full rounded-full bg-primary" style={{ width: `${((r.rating - 800) / 800) * 100}%` }} /></div>
+                    <div className="mt-1 text-xs text-muted-foreground">{r.answered} answered{r.answered < 10 ? " · placement" : ""}</div>
+                  </div>
+                ))}
+              </div>}
         </div>
         {skills.length > 0 && (
           <div className="flex flex-wrap gap-2 border-t px-8 py-6 md:px-12">

@@ -62,6 +62,7 @@ function Interview() {
   const [qi, setQi] = useState(0);
   const [turns, setTurns] = useState<TranscriptTurn[]>([]);
   const [grade, setGrade] = useState<InterviewGrade | null>(null);
+  const [ratings, setRatings] = useState<{ skill: string; before: number; after: number }[]>([]);
   const [busy, setBusy] = useState(false);
   const [text, setText] = useState("");
   const [listening, setListening] = useState(false);
@@ -231,6 +232,7 @@ function Interview() {
     try {
       const g = await gradeInterviewTranscript({ data: { transcript: turns, job, plan: questions } });
       setGrade(g);
+      setRatings(g.ratings ?? []);
       setStage("report");
       completeQuest("mock1");
       if (g.xp > 0) gainXp(g.xp, "mock interview");
@@ -472,6 +474,18 @@ function Interview() {
             <div className={cn("grid gap-4", metrics.length === 4 ? "md:grid-cols-4" : "md:grid-cols-3")}>
               {metrics.map(([l, m]) => <Metric key={l} label={l} m={m} />)}
             </div>
+            {ratings.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {ratings.map((r) => {
+                  const d = r.after - r.before;
+                  return (
+                    <span key={r.skill} className="rounded-full border bg-card px-3 py-1 text-xs">
+                      <b>{r.skill}</b> {r.after} <span className={d >= 0 ? "text-success" : "text-primary"}>{d >= 0 ? "+" : ""}{d}</span>
+                    </span>
+                  );
+                })}
+              </div>
+            )}
             <div className="grid gap-4 md:grid-cols-[1.6fr_1fr]">
               <div className="rounded-2xl border bg-card p-6">
                 <h2 className="font-display text-2xl font-bold">What to work on</h2>
