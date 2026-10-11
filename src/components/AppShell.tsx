@@ -4,8 +4,7 @@ import { AnimatePresence, motion, MotionConfig, useReducedMotion } from "framer-
 import {
   LayoutGrid, FileText, Mic, Radar, LineChart, Network, UsersRound, Swords, Settings, Menu, LogOut, Zap, Flame, CircleHelp, X, Store, ArrowRight,
 } from "lucide-react";
-import { useEffect, useRef, useState, type ReactNode } from "react";
-import { toast } from "sonner";
+import { useEffect, useState, type ReactNode } from "react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -38,7 +37,7 @@ export function Mascot({ className }: { className?: string }) {
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const { level, lastGain, name, avatarUrl, setAvatar } = useGame();
+  const { level, lastGain, name, avatarUrl } = useGame();
   const loc = useLocation();
   const router = useRouter();
   const navigating = useRouterState({ select: (s) => s.status === "pending" });
