@@ -33,6 +33,9 @@ export type GameState = {
   roast: boolean;
   reducedMotion: boolean;
   largeText: boolean;
+  highContrast: boolean;
+  dyslexiaFont: boolean;
+  captions: boolean;
   activeTitle: string | null;
   activeTheme: string;
   avatarUrl: string | null;
@@ -107,7 +110,7 @@ export const loadGame = createServerFn({ method: "GET" }).handler(
         },
         {
           query:
-            "select name, title, xp, roast, reduced_motion, large_text, skills, student, job_prefs, resume, active_title, active_theme, avatar_url " +
+            "select name, title, xp, roast, reduced_motion, large_text, high_contrast, dyslexia_font, captions, skills, student, job_prefs, resume, active_title, active_theme, avatar_url " +
             "from public.devup_profile where id = $1 limit 1",
           params: [PROFILE_ID],
         },
@@ -133,6 +136,9 @@ export const loadGame = createServerFn({ method: "GET" }).handler(
         roast: Boolean(profile?.roast ?? false),
         reducedMotion: Boolean(profile?.reduced_motion ?? false),
         largeText: Boolean(profile?.large_text ?? false),
+        highContrast: Boolean(profile?.high_contrast ?? false),
+        dyslexiaFont: Boolean(profile?.dyslexia_font ?? false),
+        captions: profile?.captions == null ? true : Boolean(profile.captions),
         activeTitle: profile?.active_title ? String(profile.active_title) : null,
         activeTheme: String(profile?.active_theme ?? "default"),
         avatarUrl: profile?.avatar_url ? String(profile.avatar_url) : null,
