@@ -105,3 +105,6 @@
 - [x] Move the `Lock In` button to the far left of the top nav, straight after the brand, with the section tabs centred behind it.
 - [x] Take the hanging `Lock In` tab off the featured card and drop the now-unused card helpers (`LOCK_IN_TAB`, `QUEST_LINK`, `featLink`), restoring the card's original top padding.
 - [x] Verify on the live signed-in dashboard that the nav reads Lock In · Home · Collection · Career · Store left to right, that no `Lock In` control remains inside the card, and that `/lock-in` still opens the mode picker; temporary sign-in removed, build clean.
+- [x] Make the button a hard-edged rectangle that fills the nav's whole height with a right arrow at its end, drop the lightning bolt, and keep its label centred against the other tabs.
+- [x] Verify on the live signed-in dashboard that the button's box spans the nav edge to edge (64px of the 64px bar), that it is the leftmost option after the brand and flush with the tabs' tops, that its only icon is `ArrowRight`, and that hover nudges the arrow; temporary sign-in removed.
+
