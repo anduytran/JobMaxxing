@@ -401,8 +401,8 @@ function SuggestionList({ review, sections, onFocus, open, moreBusy, onMore }: {
   const hint = open === 0
     ? `All ${SUGGESTION_BATCH} integrated — pull the next ${SUGGESTION_BATCH} highest-impact fixes.`
     : open === 1
-      ? "Integrate this fix to unlock the next batch."
-      : `Integrate these ${open} fixes to unlock the next ${SUGGESTION_BATCH}.`;
+      ? "Make this change, then upload or re-scan your resume to verify it."
+      : `Make these ${open} changes, then upload or re-scan your resume — the grader checks them.`;
   return (
     <div className="space-y-3">
       <div className="flex items-baseline justify-between gap-3">
