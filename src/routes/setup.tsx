@@ -52,7 +52,7 @@ const findLine = (sections: ResumeSection[], lineId?: string | null) =>
   lineId ? sections.flatMap((s) => s.lines).find((l) => l.id === lineId) : undefined;
 
 function Setup() {
-  const { completeQuest, quests, xp, level, setXp, addQuest } = useGame();
+  const { completeQuest, quests, xp, level, setXp, addQuest, refreshQuests } = useGame();
   const { welcome } = Route.useSearch();
   const navigate = useNavigate();
   const [review, setReview] = useState<StoredReview | null>(null);
@@ -116,6 +116,10 @@ function Setup() {
         toast.success(`Quest${res.questsDone.length === 1 ? "" : "s"} complete: ${names}`, { description: "Confirmed by the resume grader." });
       } else {
         toast.message("No resume quests confirmed yet", { description: `Checked: ${openQuests.map((q) => q.title).join(", ")}. The grader didn't see those goals met in this version.` });
+      }
+      if (res.questsAdded?.length) {
+        toast.success(`New quest${res.questsAdded.length === 1 ? "" : "s"} from the grader`, { description: res.questsAdded.join(" · ") });
+        await refreshQuests();
       }
       setPaste(false);
       setText("");
