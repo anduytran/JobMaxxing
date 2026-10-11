@@ -74,7 +74,6 @@ function Interview() {
   const [playback, setPlayback] = useState<VoicePlaybackState>("ready");
   const [typing, setTyping] = useState(false);
   const [liveCaption, setLiveCaption] = useState("");
-  const [capturedAnswer, setCapturedAnswer] = useState<string | null>(null);
   const captureGeneration = useRef(0);
 
   const [convId, setConvId] = useState<string | null>(null);
@@ -91,7 +90,6 @@ function Interview() {
     setListening(false);
     setPlayback("ready");
     setLiveCaption("");
-    setCapturedAnswer(null);
   };
   const voiceState: InterviewVoiceState = stage === "grading" ? "grading" : listening ? "listening" : thinking ? "thinking" : playback;
   const currentCaption = [...turns].reverse().find((turn) => turn.speaker === "interviewer")?.text;
@@ -195,14 +193,14 @@ function Interview() {
     if (!currentVoice) return;
     const generation = ++captureGeneration.current;
     currentVoice.stop();
-    setCapturedAnswer(null); setLiveCaption(""); setTyping(false);
+    setLiveCaption(""); setTyping(false);
     setListening(true);
     try {
       const captured = await currentVoice.listen((caption) => { if (generation === captureGeneration.current) setLiveCaption(caption); });
       if (generation === captureGeneration.current) {
         setListening(false);
-        setCapturedAnswer(captured);
         setLiveCaption("");
+        void answer(capitalizeTranscript(captured));
       }
     } catch (e) { if (generation === captureGeneration.current) toast.error((e as Error).message); }
     finally { if (generation === captureGeneration.current) setListening(false); }
@@ -352,7 +350,7 @@ function Interview() {
           </div>
           {listening && <div className="mx-auto w-full max-w-2xl px-4 pb-6 text-center"><p className="mb-2 text-xs font-semibold uppercase text-muted-foreground">Your answer</p><p className="min-h-12 text-lg leading-relaxed" aria-live="off">{liveCaption || "…"}</p></div>}
           <div className="flex flex-wrap items-center justify-center gap-2 border-t p-4">
-            <Button onClick={listening ? () => voice.current?.finishListening() : speak} disabled={Boolean(capturedAnswer) || thinking || stage === "grading" || playback !== "ready"}>
+            <Button onClick={listening ? () => voice.current?.finishListening() : speak} disabled={thinking || stage === "grading" || playback !== "ready"}>
               {listening ? <Square /> : <Mic />} {listening ? "Done speaking" : "Speak"}
             </Button>
             {listening && <Button variant="outline" onClick={stopVoice}>Cancel answer</Button>}
