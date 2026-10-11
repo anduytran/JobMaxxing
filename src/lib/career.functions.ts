@@ -43,28 +43,55 @@ export type XpEvent = { label: string; amount: number; at: string };
 
 const EMPTY_STREAK: StreakInfo = { current: 0, longest: 0, lastActivity: null, freezes: 0 };
 
+/** XP paid the first time a streak reaches each 7-day mark (7, 14, 21 …). */
+export const STREAK_BONUS_XP = 250;
+
 /** One row per active day. Yesterday continues the streak; one missed day burns a
- *  streak freeze; anything longer restarts at 1. */
-export async function bumpStreak(userId: string): Promise<void> {
+ *  streak freeze; anything longer restarts at 1. Crossing a 7-day mark pays a bonus
+ *  once — the partial unique index on `streak:%` reasons makes a replay a no-op. */
+export async function bumpStreak(userId: string): Promise<number> {
   const next = `case
     when public.devup_activity_streak.last_activity_date = current_date then public.devup_activity_streak.current_streak
     when public.devup_activity_streak.last_activity_date = current_date - 1 then public.devup_activity_streak.current_streak + 1
     when public.devup_activity_streak.last_activity_date = current_date - 2 and public.devup_activity_streak.streak_freeze_count > 0 then public.devup_activity_streak.current_streak + 1
     else 1 end`;
-  await neonExecute(
-    `insert into public.devup_activity_streak (user_id, current_streak, longest_streak, last_activity_date, streak_freeze_count)
-     values ($1, 1, 1, current_date, 1)
-     on conflict (user_id) do update set
-       current_streak = ${next},
-       longest_streak = greatest(public.devup_activity_streak.longest_streak, ${next}),
-       streak_freeze_count = case
-         when public.devup_activity_streak.last_activity_date = current_date - 2 and public.devup_activity_streak.streak_freeze_count > 0
-           then public.devup_activity_streak.streak_freeze_count - 1
-         else public.devup_activity_streak.streak_freeze_count end,
-       last_activity_date = current_date,
-       updated_at = now()`,
-    [userId],
+  const { rows } = await neonExecute<{ rows: { streak: number; bonus: number }[] }>(
+    `with s as (
+       insert into public.devup_activity_streak (user_id, current_streak, longest_streak, last_activity_date, streak_freeze_count)
+       values ($1, 1, 1, current_date, 1)
+       on conflict (user_id) do update set
+         current_streak = ${next},
+         longest_streak = greatest(public.devup_activity_streak.longest_streak, ${next}),
+         streak_freeze_count = case
+           when public.devup_activity_streak.last_activity_date = current_date - 2 and public.devup_activity_streak.streak_freeze_count > 0
+             then public.devup_activity_streak.streak_freeze_count - 1
+           else public.devup_activity_streak.streak_freeze_count end,
+         last_activity_date = current_date,
+         updated_at = now()
+       returning user_id, current_streak
+     ),
+     m as (
+       select user_id, (current_streak / 7) * 7 as milestone from s where current_streak >= 7
+     ),
+     e as (
+       insert into public.devup_xp_event (amount, reason, user_id)
+       select $2, 'streak:' || milestone, user_id from m
+       on conflict (user_id, reason) where reason like 'streak:%' do nothing
+       returning amount, user_id
+     ),
+     p as (
+       update public.devup_profile
+          set xp = xp + (select coalesce(sum(amount), 0) from e), updated_at = now()
+        where id = (select user_id from e limit 1)
+        returning xp
+     )
+     select (select current_streak from s)::int as streak,
+            coalesce((select sum(amount) from e), 0)::int as bonus`,
+    [userId, STREAK_BONUS_XP],
   );
+  const bonus = Number(rows[0]?.bonus ?? 0);
+  if (bonus > 0) console.log(`streak bonus paid`, userId, bonus);
+  return Number(rows[0]?.streak ?? 0);
 }
 
 /** A stored streak only counts if activity was today, yesterday, or one missed
