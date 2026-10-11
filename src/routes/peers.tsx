@@ -136,10 +136,12 @@ function Page() {
     } catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
   };
 
-  const join = async () => {
+  const join = async (override?: string) => {
+    const useCode = (override ?? joinCode).trim().toUpperCase();
+    if (useCode.length !== 6) return;
     setBusy(true);
     try {
-      const { id } = await joinPeerSession({ data: { code: joinCode } });
+      const { id } = await joinPeerSession({ data: { code: useCode } });
       setSessionId(id);
       await refresh(id);
       setStage((st) => (st === "intro" ? "lobby" : st));
