@@ -242,8 +242,8 @@ async function ensureConversationUser(secret: string, opts: { userId: string; na
     });
   } catch (err) {
     if (!String(err).includes("USER_ALREADY_EXISTS")) throw err;
-    const found = await raiaGet<{ id: string }[] | { id: string }>(secret, `/users/search?fkId=${encodeURIComponent(opts.userId)}`);
-    const user = Array.isArray(found) ? found[0] : found;
+    const found = await raiaGet<{ user?: { id: string } }>(secret, `/users/search?fkId=${encodeURIComponent(opts.userId)}`);
+    const user = found.user;
     if (!user?.id) throw err;
     return user;
   }
