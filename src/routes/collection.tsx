@@ -1,3 +1,4 @@
+import loadingVideo from "@/assets/max/max-loading.mp4.asset.json";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
@@ -51,8 +52,17 @@ function Collection() {
     );
   if (!state)
     return (
-      <div className="mx-auto max-w-3xl panel p-8 text-center text-muted-foreground">
-        Opening your collection…
+      <div className="grid min-h-[60vh] place-items-center" role="status" aria-label="Loading your collection">
+        <video
+          src={loadingVideo.url}
+          poster={MAX_POSES.wave}
+          autoPlay
+          loop
+          muted
+          playsInline
+          aria-hidden="true"
+          className="h-48 w-48 rounded-3xl object-cover mix-blend-multiply"
+        />
       </div>
     );
 
