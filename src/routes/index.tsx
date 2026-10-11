@@ -27,12 +27,6 @@ import { XpCareerCard } from "@/components/DashboardProgressCards";
 const MAX_ART: Record<string, MaxPose> = { setup: "resume", resume: "resume", interview: "interview", skills: "skills", hunt: "hunt", branding: "dap", social: "dap" };
 const QUEST_LINK: Record<string, "/setup" | "/interview" | "/quests" | "/skills" | "/market"> = { setup: "/setup", resume: "/setup", interview: "/interview", skills: "/skills", hunt: "/market" };
 
-// The featured card's one call to action: a hard-edged tab hanging from the card's
-// top-left corner — square corners, a heavier bottom edge, and it dips a little when
-// pressed, like a metal tag on a hinge. The global reduced-motion rule still applies.
-const LOCK_IN_TAB =
-  "group absolute left-6 top-0 z-20 inline-flex items-center gap-3 border-b-4 border-b-primary/45 bg-primary px-7 py-3 text-xs font-bold uppercase tracking-[0.22em] text-primary-foreground shadow-xl transition-transform duration-150 hover:translate-y-1 active:translate-y-1.5 md:left-20";
-
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
@@ -197,17 +191,6 @@ function Dashboard() {
         >
           <SceneBackdrop kind={featKey} />
           <div className="featured-scrim pointer-events-none absolute inset-0" />
-          {/* Lock In hangs from the card's top-left corner and always leads to the
-              place where the featured quest actually gets done. */}
-          {featured ? (
-            <Link to={featLink} className={LOCK_IN_TAB}>
-              Lock In <ArrowRight className="h-4 w-4 transition-transform duration-150 group-hover:translate-x-1" />
-            </Link>
-          ) : (
-            <Link to="/interview" search={{ radar: undefined }} className={LOCK_IN_TAB}>
-              Lock In <ArrowRight className="h-4 w-4 transition-transform duration-150 group-hover:translate-x-1" />
-            </Link>
-          )}
           {/* The column stretches to the card so the eyebrow, the pitch and the dots
               anchor the top, middle and bottom of the screen. */}
           <div className="relative z-10 flex w-full max-w-2xl flex-col justify-start md:max-w-[calc(50%_-_13svh_-_1.5rem)] md:justify-between">
