@@ -76,18 +76,21 @@ async function gatherEvidence(userId: string) {
   };
 }
 
-async function askSkillExpert(payload: unknown): Promise<Proposed[] | null> {
+async function askSkillExpert(payload: unknown, userId?: string): Promise<Proposed[] | null> {
   const secret = process.env["RAIA_SKILL_AGENT_SECRET_KEY"]?.trim();
   if (!secret) return null;
+  const prompt = JSON.stringify(payload);
   try {
     const res = await fetch(`${RAIA}/prompts`, {
       method: "POST",
       headers: { "Agent-Secret-Key": secret, "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt: JSON.stringify(payload) }),
+      body: JSON.stringify({ prompt }),
       signal: AbortSignal.timeout(45_000),
     });
     if (!res.ok) { console.error("Skill expert failed", res.status, await res.text()); return null; }
     const text = ((await res.json()) as { response?: string }).response ?? "";
+    const { trackUsage } = await import("./interview/agents.server");
+    await trackUsage(userId, "skill_expert", prompt, text);
     const out = JSON.parse(text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1)) as { skills?: Proposed[] };
     return Array.isArray(out.skills) ? out.skills : null;
   } catch (e) {
@@ -157,7 +160,7 @@ export async function refreshSkills(userId: string, latest?: unknown): Promise<v
     trackedSkills: tracked,
     current: current.filter((c) => tracked.some((t) => keyOf(t) === keyOf(c.skill))),
     evidence: { ...evidence, latest: latest ?? null },
-  });
+  }, userId);
   const trackedByKey = new Map(tracked.map((t) => [keyOf(t), t]));
   const byKey = new Map(current.map((c) => [keyOf(c.skill), c]));
   const writes: { query: string; params: unknown[] }[] = [];
