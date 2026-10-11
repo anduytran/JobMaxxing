@@ -109,12 +109,10 @@ function Setup() {
       toast.success(`Resume graded ${res.review.grade} · ${res.review.score}/100`, { description: extra || `${res.review.suggestions.length} fixes ready below.` });
       // Only quests the resume grader confirmed (same grader conversation) complete.
       for (const id of res.questsDone) completeQuest(id);
-      if (!openQuests.length) {
-        toast.message("No resume quests to check", { description: "Add a resume quest from Add Quests and your next upload will be checked against it." });
-      } else if (res.questsDone.length) {
+      if (res.questsDone.length) {
         const names = openQuests.filter((q) => res.questsDone.includes(q.id)).map((q) => q.title).join(", ");
         toast.success(`Quest${res.questsDone.length === 1 ? "" : "s"} complete: ${names}`, { description: "Confirmed by the resume grader." });
-      } else {
+      } else if (openQuests.length) {
         toast.message("No resume quests confirmed yet", { description: `Checked: ${openQuests.map((q) => q.title).join(", ")}. The grader didn't see those goals met in this version.` });
       }
       if (res.questsAdded?.length) {
