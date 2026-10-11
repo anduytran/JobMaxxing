@@ -247,23 +247,38 @@ const FILLER = /\b(um+|uh+|like|basically|actually|literally|you know|kind of|so
 const JARGON = /\b(synergy|leverage|paradigm|holistic|best-in-class|robust|scalable solution|cutting[- ]edge)\b/gi;
 const clamp = (n: number) => Math.max(0, Math.min(100, Math.round(n)));
 
+const HOSTILE = /\b(f+u+c*k+|freak(ing)? (u|you)|shit|screw (u|you)|shut up|never speak to you|hate (u|you)|stupid|idiot|wtf|go away|piss off)\b/i;
+const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 function fallbackGrade(t: TranscriptTurn[], job: ParsedJob): InterviewGrade {
   const answers = t.filter((x) => x.speaker === "candidate" && x.phase === "interview").map((x) => x.text);
   const asked = t.filter((x) => x.speaker === "candidate" && x.phase === "candidate_questions").map((x) => x.text);
+  const questionsAsked = new Set(t.filter((x) => x.speaker === "interviewer" && x.phase === "interview" && x.questionId).map((x) => x.questionId)).size || 1;
   const words = answers.map((a) => a.split(/\s+/).filter(Boolean).length);
-  const avg = words.length ? words.reduce((a, b) => a + b, 0) / words.length : 0;
+  const total = words.reduce((a, b) => a + b, 0);
+  const avg = words.length ? total / words.length : 0;
   const all = answers.join(" ");
-  const skillHits = job.skills.filter((s) => all.toLowerCase().includes(s.toLowerCase())).length;
+  // Whole-word skill matches only (a skill like "R" must not match inside "freak").
+  const skillHits = job.skills.filter((s) => s.length > 1 && new RegExp(`\\b${escapeRe(s)}\\b`, "i").test(all)).length;
   const star = (all.match(/\b(situation|task|result|impact|because|so that|measured|\d+%)\b/gi) ?? []).length;
+  const hostile = [...answers, ...asked].some((a) => HOSTILE.test(a) || moderate(a).level !== "ok");
+  // Substance: answers under ~20 words earn almost nothing; coverage = share of questions really answered.
+  const substantive = words.filter((w) => w >= 20).length;
+  const coverage = Math.min(1, substantive / questionsAsked);
+  const depth = Math.min(1, avg / 80);
 
-  const quality = clamp(answers.length ? 35 + Math.min(avg, 80) * 0.4 + skillHits * 6 + star * 3 : 0);
+  let quality = clamp(answers.length ? depth * 55 * coverage + Math.min(skillHits, 4) * 5 * coverage + Math.min(star, 5) * 4 * coverage + (substantive ? 10 : 0) : 0);
   const filler = (all.match(FILLER) ?? []).length + (all.match(JARGON) ?? []).length * 2;
-  const lenPenalty = avg > 140 ? (avg - 140) * 0.3 : avg < 15 ? (15 - avg) * 2 : 0;
-  const concise = clamp(answers.length ? 90 - lenPenalty - (filler / Math.max(1, words.reduce((a, b) => a + b, 0))) * 400 : 0);
-  const goodQs = asked.filter((q) => q.split(/\s+/).length >= 6).length;
-  const cq = clamp(asked.length ? 40 + goodQs * 25 + (asked.some((q) => /team|growth|success|challenge|roadmap/i.test(q)) ? 15 : 0) : 10);
+  const lenPenalty = avg > 140 ? (avg - 140) * 0.3 : avg < 20 ? (20 - avg) * 3 : 0;
+  let concise = clamp(answers.length ? 90 - lenPenalty - (filler / Math.max(1, total)) * 400 : 0);
+  const realQs = asked.filter((q) => !HOSTILE.test(q) && /\?|^(what|how|why|who|when|where|is|are|do|does|can|could|would)\b/i.test(q.trim()));
+  const goodQs = realQs.filter((q) => q.split(/\s+/).length >= 6).length;
+  let cq = clamp(realQs.length ? 30 + goodQs * 25 + (realQs.some((q) => /team|growth|success|challenge|roadmap/i.test(q)) ? 15 : 0) : 5);
+  if (hostile) { quality = Math.min(quality, 10); concise = Math.min(concise, 15); cq = Math.min(cq, 5); }
 
-  const overall = clamp(quality * 0.5 + concise * 0.3 + cq * 0.2);
+  let overall = clamp(quality * 0.6 + concise * 0.2 + cq * 0.2);
+  if (hostile) overall = Math.min(overall, 10);
+  else if (!substantive) overall = Math.min(overall, 25);
   const strengths: string[] = [];
   const improvements: string[] = [];
   if (skillHits) strengths.push(`Referenced ${skillHits} skill(s) from the job description.`);
