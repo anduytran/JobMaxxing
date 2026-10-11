@@ -35,7 +35,7 @@ function Page() {
   const [ratings, setRatings] = useState<{ skill: string; rating: number; answered: number }[]>([]);
   useEffect(() => { getSkillRatings().then(setRatings).catch(() => {}); }, []);
   return (
-    <div className="mx-auto max-w-6xl">
+    <div className="mx-auto max-w-[1500px]">
       <PageHeader eyebrow="Build your next chapter" title="Skill Tree" sub="Turn your potential into progress, one step at a time." pose="skills" />
       <div className="panel">
         <PanelHead title="Grow in your own direction" level={level} />

@@ -36,7 +36,7 @@ function ProgressPage() {
   const questsDone = game.quests.filter((q) => q.done).length;
 
   return (
-    <main className="mx-auto w-full max-w-7xl space-y-5 px-4 py-6">
+    <main className="mx-auto w-full max-w-[1700px] space-y-5 px-4 py-6">
       <PageHeader eyebrow="Your journey" title="Career" sub="Everything you've earned, practiced and applied for — in one place." />
       <div className="grid gap-5 lg:grid-cols-5">
         <div className="min-w-0 lg:col-span-3">

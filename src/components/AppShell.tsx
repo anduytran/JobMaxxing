@@ -167,7 +167,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       {/* Home lands on a full-screen featured card, so its page carries its own padding. */}
       <motion.main key={loc.pathname} initial={reducedMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className={cn("page-arrival flex-1", (loc.pathname === "/" || loc.pathname === "/interview") ? "" : "p-4 md:px-10 md:py-10")}>
         {children}
-        {loc.pathname !== "/interview" && <footer className={cn("mx-auto mt-16 flex max-w-6xl justify-between border-t pt-6 text-xs text-muted-foreground", loc.pathname === "/" && "px-4 md:px-10")}>
+        {loc.pathname !== "/interview" && <footer className={cn("mx-auto mt-16 flex max-w-[1500px] justify-between border-t pt-6 text-xs text-muted-foreground", loc.pathname === "/" && "px-4 md:px-10")}>
           <span>Made for your next chapter.</span><span>Privacy · Terms · AI-powered. Human-centered.</span>
         </footer>}
       </motion.main>

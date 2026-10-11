@@ -291,7 +291,7 @@ export function InterviewFlow({ agents, api, radar, profileSkills = [], captions
   const reset = () => { stopVoice(); setTyping(false); setConvId(null); setStage(demo ? "setup" : "intro"); setGrade(null); setTurns([]); setJob(null); setAck(false); radarJobId.current = null; autoFinish.current = false; };
 
   return (
-    <div className={cn(immersive ? "w-full" : "mx-auto max-w-6xl space-y-4 px-4 py-6 md:px-10 md:py-10")}>
+    <div className={cn(immersive ? "w-full" : "mx-auto max-w-[1500px] space-y-4 px-4 py-6 md:px-10 md:py-10")}>
       {!immersive && <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">Build your next chapter</p>

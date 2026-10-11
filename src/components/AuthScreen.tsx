@@ -233,7 +233,7 @@ export function AuthScreen() {
     <div className="min-h-screen bg-background">
       {/* Nav */}
       <header className="sticky top-0 z-30 border-b border-border/60 bg-background/85 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-3.5">
+        <div className="mx-auto flex max-w-[1500px] items-center justify-between gap-4 px-6 py-3.5">
           <button className="flex items-center gap-2" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} aria-label="JobMaxxing home">
             <img src={MAX_POSES.wave} alt="" className="h-9 w-9 object-contain" />
             <span className="font-display text-xl font-bold tracking-tight">JobMaxxing<span className="text-primary">.</span></span>
@@ -251,7 +251,7 @@ export function AuthScreen() {
       </header>
 
       {/* Hero */}
-      <section ref={hero} className="mx-auto grid max-w-6xl items-center gap-10 px-6 pb-20 pt-14 lg:grid-cols-[1.1fr_1fr]">
+      <section ref={hero} className="mx-auto grid max-w-[1500px] items-center gap-10 px-6 pb-20 pt-14 lg:grid-cols-[1.1fr_1fr]">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 }}>
           <div className="flex items-center gap-2">
             <XpBadge amount="+20 XP" />
@@ -291,7 +291,7 @@ export function AuthScreen() {
       </section>
 
       {/* Feature spotlight: AI interviewing */}
-      <section className="mx-auto max-w-6xl px-6 py-20">
+      <section className="mx-auto max-w-[1500px] px-6 py-20">
         <div className="grid items-center gap-10 md:grid-cols-2">
           <motion.div {...rise} className="flex flex-col gap-4">
             <div className="flex items-center gap-2">
@@ -340,7 +340,7 @@ export function AuthScreen() {
 
       {/* Quest board */}
       <section id="quests" className="border-y border-border/60 bg-card/60 py-20">
-        <div className="mx-auto max-w-6xl px-6">
+        <div className="mx-auto max-w-[1500px] px-6">
           <motion.div {...rise} className="max-w-2xl">
             <h2 className="font-display text-3xl font-bold tracking-tight md:text-4xl">Pick a quest. Get better at getting hired.</h2>
             <p className="mt-3 text-lg text-muted-foreground">Each tool is a quest with a clear reward, so you always know what to do next and what it earned you.</p>
@@ -374,7 +374,7 @@ export function AuthScreen() {
       </section>
 
       {/* How it works */}
-      <section id="how" className="mx-auto max-w-6xl px-6 py-20">
+      <section id="how" className="mx-auto max-w-[1500px] px-6 py-20">
         <motion.div {...rise} className="max-w-2xl">
           <h2 className="font-display text-3xl font-bold tracking-tight md:text-4xl">From first scan to first offer.</h2>
           <p className="mt-3 text-lg text-muted-foreground">Quests pay XP. XP raises your level. Levels unlock new titles and tougher practice.</p>
@@ -428,7 +428,7 @@ export function AuthScreen() {
       </section>
 
       {/* CTA */}
-      <section className="mx-auto max-w-6xl px-6 pb-20">
+      <section className="mx-auto max-w-[1500px] px-6 pb-20">
         <motion.div {...rise} className="relative overflow-hidden rounded-3xl border border-border bg-secondary/70 p-10 md:p-14">
           <img src={MAX_POSES.dap} alt="" className="absolute -right-6 bottom-0 w-40 opacity-90 md:w-52" />
           <div className="relative max-w-lg">
@@ -441,7 +441,7 @@ export function AuthScreen() {
 
       {/* Footer */}
       <footer className="border-t border-border/60 py-10">
-        <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-4 px-6 text-sm text-muted-foreground md:flex-row md:items-center">
+        <div className="mx-auto flex max-w-[1500px] flex-col items-start justify-between gap-4 px-6 text-sm text-muted-foreground md:flex-row md:items-center">
           <span className="flex items-center gap-2">
             <img src={MAX_POSES.wave} alt="" className="h-7 w-7 object-contain" />
             <span className="font-display font-bold text-foreground">JobMaxxing<span className="text-primary">.</span></span>

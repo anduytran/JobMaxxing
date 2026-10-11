@@ -203,7 +203,7 @@ function Page() {
   const ticks = useMemo(() => Object.values(session?.checks ?? {}).reduce((n, a) => n + a.length, 0), [session?.checks]);
 
   return (
-    <div className="mx-auto max-w-6xl space-y-4">
+    <div className="mx-auto max-w-[1500px] space-y-4">
       <PageHeader eyebrow="Build your next chapter" title="Peer Interviews" sub="AI-planned questions, a live voice call with a friend, and graded feedback for both of you." />
 
       {stage === "intro" && (
