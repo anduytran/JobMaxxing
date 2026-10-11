@@ -3,7 +3,7 @@ import { Captions, Keyboard, Loader2, Mic, RotateCcw, Send, Square, Volume2, Vol
 import { InterviewVoicePresence, type InterviewVoiceState } from "@/components/InterviewVoicePresence";
 import { InterviewMicrophoneCheck } from "@/components/InterviewMicrophoneCheck";
 import { Max } from "@/components/Max";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { AcknowledgeDisclosure, InterviewDisclosure } from "@/components/InterviewDisclosure";
 import { SkillText } from "@/components/skill-text";
@@ -269,11 +269,10 @@ function Interview() {
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">Build your next chapter</p>
           <h1 className="mt-2 text-4xl font-bold md:text-5xl">Set Up Your Interview</h1>
           <p className="mt-2 text-lg text-muted-foreground">Paste description, answer questions, and improve your confidence</p>
-          {stage !== "intro" && <Stepper stage={stage} />}
         </div>
       </div>}
 
-      {!immersive && stage !== "intro" && <AgentBadges agents={agents} />}
+
 
       {stage === "intro" && (
         <section className="panel">
@@ -565,33 +564,6 @@ function Metric({ label, m }: { label: string; m: { score: number; feedback: str
   );
 }
 
-const STEPS: [Stage[], string][] = [
-  [["setup"], "Job"], [["review"], "Review"], [["options"], "Options"], [["live"], "Interview"], [["your_questions"], "Your Qs"], [["grading", "report"], "Report"],
-];
-function Stepper({ stage }: { stage: Stage }) {
-  const idx = useMemo(() => STEPS.findIndex(([s]) => s.includes(stage)), [stage]);
-  return (
-    <div className="mt-1 flex gap-2 font-mono text-[10px]">
-      {STEPS.map(([, l], i) => <span key={l} className={i <= idx ? "text-primary" : "text-muted-foreground"}>{i + 1}.{l}</span>)}
-    </div>
-  );
-}
-
-function AgentBadges({ agents }: { agents: AgentStatus }) {
-  const items: [string, boolean][] = [
-    ["Job parser", agents.parser === "raia"], ["Question agent", agents.questions === "raia"],
-    ["Voice (ElevenLabs)", agents.voice === "elevenlabs"], ["Grader agent", agents.grader === "raia"],
-  ];
-  return (
-    <div className="flex flex-wrap gap-2 font-mono text-[10px]">
-      {items.map(([l, live]) => (
-        <span key={l} className={cn("rounded border px-2 py-1", live ? "border-primary text-primary" : "text-muted-foreground")}>
-          {l}: {live ? "AI agent" : "built-in"}
-        </span>
-      ))}
-    </div>
-  );
-}
 
 function SpokenQuestion({ text, activeWord }: { text: string; activeWord: number }) {
   return <>{(text.match(/\S+/g) ?? []).map((word, index) => <span key={index} className={index === activeWord ? "rounded-sm bg-primary/15 text-primary" : undefined}>{word}{" "}</span>)}</>;
