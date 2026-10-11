@@ -280,6 +280,17 @@ function Interview() {
     } catch (e) { toast.error((e as Error).message); setStage("your_questions"); }
   };
 
+  // Auto-end: once the agent's closing line has finished playing (or right
+  // away when voice is off), run the same finish flow as the End button.
+  useEffect(() => {
+    if (!autoFinish.current || thinking) return;
+    if (stage !== "live" && stage !== "your_questions") return;
+    if (voiceOn && playback !== "ready") return;
+    autoFinish.current = false;
+    const t = setTimeout(() => void finish(), 700);
+    return () => clearTimeout(t);
+  }, [thinking, playback, stage, turns, voiceOn]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const reset = () => { stopVoice(); setTyping(false); setConvId(null); setStage("intro"); setGrade(null); setTurns([]); setJob(null); setAck(false); radarJobId.current = null; };
 
   return (
