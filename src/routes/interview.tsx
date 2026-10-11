@@ -47,7 +47,7 @@ type Stage = "intro" | "setup" | "review" | "options" | "live" | "your_questions
 function Interview() {
   const agents = Route.useLoaderData() as AgentStatus;
   const search = Route.useSearch();
-  const { completeQuest, gainXp, details, captions: captionsPref } = useGame();
+  const { completeQuest, claimInterviewXp, details, captions: captionsPref } = useGame();
   const [stage, setStage] = useState<Stage>("intro");
   const [jd, setJd] = useState("");
   const radarJobId = useRef<string | null>(null);
@@ -270,7 +270,7 @@ function Interview() {
       setRatings(g.ratings ?? []);
       setStage("report");
       completeQuest("mock1");
-      if (g.xp > 0) gainXp(g.xp, "mock interview");
+      const ivId = g.sessionId ?? savedId; if (g.xp > 0 && ivId) claimInterviewXp("solo", ivId);
       // A tailored practice for a Job Radar role pays a one-time +50 XP bonus.
       if (radarJobId.current) {
         const radarXp = await awardRadarPracticeXp({ data: { jobId: radarJobId.current } }).catch(() => null);

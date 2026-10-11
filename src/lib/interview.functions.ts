@@ -33,7 +33,24 @@ export const fetchJobPosting = createServerFn({ method: "POST" })
     return { url: parsed.toString() };
   })
   .handler(async ({ data }) => {
-    const res = await fetch(data.url, {
+    const { requireUser } = await import("./auth.server");
+    await requireUser();
+    const { assertPublicUrl } = await import("./safe-url.server");
+    let target = assertPublicUrl(data.url);
+    // Follow redirects by hand so every hop is checked, not just the first.
+    let res: Response | null = null;
+    for (let hop = 0; hop < 5; hop++) {
+      res = await fetch(target, {
+        redirect: "manual",
+        signal: AbortSignal.timeout(15000),
+        headers: { "user-agent": "Mozilla/5.0 (compatible; JobMaxxing/1.0)", accept: "text/html,*/*" },
+      });
+      const loc = res.status >= 300 && res.status < 400 ? res.headers.get("location") : null;
+      if (!loc) break;
+      target = assertPublicUrl(new URL(loc, target).toString());
+    }
+    if (!res) throw new Error("Couldn't open that posting. Paste the description instead.");
+    const _unused = {
       redirect: "follow",
       signal: AbortSignal.timeout(15000),
       headers: { "user-agent": "Mozilla/5.0 (compatible; JobMaxxing/1.0)", accept: "text/html,*/*" },
@@ -65,8 +82,10 @@ export const parseJobUrl = createServerFn({ method: "POST" })
     return { url: parsed.toString(), hint };
   })
   .handler(async ({ data }) => {
-    const { currentUser } = await import("./auth.server");
-    const user = await currentUser();
+    const { requireUser } = await import("./auth.server");
+    const user = await requireUser();
+    const { assertPublicUrl } = await import("./safe-url.server");
+    assertPublicUrl(data.url);
     const { parseJobFromUrl } = await import("./interview/agents.server");
     const job = await parseJobFromUrl(data.url, data.hint || undefined, user?.id);
     if (!job) throw new Error("Couldn't read that posting, even with a web search. Paste the description instead.");
@@ -144,6 +163,7 @@ export const gradeInterviewTranscript = createServerFn({ method: "POST" })
     const { gradeInterview } = await import("./interview/agents.server");
     const grade = await gradeInterview(data.transcript, data.job, user?.id);
     let ratings: import("./mmr.server").RatingChange[] = [];
+    let sessionId: string | null = data.sessionId;
     try {
       const answered = data.transcript.filter((t) => t.speaker === "candidate" && t.phase === "interview").length;
       if (user && answered > 0) {
@@ -167,9 +187,9 @@ export const gradeInterviewTranscript = createServerFn({ method: "POST" })
               [...saveArgs, data.sessionId],
             )
           : neonExecute(
-              `insert into public.devup_interview (user_id, job, type, overall, grade, transcript) values ($1, $2, $3, $4, $5::jsonb, $6::jsonb)`,
+              `insert into public.devup_interview (user_id, job, type, overall, grade, transcript) values ($1, $2, $3, $4, $5::jsonb, $6::jsonb) returning id::text as id`,
               saveArgs,
-            )
+            ).then((r) => { sessionId = (r.rows[0]?.["id"] as string) ?? null; return r; })
         ).catch((e) => console.error("interview save failed", e));
         const { bumpStreak } = await import("./career.functions");
         await bumpStreak(user.id).catch((e) => console.error("streak update failed", e));
@@ -179,7 +199,7 @@ export const gradeInterviewTranscript = createServerFn({ method: "POST" })
         ratings = now.map((r) => ({ skill: r.skill, before: before.get(r.skill)?.before ?? r.rating, after: r.rating, answered: r.answered }));
       }
     } catch (e) { console.error("rating update failed", e); }
-    return { ...grade, ratings };
+    return { ...grade, ratings, sessionId };
   });
 
 export const getSkillRatings = createServerFn({ method: "GET" }).handler(async () => {

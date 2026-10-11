@@ -42,7 +42,7 @@ export type GameState = {
   quests: Quest[];
 };
 
-export type SaveResult = { ok: true; xp?: number } | { ok: false; error: string };
+export type SaveResult = { ok: true; xp?: number; paid?: number } | { ok: false; error: string };
 
 
 /** Active 1.5x store booster, if any — multiplies XP (and therefore points). */
@@ -376,30 +376,53 @@ export const removeQuest = createServerFn({ method: "POST" })
     }
   });
 
-export const gainXp = createServerFn({ method: "POST" })
-  .inputValidator((input: { amount: unknown; reason: unknown }) => {
-    const amount = int(input.amount, 1, 2000);
-    const reason = clean(input.reason, 80);
-    if (amount === null || !reason) throw new Error("Invalid XP award.");
-    return { amount, reason };
+/** Pays interview XP from the grade stored on the server — never from a number the
+ *  browser sends. Each interview pays once per person: the partial unique index on
+ *  `iv:%` reasons turns a replay into a no-op. */
+export const claimInterviewXp = createServerFn({ method: "POST" })
+  .inputValidator((input: { kind: unknown; id: unknown }) => {
+    const kind = input.kind === "peer" ? "peer" : input.kind === "solo" ? "solo" : null;
+    const id = typeof input.id === "string" && /^[0-9a-f-]{36}$/i.test(input.id) ? input.id : null;
+    if (!kind || !id) throw new Error("Invalid interview.");
+    return { kind, id };
   })
   .handler(async ({ data }): Promise<SaveResult> => {
     try {
       const PROFILE_ID = (await requireUser()).id;
-      const boost = await xpBoost(PROFILE_ID);
-      const amount = Math.round(data.amount * boost);
-      const { results } = await neonExecute<{ results: any[] }>([
-        {
-          query: "insert into public.devup_xp_event (amount, reason, user_id) values ($1, $2, $3)",
-          params: [amount, data.reason, PROFILE_ID],
-        },
-        {
-          query:
-            "update public.devup_profile set xp = xp + $1, updated_at = now() where id = $2 returning xp",
-          params: [amount, PROFILE_ID],
-        },
-      ]);
-      return { ok: true, xp: Number(results[1]?.rows?.[0]?.xp ?? 0) };
+      let base = 0;
+      if (data.kind === "solo") {
+        const { rows } = await neonExecute(
+          "select grade from public.devup_interview where id = $1::uuid and user_id = $2 and grade is not null",
+          [data.id, PROFILE_ID],
+        );
+        base = Number((rows[0]?.["grade"] as { xp?: unknown } | undefined)?.xp ?? 0);
+      } else {
+        const { rows } = await neonExecute(
+          `select host_id::text as host_id, host_role, grade, interviewer_grade from public.devup_peer_session
+            where id = $1::uuid and (host_id = $2::uuid or guest_id = $2::uuid)`,
+          [data.id, PROFILE_ID],
+        );
+        const r = rows[0];
+        if (r) {
+          const isHost = String(r["host_id"]) === PROFILE_ID;
+          const candidate = (r["host_role"] === "interviewer") !== isHost;
+          const g = (candidate ? r["grade"] : r["interviewer_grade"]) as { xp?: unknown; pending?: unknown } | null;
+          base = g && !g.pending ? Number(g.xp ?? 0) : 0;
+        }
+      }
+      base = Math.max(0, Math.min(400, Math.round(base) || 0));
+      if (base <= 0) return { ok: true };
+      const amount = Math.round(base * (await xpBoost(PROFILE_ID)));
+      const { rows } = await neonExecute(
+        `with e as (
+           insert into public.devup_xp_event (amount, reason, user_id) values ($1, $2, $3)
+           on conflict (user_id, reason) where reason like 'iv:%' do nothing returning amount
+         )
+         update public.devup_profile set xp = xp + (select coalesce(sum(amount), 0) from e), updated_at = now()
+          where id = $3 returning xp, (select coalesce(sum(amount), 0) from e)::int as paid`,
+        [amount, `iv:${data.kind}:${data.id}`, PROFILE_ID],
+      );
+      return { ok: true, xp: Number(rows[0]?.["xp"] ?? 0), paid: Number(rows[0]?.["paid"] ?? 0) } as SaveResult;
     } catch (err) {
       return fail(err);
     }

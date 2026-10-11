@@ -4,7 +4,7 @@ import {
   addQuest as addQuestFn,
   removeQuest as removeQuestFn,
   completeQuest as completeQuestFn,
-  gainXp as gainXpFn,
+  claimInterviewXp as claimInterviewXpFn,
   saveProfile as saveProfileFn,
   saveAvatar as saveAvatarFn,
   saveRoast as saveRoastFn,
@@ -54,7 +54,7 @@ type Game = {
   completeQuest: (id: string) => void;
   addQuest: (q: Omit<Quest, "done">) => void;
   removeQuest: (id: string) => void;
-  gainXp: (n: number, reason?: string) => void;
+  claimInterviewXp: (kind: "solo" | "peer", id: string) => void;
   setRoast: (v: boolean) => void;
   setReducedMotion: (v: boolean) => void;
   setLargeText: (v: boolean) => void;
@@ -142,13 +142,14 @@ export function GameProvider({
     return false;
   };
 
-  const gainXp = (n: number, reason = "bonus") => {
-    const prev = xp;
-    setXpState((x) => x + n);
-    setLastGain({ amount: n, key: Date.now() });
-    gainXpFn({ data: { amount: n, reason } }).then((res) => {
-      if (rejected(res, () => { setXpState(prev); setLastGain(null); })) return;
-      if (res.ok && typeof res.xp === "number") setXpState(res.xp);
+  // The server reads the stored grade and pays it once; the screen shows what it paid.
+  const claimInterviewXp = (kind: "solo" | "peer", id: string) => {
+    claimInterviewXpFn({ data: { kind, id } }).then((res) => {
+      if (rejected(res, () => {})) return;
+      if (res.ok && typeof res.xp === "number" && res.paid) {
+        setXpState(res.xp);
+        setLastGain({ amount: res.paid, key: Date.now() });
+      }
     });
   };
 
@@ -207,7 +208,7 @@ export function GameProvider({
         rejected(res, () => setQuests(prev));
       });
     },
-    gainXp,
+    claimInterviewXp,
     setRoast: (v) => {
       const prev = roast;
       setRoastState(v);
