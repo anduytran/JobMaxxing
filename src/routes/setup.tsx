@@ -121,6 +121,7 @@ function Setup() {
       const extra = [
         res.awarded.firstScan && `+${res.awarded.firstScan} XP first scan`,
         res.awarded.levelUp && `+${res.awarded.levelUp} XP Level Up — score above ${XP_RULES.levelUpScore}!`,
+        res.awarded.integrated > 0 && `${res.awarded.integrated} fix${res.awarded.integrated === 1 ? "" : "es"} confirmed · +${res.awarded.fixes} XP`,
       ].filter(Boolean).join(" · ");
       toast.success(`Resume graded ${res.review.grade} · ${res.review.score}/100`, { description: extra || `${res.review.suggestions.length} fixes ready below.` });
       if (!quests.find((q) => q.id === "resume")?.done) completeQuest("resume");
@@ -389,7 +390,7 @@ function AtsPanel({ review }: { review: StoredReview }) {
 
 const TYPE_LABEL: Record<string, string> = { rewrite: "Action verb", metric: "Metric gap", ats: "ATS", general: "General" };
 
-function SuggestionList({ review, sections, applying, onApply, onFocus, open, moreBusy, onMore }: {
+function SuggestionList({ review, sections, onFocus, open, moreBusy, onMore }: {
   review: StoredReview; sections: ResumeSection[]; applying: string | null;
   onApply: (s: ResumeSuggestion) => Promise<void>; onFocus: (id: string | null) => void;
   open: number; moreBusy: boolean; onMore: () => void;
@@ -410,7 +411,6 @@ function SuggestionList({ review, sections, applying, onApply, onFocus, open, mo
       </div>
       {review.suggestions.map((s) => {
         const line = findLine(sections, s.lineId);
-        const label = s.type === "rewrite" ? "Accept fix" : s.type === "metric" ? "I added it" : "Mark done";
         return (
           <div key={s.id} className={cn("panel p-4 transition", s.applied && "opacity-60")}>
             <div className="flex items-start justify-between gap-4">
@@ -441,9 +441,10 @@ function SuggestionList({ review, sections, applying, onApply, onFocus, open, mo
                   </div>
                 )}
               </div>
-              <Button size="sm" variant={s.applied ? "outline" : "default"} disabled={s.applied || applying === s.id} onClick={() => void onApply(s)} className="shrink-0">
-                {applying === s.id ? <Loader2 className="animate-spin" /> : s.applied ? <><Check className="h-3.5 w-3.5" /> done</> : label}
-              </Button>
+              <span className={cn("inline-flex shrink-0 items-center gap-1 rounded-md border px-2.5 py-1 text-xs font-medium", s.applied ? "border-success/40 text-success" : "text-muted-foreground")}
+                title="Make the change, then upload or re-scan your resume — the grader confirms it">
+                {s.applied ? <><Check className="h-3.5 w-3.5" /> done</> : "Upload to verify"}
+              </span>
             </div>
           </div>
         );
