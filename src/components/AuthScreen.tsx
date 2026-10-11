@@ -9,6 +9,10 @@ import { Label } from "@/components/ui/label";
 import { signIn, signUp } from "@/lib/auth.functions";
 import { MAX_POSES } from "@/components/Max";
 import interviewShot from "@/assets/landing/interview-review.asset.json";
+import stageDesktop from "@/assets/quest-scenes/stage-desktop.png.asset.json";
+import officeDesktop from "@/assets/quest-scenes/office-desktop.png.asset.json";
+import billboardDesktop from "@/assets/quest-scenes/billboard-desktop.png.asset.json";
+import meadowDesktop from "@/assets/quest-scenes/meadow-desktop.png.asset.json";
 
 const spring = { type: "spring" as const, stiffness: 380, damping: 30 };
 const rise = {
@@ -149,6 +153,9 @@ const QUESTS = [
     title: "AI mock interviews",
     text: "An interviewer that talks back. Answer out loud, then get graded on what you said and how clearly you said it.",
     chips: ["Answer quality", "Conciseness", "Your questions"],
+    scene: stageDesktop.url,
+    pose: MAX_POSES.interview,
+    poseAlt: "Max holding a microphone, ready to interview",
   },
   {
     tag: "Main quest",
@@ -157,6 +164,9 @@ const QUESTS = [
     title: "Resume grader",
     text: "Upload your resume. Max grades it against strong resumes in your field and flags the bullets holding you back.",
     chips: ["ATS check", "Action verbs", "Metrics"],
+    scene: officeDesktop.url,
+    pose: MAX_POSES.resume,
+    poseAlt: "Max holding a resume folder",
   },
   {
     tag: "Co-op quest",
@@ -165,6 +175,9 @@ const QUESTS = [
     title: "Peer interviews",
     text: "Pair up with a friend over a live call. One of you runs the AI-written script, the other answers — then you swap.",
     chips: ["Live audio", "Shared transcript", "Two-sided grades"],
+    scene: billboardDesktop.url,
+    pose: MAX_POSES.dap,
+    poseAlt: "Max giving a dap to a friend",
   },
   {
     tag: "Scouting quest",
@@ -173,6 +186,9 @@ const QUESTS = [
     title: "Job radar",
     text: "Roles matched to your resume and your dealbreakers. Save the good ones, or practice for one in a click.",
     chips: ["Real listings", "Match scores", "One-click practice"],
+    scene: meadowDesktop.url,
+    pose: MAX_POSES.hunt,
+    poseAlt: "Max scanning the horizon for roles",
   },
 ];
 
@@ -351,21 +367,41 @@ export function AuthScreen() {
                 key={q.title}
                 {...rise}
                 transition={{ ...rise.transition, delay: i * 0.07 }}
-                className="group flex flex-col gap-3 rounded-2xl border border-border bg-card p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-[var(--shadow-hover)]"
+                className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all hover:-translate-y-1 hover:shadow-[var(--shadow-hover)]"
               >
-                <div className="flex items-center justify-between">
-                  <QuestTag type={q.tag} />
-                  <XpBadge amount={q.xp} />
+                <div className="relative h-44 overflow-hidden">
+                  <img
+                    src={q.scene}
+                    alt=""
+                    className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+                    loading="lazy"
+                  />
+                  <img
+                    src={q.pose}
+                    alt={q.poseAlt}
+                    className="absolute bottom-0 right-4 h-[92%] object-contain drop-shadow-md transition-transform duration-500 group-hover:-translate-y-1.5"
+                    loading="lazy"
+                  />
+                  <div className="absolute left-4 top-4 flex items-center gap-2">
+                    <QuestTag type={q.tag} />
+                  </div>
+                  <div className="absolute right-4 top-4">
+                    <XpBadge amount={q.xp} />
+                  </div>
                 </div>
-                <span className="grid size-11 place-items-center rounded-xl bg-secondary text-secondary-foreground transition-transform group-hover:scale-110">
-                  <q.icon className="size-5" />
-                </span>
-                <h3 className="font-display text-xl font-semibold">{q.title}</h3>
-                <p className="text-sm text-muted-foreground">{q.text}</p>
-                <div className="mt-auto flex flex-wrap gap-1.5 pt-2">
-                  {q.chips.map((c) => (
-                    <span key={c} className="rounded-full border border-border px-2.5 py-1 text-xs text-muted-foreground">{c}</span>
-                  ))}
+                <div className="flex flex-1 flex-col gap-3 p-6">
+                  <h3 className="flex items-center gap-2.5 font-display text-xl font-semibold">
+                    <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-secondary text-secondary-foreground transition-transform group-hover:scale-110">
+                      <q.icon className="size-4" />
+                    </span>
+                    {q.title}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">{q.text}</p>
+                  <div className="mt-auto flex flex-wrap gap-1.5 pt-2">
+                    {q.chips.map((c) => (
+                      <span key={c} className="rounded-full border border-border px-2.5 py-1 text-xs text-muted-foreground">{c}</span>
+                    ))}
+                  </div>
                 </div>
               </motion.article>
             ))}
