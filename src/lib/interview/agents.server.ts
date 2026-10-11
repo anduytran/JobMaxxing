@@ -412,6 +412,8 @@ const RESUME_RUBRIC =
   "depth (15): substance and scope — what was built or owned, scale, tools or methods, result, links where relevant. " +
   "concision (5): fits one page; no walls of text; bullets of reasonable length. polish (5): spelling, grammar, tense and date consistency, consistent formatting. " +
   "SCORE BANDS (sanity-check the total): 90-100 ≈ send it; 80-89 strong; 65-79 solid base; below 65 rebuild. Score from the rubric first, then confirm the band. " +
+  "BE GENEROUS: give the benefit of the doubt when evidence is ambiguous, award partial credit freely, and calibrate to a typical student resume — a clean, " +
+  "complete student resume with some results usually lands 70-82; reserve below 60 for resumes missing core sections or mostly unreadable. " +
   "CONTEXT: users are mostly US students seeking internships or new-grad roles — projects, coursework, research, clubs, volunteering and part-time jobs all count; " +
   "never penalize a resume for lacking full-time work history; the US entry-level norm is one page. " +
   "TRACK: determine \"stem\" (software, data, engineering, science) or \"non_stem\" (business, finance, humanities, arts...) from the resume. " +
@@ -432,7 +434,7 @@ const SUGGESTION_SCHEMA =
   '"category":"impact"|"keywords"|"formatting"|"structure"|"credibility"}]';
 
 const RESUME_SCHEMA =
-  'Reply with JSON only: {"grade":"S"|"A"|"B"|"C"|"D"|"F","score":0-100,"summary":"2-3 sentences",' +
+  'Reply with JSON only: {"grade":"S"|"A"|"B"|"C"|"D"|"F","score":0-100,"summary":"2-3 sentences","outcome":"one encouraging final verdict sentence: whether it is ready to send, and the single next step",' +
   '"sections":[{"id":"s1","heading":"exact section heading","lines":[{"id":"s1l1","text":"exact line or bullet text, verbatim"}]}],' +
   '"ats":{"score":0-100,"usesTablesOrColumns":false,"headers":{"experience":true,"education":true,"projects":false},"issues":["short ATS risk"]},' +
   SUGGESTION_SCHEMA + ',' +
@@ -541,6 +543,14 @@ function normalizeSuggestions(v: unknown, lineIds: Set<string>, cap = SUGGESTION
     .slice(0, cap);
 }
 
+export function outcomeFor(score: number): string {
+  if (score >= 90) return "Ready to send — apply with confidence.";
+  if (score >= 80) return "Strong and ready to send; a couple of polish fixes will make it stand out.";
+  if (score >= 65) return "A solid base — work through the top fixes and it'll be ready to send.";
+  if (score > 0) return "Good start — tackle the top fixes first and rescan to see your score climb.";
+  return "We couldn't read enough to grade — upload a clearer file or add more detail.";
+}
+
 function normalizeReview(ai: any, source: "raia" | "fallback"): ResumeReview | null {
   const score = num(ai?.score, 0, 100);
   if (score === null) return null;
@@ -567,6 +577,7 @@ function normalizeReview(ai: any, source: "raia" | "fallback"): ResumeReview | n
     grade,
     score,
     summary: str(ai?.summary, 1200) ?? "",
+    outcome: str(ai?.outcome, 400) ?? outcomeFor(score),
     suggestions,
     sections,
     ats: normalizeAts(ai?.ats),

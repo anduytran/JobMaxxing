@@ -116,7 +116,7 @@ export const scanResume = createServerFn({ method: "POST" })
                   returning id::text as id, to_json(created_at) as created_at_iso`,
           params: [
             data.fileName, review.grade, review.score, review.summary,
-            JSON.stringify({ suggestions: review.suggestions, fields: f, source: review.source, ats: review.ats ?? null }),
+            JSON.stringify({ suggestions: review.suggestions, fields: f, source: review.source, ats: review.ats ?? null, outcome: review.outcome ?? null }),
             user.id,
           ],
         },
@@ -297,7 +297,7 @@ export const saveResumeVersion = createServerFn({ method: "POST" })
   });
 
 function toStored(r: Record<string, unknown>): StoredReview {
-  const d = (r["details"] ?? {}) as { suggestions?: StoredReview["suggestions"]; fields?: ResumeFields; source?: string; ats?: StoredReview["ats"] };
+  const d = (r["details"] ?? {}) as { suggestions?: StoredReview["suggestions"]; fields?: ResumeFields; source?: string; ats?: StoredReview["ats"]; outcome?: string | null };
   const grade = String(r["grade"]);
   return {
     id: String(r["id"]),
@@ -305,6 +305,7 @@ function toStored(r: Record<string, unknown>): StoredReview {
     grade: (GRADES as string[]).includes(grade) ? (grade as Grade) : "C",
     score: Number(r["overall_score"] ?? 0),
     summary: String(r["summary"] ?? ""),
+    outcome: d.outcome || undefined,
     suggestions: Array.isArray(d.suggestions) ? d.suggestions : [],
     fields: d.fields ?? EMPTY_FIELDS,
     source: d.source === "fallback" ? "fallback" : "raia",

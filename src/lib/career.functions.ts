@@ -30,6 +30,11 @@ export type CareerDashboard = {
   radar: RadarTrackerRow[];
   peerActive: PeerActive[];
   peerRecent: PeerRecent[];
+  solo: SoloInterview[];
+};
+export type SoloInterview = {
+  id: string; job: string | null; type: string | null; overall: number | null; at: string;
+  strengths: string[]; improvements: string[]; transcript: { speaker: string; text: string }[];
 };
 
 const EMPTY_STREAK: StreakInfo = { current: 0, longest: 0, lastActivity: null, freezes: 0 };
@@ -61,9 +66,9 @@ export async function bumpStreak(userId: string): Promise<void> {
 export const getCareerDashboard = createServerFn({ method: "GET" }).handler(async (): Promise<CareerDashboard> => {
   const { currentUser } = await import("./auth.server");
   const user = await currentUser();
-  if (!user) return { streak: EMPTY_STREAK, goal: null, elo: [], radar: [], peerActive: [], peerRecent: [] };
+  if (!user) return { streak: EMPTY_STREAK, goal: null, elo: [], radar: [], peerActive: [], peerRecent: [], solo: [] };
   try {
-    const [streak, goal, log, ratings, profile, radar, peers] = await Promise.all([
+    const [streak, goal, log, ratings, profile, radar, peers, solos] = await Promise.all([
       neonQuery(
         `select current_streak, longest_streak, to_json(last_activity_date) as last, streak_freeze_count
            from public.devup_activity_streak where user_id = $1`,
@@ -93,6 +98,11 @@ export const getCareerDashboard = createServerFn({ method: "GET" }).handler(asyn
                 grade, interviewer_grade, to_json(created_at) as at
            from public.devup_peer_session where (host_id::text = $1 or guest_id::text = $1)
            order by created_at desc limit 12`,
+        [user.id],
+      ),
+      neonQuery(
+        `select id::text as id, job, type, overall, grade, transcript, to_json(created_at) as at
+           from public.devup_interview where user_id = $1 order by created_at desc limit 20`,
         [user.id],
       ),
     ]);
@@ -177,10 +187,20 @@ export const getCareerDashboard = createServerFn({ method: "GET" }).handler(asyn
         ? { targetRole: (goalRow["target_role"] as string | null) ?? null, targetLevel: level, targetElo: Number(goalRow["target_elo"]) }
         : null,
       elo, radar: radarRows, peerActive, peerRecent: peerRecent.slice(0, 6),
+      solo: solos.rows.map((r) => {
+        const g = (r["grade"] ?? {}) as { strengths?: string[]; improvements?: string[] };
+        const t = Array.isArray(r["transcript"]) ? (r["transcript"] as { speaker: string; text: string }[]) : [];
+        return {
+          id: String(r["id"]), job: (r["job"] as string | null) ?? null, type: (r["type"] as string | null) ?? null,
+          overall: r["overall"] == null ? null : Number(r["overall"]), at: String(r["at"] ?? ""),
+          strengths: (g.strengths ?? []).slice(0, 3), improvements: (g.improvements ?? []).slice(0, 3),
+          transcript: t.map((x) => ({ speaker: String(x.speaker), text: String(x.text) })),
+        };
+      }),
     };
   } catch (e) {
     console.error("career dashboard failed", e);
-    return { streak: EMPTY_STREAK, goal: null, elo: [], radar: [], peerActive: [], peerRecent: [] };
+    return { streak: EMPTY_STREAK, goal: null, elo: [], radar: [], peerActive: [], peerRecent: [], solo: [] };
   }
 });
 

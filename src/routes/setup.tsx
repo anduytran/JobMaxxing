@@ -347,6 +347,9 @@ function GradeHeader({ review }: { review: StoredReview }) {
           <p className="mt-2 text-xs text-muted-foreground">Raise it above {XP_RULES.levelUpScore} for a +{XP_RULES.levelUp} XP Level Up.</p>
         )}
         {review.summary && <p className="mt-3 text-sm text-muted-foreground">{review.summary}</p>}
+        <div className="mt-3 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 text-sm">
+          <span className="font-semibold text-primary">Final outcome: </span>{review.outcome || outcomeLabel(review.score)}
+        </div>
         <p className="mt-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
           {review.source === "raia" ? "graded by: JobMaxxing Resume Agent" : "graded by: JobMaxxing offline checker"}
         </p>
@@ -588,4 +591,12 @@ function DetectedFields({ review }: { review: StoredReview }) {
       )}
     </div>
   );
+}
+
+function outcomeLabel(score: number) {
+  if (score >= 90) return "Ready to send — apply with confidence.";
+  if (score >= 80) return "Strong and ready to send; a couple of polish fixes will make it stand out.";
+  if (score >= 65) return "A solid base — work through the top fixes and it'll be ready to send.";
+  if (score > 0) return "Good start — tackle the top fixes first and rescan to see your score climb.";
+  return "We couldn't read enough to grade — upload a clearer file or add more detail.";
 }
