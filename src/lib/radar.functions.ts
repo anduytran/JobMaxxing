@@ -27,18 +27,22 @@ export type RadarJob = {
   viewed: boolean;
 };
 
-type AdzunaListing = {
-  id: number;
+/** Source-agnostic listing. id is prefixed ("adz_", "rem_", "muse_", "joo_") so rows
+ *  from different job boards never collide in devup_job_radar. */
+type RawListing = {
+  id: string;
   title: string;
-  company?: { display_name?: string };
-  location?: { display_name?: string };
+  company: string;
+  location: string;
   description: string;
-  redirect_url: string;
-  salary_min?: number;
-  salary_max?: number;
-  created: string;
-  contract_time?: string;
+  url: string;
+  salaryMin: number | null;
+  salaryMax: number | null;
+  postedAt: string;
+  contractTime: string | null;
 };
+
+const stripHtml = (s: string) => s.replace(/<[^>]+>/g, " ").replace(/&[a-z#0-9]+;/gi, " ").replace(/\s+/g, " ").trim();
 
 // ---------------- skill extraction & normalization ----------------
 
@@ -134,13 +138,23 @@ function scoreJob(job: { title: string; description: string; location: string; s
 
 // ---------------- Adzuna fetch ----------------
 
-async function fetchAdzuna(prefs: JobPrefs): Promise<{ listings: AdzunaListing[]; error?: string }> {
+type AdzunaListing = {
+  id: number;
+  title: string;
+  company?: { display_name?: string };
+  location?: { display_name?: string };
+  description: string;
+  redirect_url: string;
+  salary_min?: number;
+  salary_max?: number;
+  created: string;
+  contract_time?: string;
+};
+
+async function fetchAdzuna(roles: string[], where: string | undefined): Promise<RawListing[]> {
   const appId = process.env["ADZUNA_APPLICATION_ID"];
   const appKey = process.env["ADZUNA_API_KEY"];
-  if (!appId || !appKey) return { listings: [], error: "Job listings aren't connected yet. Add the Adzuna Application ID and API key in project settings." };
-  const roles = tokens(prefs.roles).slice(0, 3);
-  if (!roles.length) roles.push("software developer");
-  const where = tokens(prefs.locations).filter((t) => !/^remote/.test(t))[0];
+  if (!appId || !appKey) return [];
   const seen = new Set<string>();
   const jobs: AdzunaListing[] = [];
   // Title-only search per target role: plain "what" matches any word anywhere in the
@@ -166,16 +180,152 @@ async function fetchAdzuna(prefs: JobPrefs): Promise<{ listings: AdzunaListing[]
     await search({ title_only: role }, 1);
     if (jobs.length < 20) await search({ title_only: role }, 2);
   }
-  // Too few exact titles (rare roles): widen to the exact phrase anywhere, then keep only
-  // listings whose title shares the role's key words.
+  // Too few exact titles (rare roles): widen to the exact phrase anywhere.
   if (jobs.length < 8) for (const role of roles) await search({ what_phrase: role }, 1);
+  return jobs.map((l) => ({
+    id: `adz_${l.id}`,
+    title: String(l.title ?? ""),
+    company: l.company?.display_name ?? "Unknown company",
+    location: l.location?.display_name ?? "",
+    description: l.description ?? "",
+    url: l.redirect_url ?? "",
+    salaryMin: typeof l.salary_min === "number" ? Math.round(l.salary_min) : null,
+    salaryMax: typeof l.salary_max === "number" ? Math.round(l.salary_max) : null,
+    postedAt: l.created ?? "",
+    contractTime: l.contract_time ?? null,
+  }));
+}
+
+/** Remotive: free, keyless, remote tech jobs. One search per target role. */
+async function fetchRemotive(roles: string[]): Promise<RawListing[]> {
+  const out: RawListing[] = [];
+  for (const role of roles) {
+    try {
+      const res = await fetch(`https://remotive.com/api/remote-jobs?search=${encodeURIComponent(role)}&limit=50`, { signal: AbortSignal.timeout(15_000) });
+      if (!res.ok) { console.error("Remotive search failed", res.status); continue; }
+      const body = (await res.json()) as { jobs?: any[] };
+      for (const j of body.jobs ?? []) {
+        out.push({
+          id: `rem_${j.id}`,
+          title: String(j.title ?? ""),
+          company: String(j.company_name ?? "Unknown company"),
+          location: String(j.candidate_required_location ?? "Remote") || "Remote",
+          description: stripHtml(String(j.description ?? "")),
+          url: String(j.url ?? ""),
+          salaryMin: null,
+          salaryMax: null,
+          postedAt: String(j.publication_date ?? ""),
+          contractTime: j.job_type ? String(j.job_type) : null,
+        });
+      }
+    } catch (err) { console.error("Remotive fetch error", err); }
+  }
+  return out;
+}
+
+/** The Muse: free public API, no key. Searches by location, so the title gate does the
+ *  role filtering. Skipped when the user only wants remote (The Muse is location-based). */
+async function fetchTheMuse(where: string | undefined): Promise<RawListing[]> {
+  if (!where) return [];
+  const out: RawListing[] = [];
+  for (let page = 1; page <= 2; page++) {
+    try {
+      const url = new URL("https://www.themuse.com/api/public/jobs");
+      url.searchParams.set("location", where);
+      url.searchParams.set("page", String(page));
+      url.searchParams.set("descending", "true");
+      const res = await fetch(url, {
+        signal: AbortSignal.timeout(15_000),
+        // The Muse's CDN rejects requests without a browser-like user agent.
+        headers: { "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36", Accept: "application/json" },
+      });
+      if (!res.ok) { console.error("The Muse search failed", res.status); break; }
+      const body = (await res.json()) as { results?: any[] };
+      for (const j of body.results ?? []) {
+        out.push({
+          id: `muse_${j.id}`,
+          title: String(j.name ?? ""),
+          company: String(j.company?.name ?? "Unknown company"),
+          location: Array.isArray(j.locations) ? j.locations.map((l: any) => l?.name).filter(Boolean).join(", ") : "",
+          description: stripHtml(String(j.contents ?? "")),
+          url: String(j.refs?.landing_page ?? ""),
+          salaryMin: null,
+          salaryMax: null,
+          postedAt: String(j.publication_date ?? ""),
+          contractTime: null,
+        });
+      }
+    } catch (err) { console.error("The Muse fetch error", err); break; }
+  }
+  return out;
+}
+
+/** Jooble: broad aggregator, free API key required. Skipped until JOOBLE_API_KEY is set. */
+async function fetchJooble(roles: string[], where: string | undefined): Promise<RawListing[]> {
+  const apiKey = process.env["JOOBLE_API_KEY"];
+  if (!apiKey) return [];
+  const out: RawListing[] = [];
+  for (const role of roles) {
+    try {
+      const res = await fetch(`https://jooble.org/api/${apiKey}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ keywords: role, ...(where ? { location: where } : {}) }),
+        signal: AbortSignal.timeout(15_000),
+      });
+      if (!res.ok) { console.error("Jooble search failed", res.status, (await res.text()).slice(0, 300)); continue; }
+      const body = (await res.json()) as { jobs?: any[] };
+      for (const j of body.jobs ?? []) {
+        // Jooble has no stable id — hash the link so refreshes dedupe correctly.
+        const link = String(j.link ?? "");
+        let h = 0;
+        for (let i = 0; i < link.length; i++) h = (h * 31 + link.charCodeAt(i)) >>> 0;
+        out.push({
+          id: `joo_${h.toString(36)}`,
+          title: String(j.title ?? ""),
+          company: String(j.company ?? "Unknown company"),
+          location: String(j.location ?? ""),
+          description: stripHtml(String(j.snippet ?? "")),
+          url: link,
+          salaryMin: parseSalary(String(j.salary ?? "")),
+          salaryMax: null,
+          postedAt: String(j.updated ?? ""),
+          contractTime: j.type ? String(j.type) : null,
+        });
+      }
+    } catch (err) { console.error("Jooble fetch error", err); }
+  }
+  return out;
+}
+
+async function fetchJobs(prefs: JobPrefs): Promise<{ listings: RawListing[]; error?: string }> {
+  const roles = tokens(prefs.roles).slice(0, 3);
+  if (!roles.length) roles.push("software developer");
+  const where = tokens(prefs.locations).filter((t) => !/^remote/.test(t))[0];
+  const wantRemote = /remote/i.test(prefs.workMode ?? "") || /remote/i.test(prefs.locations ?? "");
+
+  const [adzuna, remotive, muse, jooble] = await Promise.all([
+    fetchAdzuna(roles, where),
+    fetchRemotive(roles),
+    fetchTheMuse(where),
+    fetchJooble(roles, where),
+  ]);
+  const seen = new Set<string>();
+  const jobs: RawListing[] = [];
+  for (const l of [...adzuna, ...(wantRemote ? remotive : []), ...muse, ...jooble]) {
+    if (seen.has(l.id)) continue;
+    seen.add(l.id);
+    jobs.push(l);
+  }
+  const error = jobs.length ? undefined : "No listings came back from any job board — try again in a moment.";
+
   // Cheap regex pre-filter first (no API calls): drop titles that share nothing with a
-  // target role. Then one batched agent call makes the strict final call on the
+  // target role. Then one batched agent call makes the relevance call on the
   // survivors; if the agent is unreachable, the regex survivors stand.
-  const filtered = jobs.filter((l) => roles.some((r) => titleFit(String(l.title ?? ""), r) > 0));
+  const filtered = jobs.filter((l) => roles.some((r) => titleFit(l.title, r) > 0));
   const { filterRadarTitles } = await import("./interview/agents.server");
-  const keep = await filterRadarTitles(filtered.map((l) => String(l.title ?? "")), roles);
-  return { listings: keep ? keep.map((i) => filtered[i]!) : filtered };
+  const keep = await filterRadarTitles(filtered.map((l) => l.title), roles);
+  return { listings: keep ? keep.map((i) => filtered[i]!) : filtered, ...(error ? { error } : {}) };
 }
 
 const clean = (v: unknown, max: number): string | null => {
@@ -205,29 +355,29 @@ export const getRadar = createServerFn({ method: "POST" })
 
       let fetchError: string | undefined;
       if (data.refresh) {
-        const { listings, error } = await fetchAdzuna(prefs);
+        const { listings, error } = await fetchJobs(prefs);
         fetchError = error;
         if (listings.length) {
           const statements = listings.slice(0, 40).map((l) => ({
             query:
               "insert into public.devup_job_radar (user_id, job_id, data) values ($1, $2, $3::jsonb) " +
               "on conflict (user_id, job_id) do update set data = excluded.data, updated_at = now()",
-            params: [uid, String(l.id), JSON.stringify({
+            params: [uid, l.id, JSON.stringify({
               title: clean(l.title, 200) ?? "Untitled role",
-              company: clean(l.company?.display_name, 120) ?? "Unknown company",
-              location: clean(l.location?.display_name, 160) ?? "",
-              description: (l.description ?? "").replace(/\s+/g, " ").slice(0, 6000),
-              url: clean(l.redirect_url, 600) ?? "",
-              salaryMin: typeof l.salary_min === "number" ? Math.round(l.salary_min) : null,
-              salaryMax: typeof l.salary_max === "number" ? Math.round(l.salary_max) : null,
-              postedAt: clean(l.created, 40) ?? "",
-              contractTime: clean(l.contract_time, 40) ?? null,
+              company: clean(l.company, 120) ?? "Unknown company",
+              location: clean(l.location, 160) ?? "",
+              description: l.description.replace(/\s+/g, " ").slice(0, 6000),
+              url: clean(l.url, 600) ?? "",
+              salaryMin: l.salaryMin,
+              salaryMax: l.salaryMax,
+              postedAt: clean(l.postedAt, 40) ?? "",
+              contractTime: clean(l.contractTime, 40) ?? null,
             })],
           }));
           // Drop untouched listings from earlier searches so old titles stop crowding the radar.
           statements.push({
             query: "delete from public.devup_job_radar where user_id = $1 and status = 'new' and not (job_id = any($2::text[]))",
-            params: [uid, listings.slice(0, 40).map((l) => String(l.id))],
+            params: [uid, listings.slice(0, 40).map((l) => l.id)],
           } as never);
           await neonExecute(statements);
         }
@@ -288,7 +438,7 @@ export const getRadar = createServerFn({ method: "POST" })
 export const setRadarStatus = createServerFn({ method: "POST" })
   .inputValidator((i: { jobId: unknown; status: unknown }) => {
     const jobId = clean(i.jobId, 40);
-    if (!jobId || !/^[0-9]+$/.test(jobId)) throw new Error("Invalid role.");
+    if (!jobId || !/^[a-z0-9_-]{3,48}$/i.test(jobId)) throw new Error("Invalid role.");
     if (!RADAR_STATUSES.includes(i.status as RadarStatus)) throw new Error("Invalid status.");
     return { jobId, status: i.status as RadarStatus };
   })
@@ -328,7 +478,7 @@ export const setRadarStatus = createServerFn({ method: "POST" })
 export const markRadarViewed = createServerFn({ method: "POST" })
   .inputValidator((i: { jobId: unknown }) => {
     const jobId = clean(i.jobId, 40);
-    if (!jobId || !/^[0-9]+$/.test(jobId)) throw new Error("Invalid role.");
+    if (!jobId || !/^[a-z0-9_-]{3,48}$/i.test(jobId)) throw new Error("Invalid role.");
     return { jobId };
   })
   .handler(async ({ data }): Promise<SaveResult & { awarded?: number }> => {
@@ -377,7 +527,7 @@ export const markRadarViewed = createServerFn({ method: "POST" })
 export const awardRadarPracticeXp = createServerFn({ method: "POST" })
   .inputValidator((i: { jobId: unknown }) => {
     const jobId = clean(i.jobId, 40);
-    if (!jobId || !/^[0-9]+$/.test(jobId)) throw new Error("Invalid role.");
+    if (!jobId || !/^[a-z0-9_-]{3,48}$/i.test(jobId)) throw new Error("Invalid role.");
     return { jobId };
   })
   .handler(async ({ data }): Promise<SaveResult & { awarded?: number }> => {
