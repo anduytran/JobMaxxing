@@ -19,6 +19,9 @@ import openToWork from "@/assets/open-to-work.png.asset.json";
 import { questTitleLines } from "@/lib/quest-titles";
 import { ResetCountdown } from "@/components/ResetCountdown";
 import { useInterviewModePicker } from "@/components/InterviewModePicker";
+import { WEARABLE_ART } from "@/components/Wearables";
+import { WEARABLES } from "@/lib/wearables";
+import { useWornWearables } from "@/lib/use-wearables";
 
 const MAX_ART: Record<string, MaxPose> = { setup: "resume", resume: "resume", interview: "interview", skills: "skills", hunt: "hunt", branding: "dap", social: "dap" };
 
@@ -133,6 +136,7 @@ function Dashboard() {
   const featPose = MAX_ART[featKey] ?? "interview";
   const interviewQuest = open.find((q) => q.category.toLowerCase() === "interview");
   const reward = featured ? `+${featured.xp} XP` : interviewQuest ? `+${interviewQuest.xp} quest XP · up to 400 interview XP` : "Up to 400 XP";
+  const wornWearables = useWornWearables();
   const destination = featKey === "interview" ? "/interview" : featKey === "setup" || featKey === "resume" ? "/setup" : featKey === "hunt" ? "/market" : "/quests";
   const featArt = MAX_POSES[featPose];
   const featScale = MAX_SCALE[featPose];
