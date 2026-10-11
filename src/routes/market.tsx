@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Bookmark, Check, ExternalLink, Loader2, Mic, RefreshCw, Undo2 } from "lucide-react";
+import { Bookmark, Check, ExternalLink, Loader2, Mic, RefreshCw, Trash2, Undo2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/AppShell";
