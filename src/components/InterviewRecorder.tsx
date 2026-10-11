@@ -15,17 +15,19 @@ import { beginRecorderMix, endRecorderMix } from "@/lib/interview/recorder-mix";
 
 const MIMES = ["video/mp4;codecs=avc1,mp4a", "video/mp4", "video/webm;codecs=vp9,opus", "video/webm"];
 
-export function InterviewRecorder({ active, kind, title, onSaved }: {
+export function InterviewRecorder({ active, kind, title, onSaved, onDecision }: {
   active: boolean; kind: RecordingKind; title: string;
   onSaved?: (recordingId: string) => void;
+  /** Fires once the user answers the consent prompt (true = record, false = no thanks). */
+  onDecision?: (record: boolean) => void;
 }) {
   const [ask, setAsk] = useState(false);
   const [recording, setRecording] = useState(false);
   const decided = useRef(false);
   const rec = useRef<{ mr: MediaRecorder; stream: MediaStream; chunks: Blob[]; started: number } | null>(null);
   const preview = useRef<HTMLVideoElement>(null);
-  const meta = useRef({ kind, title, onSaved });
-  meta.current = { kind, title, onSaved };
+  const meta = useRef({ kind, title, onSaved, onDecision });
+  meta.current = { kind, title, onSaved, onDecision };
   // Draggable preview: null = default spot (top right); once dragged, absolute x/y.
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
   const drag = useRef<{ dx: number; dy: number } | null>(null);
@@ -98,6 +100,7 @@ export function InterviewRecorder({ active, kind, title, onSaved }: {
     } catch {
       toast.error("Couldn't start the camera", { description: "The interview continues without recording." });
     }
+    meta.current.onDecision?.(true);
   };
 
   useEffect(() => {
@@ -116,7 +119,7 @@ export function InterviewRecorder({ active, kind, title, onSaved }: {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>No thanks</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => meta.current.onDecision?.(false)}>No thanks</AlertDialogCancel>
             <AlertDialogAction onClick={() => void begin()}>Record me</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
