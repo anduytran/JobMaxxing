@@ -100,6 +100,7 @@ export function InterviewRecorder({ active, kind, title, onSaved, onDecision }: 
     } catch {
       toast.error("Couldn't start the camera", { description: "The interview continues without recording." });
     }
+    meta.current.onDecision?.(true);
   };
 
   useEffect(() => {
@@ -118,7 +119,7 @@ export function InterviewRecorder({ active, kind, title, onSaved, onDecision }: 
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>No thanks</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => meta.current.onDecision?.(false)}>No thanks</AlertDialogCancel>
             <AlertDialogAction onClick={() => void begin()}>Record me</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
