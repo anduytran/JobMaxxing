@@ -351,7 +351,6 @@ export const peerGrade = createServerFn({ method: "POST" })
           .catch((e) => console.error("rating update failed", e));
       }
       // Skill Expert re-rates both people (candidate and interviewer) from this session.
-      const interviewerId = s.hostRole === "interviewer" ? s.hostId : s.guestId;
       const { refreshSkills } = await import("./skills.server");
       const pick = (g: { overall: number; metrics: Record<string, { score: number } | null>; strengths: string[]; improvements: string[] }) => ({
         overall: g.overall, metrics: Object.fromEntries(Object.entries(g.metrics).map(([k, v]) => [k, v ? v.score : null])),
