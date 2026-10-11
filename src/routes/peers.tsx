@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Max } from "@/components/Max";
 import { PageHeader } from "@/components/AppShell";
+import { FriendsPanel } from "@/components/FriendsPanel";
 import { SkillText } from "@/components/skill-text";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +22,7 @@ import { LENGTHS, type InterviewLength, type InterviewType, type ParsedJob } fro
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/peers")({
+  validateSearch: (s: Record<string, unknown>) => ({ join: typeof s["join"] === "string" ? s["join"] : undefined }),
   head: () => ({
     meta: [
       { title: "Peer Interviews — JobMaxxing" },
@@ -41,6 +43,7 @@ const capitalize = (s: string) =>
 
 function Page() {
   const { gainXp } = useGame();
+  const joinParam = Route.useSearch().join;
   const [stage, setStage] = useState<Stage>("intro");
   const [busy, setBusy] = useState(false);
   const [jd, setJd] = useState("");
@@ -134,16 +137,26 @@ function Page() {
     } catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
   };
 
-  const join = async () => {
+  const join = async (override?: string) => {
+    const useCode = (override ?? joinCode).trim().toUpperCase();
+    if (useCode.length !== 6) return;
     setBusy(true);
     try {
-      const { id } = await joinPeerSession({ data: { code: joinCode } });
+      const { id } = await joinPeerSession({ data: { code: useCode } });
       setSessionId(id);
       await refresh(id);
       setStage((st) => (st === "intro" ? "lobby" : st));
       toast.success("You're in!", { description: "Start the call to talk with your friend." });
     } catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
   };
+
+  // Auto-join when arriving from an accepted invite (?join=CODE).
+  const autoJoined = useRef(false);
+  useEffect(() => {
+    if (!joinParam || autoJoined.current) return;
+    autoJoined.current = true;
+    void join(joinParam);
+  }, [joinParam]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const act = async (fn: () => Promise<unknown>) => {
     setBusy(true);
@@ -217,6 +230,8 @@ function Page() {
         </div>
       )}
 
+      {stage === "intro" && <FriendsPanel />}
+
       {stage === "setup" && (
         <section className="panel space-y-4 p-6">
           <div>
@@ -275,19 +290,22 @@ function Page() {
       )}
 
       {stage === "lobby" && (
-        <section className="panel flex flex-col items-center px-6 py-20 text-center">
-          <Max pose="wave" className="mascot-float h-24 w-24" />
-          <h2 className="mt-6 text-2xl font-bold">Waiting for your friend…</h2>
-          <p className="mt-2 text-sm text-muted-foreground">Share this code — the session starts as soon as they join.</p>
-          <div className="mt-6 flex items-center gap-3">
-            <div className="rounded-lg border-2 border-primary bg-primary/10 px-8 py-4 font-mono text-4xl font-bold tracking-[0.4em] text-primary">{code || session?.code}</div>
-            <Button variant="outline" size="icon" aria-label="Copy code" onClick={() => { void navigator.clipboard.writeText(code); toast.success("Code copied"); }}>
-              <Copy />
-            </Button>
-          </div>
-          <p className="mt-4 flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="h-3 w-3 animate-spin" /> Checking for your friend every few seconds…</p>
-          <Button variant="ghost" className="mt-6" onClick={reset}>Cancel session</Button>
-        </section>
+        <div className="mx-auto grid max-w-4xl gap-4 md:grid-cols-[1fr_20rem]">
+          <section className="panel flex flex-col items-center px-6 py-20 text-center">
+            <Max pose="wave" className="mascot-float h-24 w-24" />
+            <h2 className="mt-6 text-2xl font-bold">Waiting for your friend…</h2>
+            <p className="mt-2 text-sm text-muted-foreground">Share this code, or invite a friend directly — they'll get a pop-up to join.</p>
+            <div className="mt-6 flex items-center gap-3">
+              <div className="rounded-lg border-2 border-primary bg-primary/10 px-8 py-4 font-mono text-4xl font-bold tracking-[0.4em] text-primary">{code || session?.code}</div>
+              <Button variant="outline" size="icon" aria-label="Copy code" onClick={() => { void navigator.clipboard.writeText(code); toast.success("Code copied"); }}>
+                <Copy />
+              </Button>
+            </div>
+            <p className="mt-4 flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="h-3 w-3 animate-spin" /> Checking for your friend every few seconds…</p>
+            <Button variant="ghost" className="mt-6" onClick={reset}>Cancel session</Button>
+          </section>
+          <FriendsPanel inviteCode={code || session?.code} roleTitle={job?.title ?? null} />
+        </div>
       )}
 
       {stage === "live" && session && (

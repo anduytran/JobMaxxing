@@ -104,7 +104,7 @@ function InterviewModeDialog({ open, onOpenChange }: { open: boolean; onOpenChan
                 {card}
               </Link>
             ) : (
-              <Link key={mode.key} to="/peers" className={cls} onClick={() => onOpenChange(false)}>
+              <Link key={mode.key} to="/peers" search={{ join: undefined }} className={cls} onClick={() => onOpenChange(false)}>
                 {card}
               </Link>
             );
