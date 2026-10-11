@@ -63,6 +63,9 @@ export function TokenUsagePanel() {
               tokens across {fmt(data.calls)} {data.calls === 1 ? "action" : "actions"}
             </span>
           </div>
+          <div className="text-sm text-muted-foreground">
+            Average {fmt(Math.round(data.total / Math.max(1, data.calls)))} tokens per action.
+          </div>
 
           <div className="space-y-2">
             {data.byAction.map((row) => (
@@ -71,7 +74,9 @@ export function TokenUsagePanel() {
                   <span className="font-medium">{LABELS[row.action] ?? row.action}</span>
                   <span className="tabular-nums text-muted-foreground">
                     {fmt(row.tokens)}
-                    <span className="ml-1 text-xs">({row.calls})</span>
+                    <span className="ml-1 text-xs">
+                      ({row.calls} × avg {fmt(Math.round(row.tokens / Math.max(1, row.calls)))})
+                    </span>
                   </span>
                 </div>
                 <div className="h-1.5 overflow-hidden rounded-full bg-muted">
