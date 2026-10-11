@@ -81,7 +81,10 @@ function titleFit(title: string, role: string): number {
   const tw = new Set(words(title));
   const rw = words(role);
   if (!rw.length) return 0;
-  const hit = rw.filter((w) => tw.has(w) || [...tw].some((x) => x.startsWith(w) || w.startsWith(x) && x.length > 3)).length / rw.length;
+  // Exact word, or a prefix match where both words are long enough to be meaningful
+  // ("architect" ~ "architecture"). Short words like "ai" must match exactly, so
+  // "aide"/"airport" never count as "ai".
+  const hit = rw.filter((w) => tw.has(w) || (w.length > 3 && [...tw].some((x) => x.length > 3 && (x.startsWith(w) || w.startsWith(x))))).length / rw.length;
   return hit === 1 ? 0.75 : hit >= 0.5 && rw.length > 2 ? 0.4 : 0;
 }
 
@@ -166,8 +169,11 @@ async function fetchAdzuna(prefs: JobPrefs): Promise<{ listings: AdzunaListing[]
   // Too few exact titles (rare roles): widen to the exact phrase anywhere, then keep only
   // listings whose title shares the role's key words.
   if (jobs.length < 8) for (const role of roles) await search({ what_phrase: role }, 1);
+  // Always keep only listings whose title fits a target role — never fall back to the
+  // unfiltered set, or a rare role ("AI Architect") floods the radar with anything
+  // that mentioned the words in its description.
   const filtered = jobs.filter((l) => roles.some((r) => titleFit(String(l.title ?? ""), r) > 0));
-  return { listings: filtered.length >= 3 ? filtered : jobs };
+  return { listings: filtered };
 }
 
 const clean = (v: unknown, max: number): string | null => {
@@ -229,9 +235,19 @@ export const getRadar = createServerFn({ method: "POST" })
         "select job_id, data, status, viewed from public.devup_job_radar where user_id = $1",
         [uid],
       );
+      // Hide listings outside the user's areas (unless they want remote and the job is
+      // remote). Runs at read time, so stale rows from older searches drop out too.
+      const locTokens = tokens(prefs.locations).filter((t) => !/^remote/.test(t));
+      const wantRemote = /remote/i.test(prefs.workMode ?? "") || /remote/i.test(prefs.locations ?? "");
+      const inArea = (location: string, description: string) => {
+        if (!locTokens.length) return true;
+        if (locTokens.some((t) => location.toLowerCase().includes(t))) return true;
+        return wantRemote && /remote|work from home|anywhere/i.test(`${location} ${description}`);
+      };
       const jobs: RadarJob[] = [];
       for (const r of rows) {
         const d = (r["data"] ?? {}) as any; // Adzuna snapshot: free-form keys, validated field by field below
+        if (!inArea(String(d.location ?? ""), String(d.description ?? ""))) continue;
         const title = String(d.title ?? "Untitled role");
         const description = String(d.description ?? "");
         const jdSkills = await extractSkills(`${title} ${description}`);
