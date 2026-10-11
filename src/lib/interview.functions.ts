@@ -209,7 +209,7 @@ export const speakInterviewLine = createServerFn({ method: "POST" })
 export const getScribeToken = createServerFn({ method: "POST" }).handler(async () => {
   const { requireUser } = await import("./auth.server");
   await requireUser();
-  const key = process.env.ELEVENLABS_API_KEY;
+  const key = process.env["ELEVENLABS_API_KEY"];
   if (!key) return { token: null as string | null };
   const res = await fetch("https://api.elevenlabs.io/v1/single-use-token/realtime_scribe", { method: "POST", headers: { "xi-api-key": key } });
   if (!res.ok) { console.error("Scribe token failed", res.status, await res.text()); return { token: null as string | null }; }
