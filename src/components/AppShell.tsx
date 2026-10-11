@@ -57,6 +57,34 @@ export function AppShell({ children }: { children: ReactNode }) {
     try { await signOut(); await router.invalidate(); } finally { setSigningOut(false); }
   };
 
+  // Profile photo: read the picked file, downscale to a 256px square on a
+  // canvas, and hand the small data URL to the server (no file storage).
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [savingAvatar, setSavingAvatar] = useState(false);
+  const pickAvatar = async (file: File | undefined) => {
+    if (!file) return;
+    if (!/^image\/(png|jpeg|webp)$/.test(file.type)) { toast.error("Choose a PNG, JPG, or WebP image."); return; }
+    setSavingAvatar(true);
+    try {
+      const bitmap = await createImageBitmap(file);
+      const side = Math.min(bitmap.width, bitmap.height);
+      const canvas = document.createElement("canvas");
+      canvas.width = canvas.height = 256;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) throw new Error("no canvas");
+      ctx.drawImage(bitmap, (bitmap.width - side) / 2, (bitmap.height - side) / 2, side, side, 0, 0, 256, 256);
+      bitmap.close();
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+      if (!(await setAvatar(dataUrl))) return;
+      toast.success("Profile picture updated.");
+    } catch {
+      toast.error("Couldn't read that image. Try another one.");
+    } finally {
+      setSavingAvatar(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  };
+
   return (
     <MotionConfig reducedMotion="user"><div className="flex min-h-screen flex-col">
       <InviteListener />
