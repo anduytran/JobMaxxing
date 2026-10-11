@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Max } from "@/components/Max";
 import { PageHeader } from "@/components/AppShell";
+import { FriendsPanel } from "@/components/FriendsPanel";
 import { SkillText } from "@/components/skill-text";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -228,6 +229,8 @@ function Page() {
           </section>
         </div>
       )}
+
+      {stage === "intro" && <FriendsPanel />}
 
       {stage === "setup" && (
         <section className="panel space-y-4 p-6">
