@@ -16,7 +16,7 @@ const formatDate = (iso: string) => {
 
 /** Spider-web chart of the skills the user chose to track (up to MAX_TRACKED).
  *  Tracked skills are what the Skill Expert grades; ratings never go down. */
-export function SkillRadar() {
+export function SkillRadar({ onPractice }: { onPractice?: (skill: string) => void }) {
   const [ratings, setRatings] = useState<Rating[]>([]);
   const [tracked, setTracked] = useState<string[]>([]);
   const [draft, setDraft] = useState<string[] | null>(null);
@@ -173,15 +173,41 @@ export function SkillRadar() {
         Strongest: <span className="font-semibold text-foreground">{best.skill}</span> · {best.rating}
       </div>
       {rows.length >= 3 ? (
-        <div className="mt-2 h-80">
-          <ResponsiveContainer width="100%" height="100%">
-            <RadarChart data={rows} outerRadius="72%">
-              <PolarGrid stroke="var(--border)" />
-              <PolarAngleAxis dataKey="skill" tick={{ fill: "var(--muted-foreground)", fontSize: 12 }} />
-              <PolarRadiusAxis domain={[RATING_MIN, RATING_MAX]} tick={false} axisLine={false} />
-              <Radar dataKey="rating" stroke="var(--primary)" fill="var(--primary)" fillOpacity={0.25} strokeWidth={2} />
-            </RadarChart>
-          </ResponsiveContainer>
+        <div className="mt-2 flex flex-col gap-4 lg:flex-row">
+          <div className="h-80 min-w-0 flex-1">
+            <ResponsiveContainer width="100%" height="100%">
+              <RadarChart data={rows} outerRadius="72%">
+                <PolarGrid stroke="var(--border)" />
+                <PolarAngleAxis dataKey="skill" tick={{ fill: "var(--muted-foreground)", fontSize: 12 }} />
+                <PolarRadiusAxis domain={[RATING_MIN, RATING_MAX]} tick={false} axisLine={false} />
+                <Radar dataKey="rating" stroke="var(--primary)" fill="var(--primary)" fillOpacity={0.25} strokeWidth={2} />
+              </RadarChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="flex min-w-0 flex-1 flex-col justify-center gap-3">
+            {rows.map((r) => (
+              <div key={r.skill}>
+                <div className="flex items-baseline justify-between gap-2 text-sm">
+                  <span className="min-w-0 truncate font-medium">{r.skill}</span>
+                  <span className="shrink-0 font-semibold tabular-nums">{"unrated" in r && r.unrated ? "not rated yet" : r.rating}</span>
+                </div>
+                <div className="mt-1 h-2 overflow-hidden rounded-full bg-muted">
+                  <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${Math.min(100, ((r.rating - RATING_MIN) / (RATING_MAX - RATING_MIN)) * 100)}%` }} />
+                </div>
+              </div>
+            ))}
+            {onPractice && (() => {
+              const rated = rows.filter((r) => !("unrated" in r && r.unrated));
+              if (!rated.length) return null;
+              const lowest = rated.reduce((a, b) => (a.rating <= b.rating ? a : b));
+              return (
+                <div className="mt-1 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-muted/60 px-3 py-2.5 text-sm">
+                  <span className="text-muted-foreground">Your lowest-rated skill is <b className="text-foreground">{lowest.skill}</b>. Practice it next.</span>
+                  <Button size="sm" variant="outline" onClick={() => onPractice(lowest.skill)}>Practice</Button>
+                </div>
+              );
+            })()}
+          </div>
         </div>
       ) : (
         <p className="my-6 text-sm text-muted-foreground">Track at least 3 skills to draw the web.</p>

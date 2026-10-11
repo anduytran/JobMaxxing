@@ -31,11 +31,15 @@ export type CareerDashboard = {
   peerActive: PeerActive[];
   peerRecent: PeerRecent[];
   solo: SoloInterview[];
+  xpEvents: XpEvent[];
+  interviewCount: number;
 };
 export type SoloInterview = {
   id: string; job: string | null; type: string | null; overall: number | null; at: string;
   strengths: string[]; improvements: string[]; transcript: { speaker: string; text: string }[];
+  metrics: { quality: number | null; conciseness: number | null; questions: number | null };
 };
+export type XpEvent = { label: string; amount: number; at: string };
 
 const EMPTY_STREAK: StreakInfo = { current: 0, longest: 0, lastActivity: null, freezes: 0 };
 
@@ -101,9 +105,9 @@ export const getStreak = createServerFn({ method: "GET" }).handler(async (): Pro
 export const getCareerDashboard = createServerFn({ method: "GET" }).handler(async (): Promise<CareerDashboard> => {
   const { currentUser } = await import("./auth.server");
   const user = await currentUser();
-  if (!user) return { streak: EMPTY_STREAK, goal: null, elo: [], radar: [], peerActive: [], peerRecent: [], solo: [] };
+  if (!user) return { streak: EMPTY_STREAK, goal: null, elo: [], radar: [], peerActive: [], peerRecent: [], solo: [], xpEvents: [], interviewCount: 0 };
   try {
-    const [streak, goal, log, ratings, profile, radar, peers, solos] = await Promise.all([
+    const [streak, goal, log, ratings, profile, radar, peers, solos, xpEvents, interviewCount] = await Promise.all([
       neonQuery(
         `select current_streak, longest_streak, to_json(last_activity_date) as last, streak_freeze_count
            from public.devup_activity_streak where user_id = $1`,
@@ -138,6 +142,17 @@ export const getCareerDashboard = createServerFn({ method: "GET" }).handler(asyn
       neonQuery(
         `select id::text as id, job, type, overall, grade, transcript, to_json(created_at) as at
            from public.devup_interview where user_id = $1 and deleted_at is null order by created_at desc limit 20`,
+        [user.id],
+      ),
+      neonQuery(
+        `select e.amount, e.reason, to_json(e.created_at) as at, q.title as quest_title
+           from public.devup_xp_event e
+           left join public.devup_quest q on q.user_id = e.user_id and q.id = substring(e.reason from 7)
+          where e.user_id = $1 order by e.created_at desc limit 8`,
+        [user.id],
+      ),
+      neonQuery(
+        `select count(*)::int as n from public.devup_interview where user_id = $1 and deleted_at is null`,
         [user.id],
       ),
     ]);
@@ -224,19 +239,40 @@ export const getCareerDashboard = createServerFn({ method: "GET" }).handler(asyn
         : null,
       elo, radar: radarRows, peerActive, peerRecent: peerRecent.slice(0, 6),
       solo: solos.rows.map((r) => {
-        const g = (r["grade"] ?? {}) as { strengths?: string[]; improvements?: string[] };
+        const g = (r["grade"] ?? {}) as {
+          strengths?: string[]; improvements?: string[];
+          metrics?: { quality?: { score?: number }; conciseness?: { score?: number }; candidateQuestions?: { score?: number } };
+        };
         const t = Array.isArray(r["transcript"]) ? (r["transcript"] as { speaker: string; text: string }[]) : [];
         return {
           id: String(r["id"]), job: (r["job"] as string | null) ?? null, type: (r["type"] as string | null) ?? null,
           overall: r["overall"] == null ? null : Number(r["overall"]), at: String(r["at"] ?? ""),
           strengths: (g.strengths ?? []).slice(0, 3), improvements: (g.improvements ?? []).slice(0, 3),
           transcript: t.map((x) => ({ speaker: String(x.speaker), text: String(x.text) })),
+          metrics: {
+            quality: typeof g.metrics?.quality?.score === "number" ? Math.round(g.metrics.quality.score) : null,
+            conciseness: typeof g.metrics?.conciseness?.score === "number" ? Math.round(g.metrics.conciseness.score) : null,
+            questions: typeof g.metrics?.candidateQuestions?.score === "number" ? Math.round(g.metrics.candidateQuestions.score) : null,
+          },
         };
       }),
+      xpEvents: xpEvents.rows.map((r) => {
+        const reason = String(r["reason"] ?? "");
+        const label = reason.startsWith("quest:")
+          ? ((r["quest_title"] as string | null) ?? "Quest completed")
+          : reason.startsWith("radar:save:") ? "Saved a role"
+          : reason.startsWith("radar:review:") ? "Reviewed Job Radar matches"
+          : reason.startsWith("radar:practice:") ? "Practiced for a saved role"
+          : reason.startsWith("resume:") ? "Accepted a resume fix"
+          : reason.startsWith("milestone:") ? "Milestone reached"
+          : reason || "XP earned";
+        return { label, amount: Number(r["amount"] ?? 0), at: String(r["at"] ?? "") };
+      }),
+      interviewCount: Number(interviewCount.rows[0]?.["n"] ?? 0),
     };
   } catch (e) {
     console.error("career dashboard failed", e);
-    return { streak: EMPTY_STREAK, goal: null, elo: [], radar: [], peerActive: [], peerRecent: [], solo: [] };
+    return { streak: EMPTY_STREAK, goal: null, elo: [], radar: [], peerActive: [], peerRecent: [], solo: [], xpEvents: [], interviewCount: 0 };
   }
 });
 
