@@ -768,7 +768,7 @@ export async function reviewResume(input: {
   owner?: { userId: string; name: string } | undefined;
   openFixes?: ResumeSuggestion[] | undefined;
   openQuests?: { id: string; title: string; description?: string | undefined }[] | undefined;
-}): Promise<ResumeReview & { integrated: string[]; questsDone: string[]; questsNew: { title: string; description: string }[] }> {
+}): Promise<ResumeReview & { integrated: string[]; questsDone: string[]; questsNew: { title: string; description: string; kind: "in-app" | "external" }[] }> {
   const open = input.openFixes ?? [];
   const quests = input.openQuests ?? [];
   const questText = quests.length ? `\n\nOPEN QUESTS:\n${quests.map((q) => `[${q.id}] ${q.title}${q.description ? ` — ${q.description}` : ""}`).join("\n")}` : "\n\nOPEN QUESTS: (none)";
@@ -779,7 +779,7 @@ export async function reviewResume(input: {
   // after it or the grader drops them.
   const ctx = `${RESUME_TASK}${RESUME_RUBRIC} ${RESUME_GUARDRAILS} ${CHECK_TASK}${RESUME_SCHEMA}` +
     ' The same JSON object MUST also contain these top-level keys: "integrated":["fix ids"],"questsDone":["quest ids from OPEN QUESTS"],' +
-    '"questsNew":[{"title":"4-8 word goal","description":"one sentence"}]. Use empty arrays when none apply.';
+    '"questsNew":[{"title":"4-8 word goal","description":"one sentence","kind":"in-app"|"external"}]. Use empty arrays when none apply.';
   let ai: Record<string, unknown> | null = null;
   if (textBody) {
     ai = await askResumeConversation<Record<string, unknown>>(input.owner,
@@ -808,7 +808,8 @@ export async function reviewResume(input: {
     .flatMap((q: any) => {
       const title = String(q?.title ?? "").trim().slice(0, 120);
       const description = String(q?.description ?? "").trim().slice(0, 300);
-      return title && !openTitles.has(title.toLowerCase()) ? [{ title, description }] : [];
+      const kind = q?.kind === "external" ? "external" as const : "in-app" as const;
+      return title && !openTitles.has(title.toLowerCase()) ? [{ title, description, kind }] : [];
     })
     .slice(0, 3);
   const review = ai && normalizeReview(ai, "raia");
