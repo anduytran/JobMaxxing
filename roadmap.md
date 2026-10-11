@@ -155,3 +155,12 @@
 - [x] src/lib/peer.functions.ts: create/join/poll/ask/answer/end/save-grade server functions, participant-scoped.
 - [x] /peers rewritten: host flow (JD → parse → options → lobby code), join by code, live text interview, graded report; candidate earns interview XP, interviewer +25 XP.
 - [x] Verified end to end with two temporary accounts (code join, live turns, graded report on both sides); test accounts deleted.
+
+## Token tracking, Collection loader, invites, streak bonus
+- [x] Settings token-usage panel reading `devup_token_usage`; every Raia prompt, conversation and voice call records tokens against the signed-in user.
+- [x] Verified with a real job analysis: 7,462 tokens stored and shown; temporary session removed.
+- [x] Collection loading message replaced with the animated Max video; render confirmed.
+- [x] Friend invite → interview audited live with two throwaway accounts: host lobby code, in-app invite banner with role title, accept joins the room, both sides paired, timer gated on both ready.
+- [x] Peer rooms now show profile names instead of raw email prefixes (same rule as the friend list).
+- [x] 7-day streak bonus: `bumpStreak` pays +250 XP the first time a streak reaches each 7-day mark, idempotent via a partial unique index on `streak:<n>` reasons; Career explains the paid and next bonus.
+- [x] Bonus statement tested against the database (6 → 7 days pays 250 once, replay pays 0) and the Career card and Recent XP feed verified in the browser; throwaway accounts deleted.
