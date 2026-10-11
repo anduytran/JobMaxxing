@@ -186,7 +186,7 @@ function Dashboard() {
       {/* Phase 1 — the featured quest fills the whole screen, edge to edge, under the top bar. */}
       <div className="relative">
         <section
-          className={cn("featured-screen relative flex min-h-[calc(100svh_-_4rem)] items-stretch overflow-hidden border-b bg-hero px-6 pb-24 pt-8 md:px-20 md:pb-28 md:pt-14", (featKey === "interview" || featKey === "social") && "featured-stage")}
+          className={cn("featured-screen relative flex min-h-[calc(100svh_-_4rem)] items-stretch overflow-hidden border-b bg-hero px-6 pb-24 pt-16 md:px-20 md:pb-28 md:pt-16", (featKey === "interview" || featKey === "social") && "featured-stage")}
           aria-label="Featured quest"
         >
           <SceneBackdrop kind={featKey} />
@@ -202,17 +202,6 @@ function Dashboard() {
                 <h2 className="min-h-[2.2em] break-words text-foreground text-3xl font-bold leading-[1.1] sm:text-4xl lg:text-5xl"><span className="block">Practice your</span><span className="block">mock interview</span></h2>
               )}
               <p ref={subRef} className="mt-5 max-w-md text-lg text-muted-foreground">{scene.blurb}</p>
-              {featured ? (
-                <div className="mt-8 flex flex-wrap items-center gap-3">
-                  <Button asChild className="h-auto rounded-xl px-8 py-4 text-base"><Link to={featLink}>
-                    Lock In <ArrowRight className="h-5 w-5" />
-                  </Link></Button>
-                </div>
-              ) : (
-                <Button asChild className="mt-8 h-auto rounded-xl px-8 py-4 text-base"><Link to="/interview" search={{ radar: undefined }}>
-                  Lock In <ArrowRight className="h-5 w-5" />
-                </Link></Button>
-              )}
               <p className="mt-6 flex items-center gap-2 text-sm text-muted-foreground"><Clock className="h-4 w-4" />{featured ? `+${featured.xp} XP waiting for you` : "15 minutes to a more confident you"}</p>
             </div>
             {total > 1 && (
