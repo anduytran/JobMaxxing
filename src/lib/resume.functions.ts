@@ -208,41 +208,15 @@ export const scanResume = createServerFn({ method: "POST" })
   });
 
 /**
- * Accepts one suggestion: when `lineText` is given the matching line is replaced
- * and a new version is saved, then the fix pays its XP once. The guard in the
- * UPDATE (only flip suggestions not already applied) makes a double click award nothing.
+ * Fixes can't be self-marked: they are only confirmed by uploading/re-scanning an
+ * updated resume, where the grader checks them (see scanResume). Kept so old
+ * clients get a clear message instead of a missing endpoint.
  */
 export const applyResumeSuggestion = createServerFn({ method: "POST" })
-  .inputValidator((i: { reviewId: unknown; suggestionId: unknown; sections?: unknown }) => {
-    const reviewId = String(i.reviewId ?? "");
-    if (!/^\d{1,19}$/.test(reviewId)) throw new Error("Unknown review.");
-    const suggestionId = clean(i.suggestionId, 60);
-    if (!suggestionId) throw new Error("Unknown suggestion.");
-    return { reviewId, suggestionId, sections: cleanSections(i.sections) };
-  })
-  .handler(async ({ data }): Promise<Result<{ xp: number; awarded: number; version: number | null }>> => {
-    try {
-      const user = await requireUser();
-      void user;
-      return { ok: false, error: "Upload your updated resume to check this fix — the grader confirms it from the new version." };
-      const rows: Record<string, unknown>[] = [];
-      let version: number | null = null;
-      if (data.sections.length) {
-        const saved = await neonExecute(
-          `insert into public.devup_resume_version (user_id, version, file_name, sections, note)
-           select $1, coalesce(max(version), 0) + 1,
-                  coalesce((select file_name from public.devup_resume_version where user_id = $1 order by version desc limit 1), 'resume'),
-                  $2::jsonb, $3
-             from public.devup_resume_version where user_id = $1
-           returning version`,
-          [user.id, JSON.stringify(data.sections), `Accepted fix: ${data.suggestionId}`],
-        );
-        version = Number(saved.rows[0]?.["version"] ?? 0) || null;
-      }
-      return { ok: true, xp: Number(rows[0]?.["xp"] ?? 0), awarded: Number(rows[0]?.["awarded"] ?? 0), version };
-    } catch (err) {
-      return fail(err);
-    }
+  .inputValidator((i: { reviewId: unknown; suggestionId: unknown; sections?: unknown }) => i)
+  .handler(async (): Promise<Result<{ xp: number; awarded: number; version: number | null }>> => {
+    await requireUser();
+    return { ok: false, error: "Upload your updated resume to check this fix — the grader confirms it from the new version." };
   });
 
 /**
