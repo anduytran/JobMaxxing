@@ -21,9 +21,10 @@ import openToWork from "@/assets/open-to-work.png.asset.json";
 import { questTitleLines } from "@/lib/quest-titles";
 import { ResetCountdown } from "@/components/ResetCountdown";
 import { useInterviewModePicker } from "@/components/InterviewModePicker";
-import { WEARABLE_ART } from "@/components/Wearables";
+import { WEARABLE_ART, pct } from "@/components/Wearables";
+import { placeWearable } from "@/lib/wearable-fit";
 import { WEARABLES } from "@/lib/wearables";
-import { useWornWearables } from "@/lib/use-wearables";
+import { useOutfit } from "@/lib/use-wearables";
 
 const MAX_ART: Record<string, MaxPose> = { setup: "resume", resume: "resume", interview: "interview", skills: "skills", hunt: "hunt", branding: "dap", social: "dap" };
 
@@ -140,7 +141,7 @@ function Dashboard() {
   const featPose = MAX_ART[featKey] ?? "interview";
   const interviewQuest = open.find((q) => q.category.toLowerCase() === "interview");
   const reward = featured ? `+${featured.xp} XP` : interviewQuest ? `+${interviewQuest.xp} quest bonus · up to 400 XP by score` : "Up to 400 XP by score";
-  const wornWearables = useWornWearables();
+  const { ids: wornWearables, spots: wornSpots } = useOutfit();
   const destination = featKey === "interview" ? "/interview" : featKey === "setup" || featKey === "resume" ? "/setup" : featKey === "hunt" ? "/market" : "/quests/add";
   const featArt = MAX_POSES[featPose];
   const featScale = MAX_SCALE[featPose];
@@ -253,7 +254,7 @@ function Dashboard() {
               <div className="relative h-full w-full">
                 <img key={featArt} src={featArt} alt={featured ? `Max ready for: ${featured.title}` : "Max with a microphone, ready to interview you"} width={816} height={816} decoding="sync" draggable={false} className="h-full w-full object-contain" />
                 {WEARABLES.filter((w) => wornWearables.includes(w.id)).map((w) => (
-                  <img key={w.id} src={WEARABLE_ART[w.id]} alt="" draggable={false} className="pointer-events-none absolute" style={{ left: `${w.left}%`, top: `${w.top}%`, width: `${w.width}%` }} />
+                  <img key={w.id} src={WEARABLE_ART[w.id]} alt="" draggable={false} className="pointer-events-none absolute" style={pct(placeWearable(w, featPose, wornSpots))} />
                 ))}
               </div>
             </div>

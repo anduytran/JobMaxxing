@@ -1,6 +1,7 @@
 import { MAX_POSES, type MaxPose } from "@/components/Max";
 import { WEARABLES, type WearableDef } from "@/lib/wearables";
-import { useWornWearables } from "@/lib/use-wearables";
+import { useOutfit } from "@/lib/use-wearables";
+import { placeWearable } from "@/lib/wearable-fit";
 import bowAsset from "@/assets/wearables/bow.png.asset.json";
 import earsAsset from "@/assets/wearables/ears.png.asset.json";
 import hornsAsset from "@/assets/wearables/horns.png.asset.json";
@@ -40,11 +41,12 @@ export function WearableArt({ item, width, className }: { item: WearableDef; wid
   );
 }
 
-/** Max (wave pose) wearing the given wearable ids, scaled fluidly to `width`. */
-export function MaxFigure({ worn = [], width = 200, className }: { worn?: string[]; width?: number; className?: string }) {
+/** Max (any pose, default wave) wearing the given wearable ids, scaled fluidly to `width`. */
+export function MaxFigure({ worn = [], width = 200, className, pose = "wave" }: { worn?: string[]; width?: number; className?: string; pose?: MaxPose }) {
+  const { spots } = useOutfit();
   return (
     <span className={`relative inline-block select-none ${className ?? ""}`} style={{ width, aspectRatio: "1 / 1" }}>
-      <img src={MAX_POSES.wave} alt="Max" draggable={false} className="absolute inset-0 h-full w-full object-contain" />
+      <img src={MAX_POSES[pose]} alt="Max" draggable={false} className="absolute inset-0 h-full w-full object-contain" />
       {WEARABLES.filter((w) => worn.includes(w.id)).map((w) => (
         <img
           key={w.id}
@@ -52,7 +54,7 @@ export function MaxFigure({ worn = [], width = 200, className }: { worn?: string
           alt=""
           draggable={false}
           className="absolute"
-          style={{ left: `${w.left}%`, top: `${w.top}%`, width: `${w.width}%` }}
+          style={pct(placeWearable(w, pose, spots))}
         />
       ))}
     </span>
@@ -61,11 +63,11 @@ export function MaxFigure({ worn = [], width = 200, className }: { worn?: string
 
 /**
  * Max in any pose, dressed with the signed-in user's equipped wearables.
- * Placement percentages are calibrated to the wave pose; other poses share the
- * same normalized silhouette, so the overlay lands close enough to read as worn.
+ * Placement follows each pose's measured head/face anchors plus any spot the
+ * user dragged the wearable to for that pose.
  */
 export function WornMax({ pose = "wave", className, alt = "" }: { pose?: MaxPose | undefined; className?: string | undefined; alt?: string | undefined }) {
-  const worn = useWornWearables();
+  const { ids: worn, spots } = useOutfit();
   return (
     <span className={`relative inline-block select-none ${className ?? ""}`}>
       <img src={MAX_POSES[pose]} alt={alt} width={640} height={640} draggable={false} className="mascot-personality block h-full w-full object-contain" />
@@ -76,9 +78,13 @@ export function WornMax({ pose = "wave", className, alt = "" }: { pose?: MaxPose
           alt=""
           draggable={false}
           className="pointer-events-none absolute"
-          style={{ left: `${w.left}%`, top: `${w.top}%`, width: `${w.width}%` }}
+          style={pct(placeWearable(w, pose, spots))}
         />
       ))}
     </span>
   );
+}
+
+export function pct(p: { left: number; top: number; width: number }) {
+  return { left: `${p.left}%`, top: `${p.top}%`, width: `${p.width}%` };
 }
