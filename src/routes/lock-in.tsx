@@ -70,9 +70,10 @@ function LockIn() {
           <span aria-hidden className="desk-paper right-[20%] top-[52%] h-28 w-24 -rotate-3" />
           <span aria-hidden className="desk-paper left-[42%] top-[6%] h-36 w-28 rotate-2" />
 
-          <div className="relative z-10 mx-auto w-full max-w-6xl px-4 pt-10 md:px-8">
+          {/* Heading on the left, Max's note pinned to the desk on the right. */}
+          <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-wrap items-start justify-between gap-6 px-4 pt-10 md:px-8">
             <h1 className="text-4xl font-bold md:text-5xl">Choose your mode</h1>
-            <MaxNote note={note} onCycle={next} className="mt-4" />
+            <MaxNote note={note} onCycle={next} className="-rotate-2" />
           </div>
 
           <div className="relative z-10 mx-auto grid w-full max-w-6xl flex-1 content-end items-end gap-10 px-4 pb-14 md:grid-cols-3 md:px-8">

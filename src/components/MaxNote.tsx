@@ -18,7 +18,7 @@ export function MaxNote({ note, onCycle, className = "" }: { note: string; onCyc
           key={note}
           initial={reducedMotion ? false : { opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
-          className="block min-h-[3rem] text-base leading-relaxed"
+          className="block min-h-[5rem] text-[15px] leading-relaxed"
           aria-live="polite"
         >
           {note || "\u00A0"}
@@ -26,7 +26,8 @@ export function MaxNote({ note, onCycle, className = "" }: { note: string; onCyc
       </span>
     </>
   );
-  const cls = `sticky-note block max-w-md px-5 py-4 text-left ${className}`;
+  // Squared up, like a real 3x3 note — a wide banner reads as a text strip.
+  const cls = `sticky-note block w-[280px] px-5 py-4 text-left ${className}`;
   return onCycle ? (
     <button type="button" onClick={onCycle} aria-label="Another note from Max" title="Another note from Max" className={cls}>
       <span className="flex items-start gap-3">{inner}</span>
