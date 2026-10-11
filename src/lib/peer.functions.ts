@@ -360,6 +360,11 @@ export const peerGrade = createServerFn({ method: "POST" })
         candidateId && refreshSkills(candidateId, { kind: "peer interview (candidate)", job: s.job?.title ?? null, ...pick(candidate) }),
         interviewerId && refreshSkills(interviewerId, { kind: "peer interview (interviewer)", job: s.job?.title ?? null, ...pick(interviewer) }),
       ].map((p) => Promise.resolve(p).catch((e) => console.error("skill refresh failed", e))));
+      // Both sides keep their daily streak alive with a graded session.
+      const { bumpStreak } = await import("./career.functions");
+      await Promise.all(
+        [candidateId, interviewerId].filter(Boolean).map((id) => bumpStreak(id as string).catch((e) => console.error("streak update failed", e))),
+      );
     } catch (e) {
       await neonExecute("update public.devup_peer_session set grade = null where id = $1::uuid", [s.id]);
       throw e;

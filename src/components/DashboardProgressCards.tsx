@@ -38,6 +38,7 @@ export function XpCareerCard({ xp, level, levelXp, lastGain, title }: { xp: numb
     <div className="mt-4 min-h-7" aria-live="polite"><AnimatePresence mode="wait">{lastGain ? <motion.p key={lastGain.key} initial={reduced ? false : { opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-2 text-sm font-semibold text-success"><Sparkles className="h-4 w-4 shrink-0" />+{lastGain.amount} XP · Nice work!</motion.p> : <p className="flex items-center gap-2 text-xs text-muted-foreground"><Target className="h-4 w-4 shrink-0" />Your next win is one action away.</p>}</AnimatePresence></div>
     <div className="mt-4 flex flex-wrap items-center gap-3">
       <Button asChild variant="outline" className="min-w-0 flex-1 justify-between"><Link to="/quests">Find your next win<ArrowRight className="h-4 w-4 shrink-0" /></Link></Button>
+      <Button asChild variant="outline" className="min-w-0 flex-1 justify-between"><Link to="/store">Spend XP<ArrowRight className="h-4 w-4 shrink-0" /></Link></Button>
       <Button asChild variant="ghost" className="min-w-0 justify-between text-muted-foreground hover:text-primary"><Link to="/settings">Set career direction<ArrowRight className="h-4 w-4 shrink-0" /></Link></Button>
     </div>
     <p className="mt-3 flex items-start gap-2 text-xs text-muted-foreground"><Check className="h-4 w-4 shrink-0 text-success" /><span>Your pace. Your path. Progress over comparison.</span></p>
