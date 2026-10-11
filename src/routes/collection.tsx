@@ -78,6 +78,7 @@ function Collection() {
     setState({ ...state, activeWearables: next });
     equipWearables({ data: { ids: next } }).then((r) => {
       if (!r.ok) toast.error(r.error);
+      else refreshWearables();
     });
   };
 
