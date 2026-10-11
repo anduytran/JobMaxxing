@@ -15,6 +15,8 @@ import {
 } from "@/lib/interview/types";
 import { createBrowserVoice, createElevenLabsVoice, withScribeListening, type VoiceAgent, type VoicePlaybackState } from "@/lib/interview/voice";
 import { cn } from "@/lib/utils";
+import { InterviewRecorder, RecordingPlayer } from "@/components/InterviewRecorder";
+import { linkRecording, useRecordings } from "@/lib/interview-recordings";
 
 type Stage = "setup" | "review" | "options" | "live" | "your_questions" | "grading" | "report";
 
@@ -83,6 +85,11 @@ export function InterviewFlow({ agents, api, radar, profileSkills = [], captions
   const [convId, setConvId] = useState<string | null>(null);
   const [savedId, setSavedId] = useState<string | null>(null);
   const [thinking, setThinking] = useState(false);
+  const [recId, setRecId] = useState<string | null>(null);
+  const recordings = useRecordings();
+  const myRecording = recordings.find((r) => r.id === recId);
+  const savedRef = useRef<string | null>(null);
+  savedRef.current = savedId;
   useEffect(() => {
     const base = agents.voice === "elevenlabs"
       ? createElevenLabsVoice((t) => api.speak(t), setPlayback, setSpokenWord)
@@ -267,6 +274,8 @@ export function InterviewFlow({ agents, api, radar, profileSkills = [], captions
     setStage("grading");
     try {
       const g = await api.grade(turns, job, questions, type, savedId);
+      if (g.sessionId) savedRef.current = g.sessionId;
+      if (recId && savedRef.current) linkRecording(recId, savedRef.current);
       setGrade(g);
       setRatings(g.ratings ?? []);
       setStage("report");
@@ -287,10 +296,12 @@ export function InterviewFlow({ agents, api, radar, profileSkills = [], captions
     return () => clearTimeout(t);
   }, [thinking, playback, stage, turns, voiceOn]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const reset = () => { stopVoice(); setTyping(false); setConvId(null); setStage("setup"); setGrade(null); setTurns([]); setJob(null); setAck(false); radarJobId.current = null; autoFinish.current = false; };
+  const reset = () => { stopVoice(); setTyping(false); setConvId(null); setStage("setup"); setGrade(null); setTurns([]); setJob(null); setAck(false); setRecId(null); radarJobId.current = null; autoFinish.current = false; };
 
   return (
     <div className={cn(immersive ? "w-full" : "mx-auto max-w-[1500px] space-y-4 px-4 py-6 md:px-10 md:py-10")}>
+      <InterviewRecorder active={stage === "live" || stage === "your_questions"} kind={demo ? "demo" : "solo"} title={job?.title ?? "Mock interview"}
+        onSaved={(id) => { setRecId(id); if (savedRef.current) linkRecording(id, savedRef.current); }} />
       {!immersive && <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">Build your next chapter</p>
@@ -533,6 +544,13 @@ export function InterviewFlow({ agents, api, radar, profileSkills = [], captions
                 <p className="text-xs text-muted-foreground">Another round on the same role is the fastest way to lift your weakest score.</p>
               </div>
             </div>
+
+            {myRecording && (
+              <div className="space-y-2">
+                <h2 className="text-sm font-semibold">Rewatch your interview</h2>
+                <RecordingPlayer r={myRecording} />
+              </div>
+            )}
 
             <details className="text-sm">
               <summary className="cursor-pointer font-medium text-muted-foreground hover:text-foreground">Read full transcript</summary>

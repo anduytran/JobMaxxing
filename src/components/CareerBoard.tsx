@@ -10,6 +10,8 @@ import { levelTitle, XP_PER_LEVEL } from "@/lib/game";
 import { STREAK_BONUS_XP, nextStreakBonus } from "@/lib/streak.shared";
 import { trashInterview, type CareerDashboard, type SoloInterview } from "@/lib/career.functions";
 import { cn } from "@/lib/utils";
+import { RecordingPlayer } from "@/components/InterviewRecorder";
+import { useRecordings } from "@/lib/interview-recordings";
 
 function Meter({ value, fill = "bg-primary" }: { value: number; fill?: string }) {
   const reduced = useReducedMotion();
@@ -236,6 +238,7 @@ function MetricBar({ label, value }: { label: string; value: number | null }) {
 export function SavedInterviewsCard({ items, onChanged }: { items: SoloInterview[]; onChanged: () => void }) {
   const [open, setOpen] = useState<string | null>(null);
   const [full, setFull] = useState<string | null>(null);
+  const recordings = useRecordings();
   const trash = (id: string) => { trashInterview({ data: { id } }).then(onChanged).catch(() => {}); };
   return (
     <section aria-label="Saved interviews" className="panel hover-lift flex min-w-0 flex-col p-6">
@@ -266,7 +269,7 @@ export function SavedInterviewsCard({ items, onChanged }: { items: SoloInterview
               )}
               <div className="mt-3 flex items-center gap-3 text-xs">
                 <button type="button" className="font-medium text-primary underline" onClick={() => setOpen(open === s.id ? null : s.id)}>
-                  {open === s.id ? "Hide score and feedback" : "Open score, feedback and transcript"}
+                  {open === s.id ? "Hide score and feedback" : recordings.some((r) => r.interviewId === s.id) ? "Open video, score and feedback" : "Open score, feedback and transcript"}
                 </button>
                 <button type="button" aria-label="Trash this interview" title="Trash this interview"
                   className="ml-auto text-muted-foreground transition-colors hover:text-destructive"
@@ -276,6 +279,7 @@ export function SavedInterviewsCard({ items, onChanged }: { items: SoloInterview
               </div>
               {open === s.id && (
                 <div className="mt-3 space-y-1.5 border-t pt-3 text-sm text-muted-foreground">
+                  {recordings.filter((r) => r.interviewId === s.id).map((r) => <RecordingPlayer key={r.id} r={r} compact />)}
                   {s.strengths.map((x, i) => <p key={`s${i}`}>+ {x}</p>)}
                   {s.improvements.map((x, i) => <p key={`i${i}`}>→ {x}</p>)}
                   {s.transcript.length > 0 && (
@@ -292,6 +296,26 @@ export function SavedInterviewsCard({ items, onChanged }: { items: SoloInterview
           ))}
         </ul>
       )}
+    </section>
+  );
+}
+
+/** Every interview video recorded in this tab (solo and peer). Not uploaded anywhere. */
+export function RecordingsCard() {
+  const recordings = useRecordings();
+  if (!recordings.length) return null;
+  return (
+    <section aria-label="Interview recordings" className="panel flex min-w-0 flex-col p-6">
+      <h2 className="text-base font-normal text-muted-foreground">Interview recordings</h2>
+      <p className="mt-1 text-xs text-muted-foreground">Kept on this device until you close the tab — download any you want to keep.</p>
+      <ul className="mt-3 grid gap-4 md:grid-cols-2">
+        {recordings.map((r) => (
+          <li key={r.id} className="space-y-1">
+            <div className="text-sm font-medium">{r.title} <span className="text-xs text-muted-foreground">· {new Date(r.at).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}</span></div>
+            <RecordingPlayer r={r} />
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }
