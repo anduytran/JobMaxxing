@@ -267,7 +267,7 @@ export async function startInterviewConversation(opts: {
     const context =
       `${TURN_RULES}\nTone: ${opts.roast ? "tough and blunt" : "friendly and professional"}. Interview type: ${opts.type}. ${typeFocus(opts.type)} ` +
       `Budget: about ${LENGTHS[opts.length].questions} questions in ~${Math.round(LENGTHS[opts.length].seconds / 60)} minutes.\n` +
-      `Job: ${JSON.stringify(opts.job)}\nQuestion plan (adapt follow-ups to the answers): ${JSON.stringify(opts.plan.map((q) => q.text))}`;
+      `Job: ${JSON.stringify(opts.job)}\nQuestion plan (adapt follow-ups to the answers; each entry's probe is the follow-up to use when the answer is thin): ${JSON.stringify(opts.plan.map((q) => ({ text: q.text, probe: probeFor(q.text) })))}`;
     const conv = await raiaPost<{ id: string }>(secret, "/conversations", {
       conversationUserId: user.id, title: `Mock interview: ${opts.job.title ?? "role"}`.slice(0, 255), context: context.slice(0, 250000),
     });
