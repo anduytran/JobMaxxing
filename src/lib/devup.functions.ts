@@ -32,11 +32,22 @@ export type GameState = {
   xp: number;
   roast: boolean;
   reducedMotion: boolean;
+  activeTitle: string | null;
+  activeTheme: string;
   quests: Quest[];
 };
 
 export type SaveResult = { ok: true; xp?: number } | { ok: false; error: string };
 
+
+/** Active 1.5x store booster, if any — multiplies XP (and therefore points). */
+async function xpBoost(userId: string): Promise<number> {
+  const { rows } = await neonExecute(
+    "select multiplier from public.devup_booster where user_id = $1 and expires_at > now() order by expires_at desc limit 1",
+    [userId],
+  );
+  return Number(rows[0]?.["multiplier"] ?? 1) || 1;
+}
 
 function fail(err: unknown): SaveResult {
   if (err instanceof Error && err.message === "Please sign in.") return { ok: false, error: err.message };
@@ -94,7 +105,7 @@ export const loadGame = createServerFn({ method: "GET" }).handler(
         },
         {
           query:
-            "select name, title, xp, roast, reduced_motion, skills, student, job_prefs, resume " +
+            "select name, title, xp, roast, reduced_motion, skills, student, job_prefs, resume, active_title, active_theme " +
             "from public.devup_profile where id = $1 limit 1",
           params: [PROFILE_ID],
         },
@@ -119,6 +130,8 @@ export const loadGame = createServerFn({ method: "GET" }).handler(
         xp: Number(profile?.xp ?? 0),
         roast: Boolean(profile?.roast ?? false),
         reducedMotion: Boolean(profile?.reduced_motion ?? false),
+        activeTitle: profile?.active_title ? String(profile.active_title) : null,
+        activeTheme: String(profile?.active_theme ?? "default"),
         quests: (results[3]?.rows ?? []).map((r: any) => ({
           id: String(r.id),
           title: String(r.title),
@@ -210,6 +223,7 @@ export const completeQuest = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<SaveResult> => {
     try {
       const PROFILE_ID = (await requireUser()).id;
+      const boost = await xpBoost(PROFILE_ID);
       const { rows } = await neonExecute(
         `with q as (
            update public.devup_quest
@@ -219,17 +233,17 @@ export const completeQuest = createServerFn({ method: "POST" })
          ),
          e as (
            insert into public.devup_xp_event (amount, reason, user_id)
-           select xp, 'quest:' || $1, $2 from q
+           select (xp * $3)::int, 'quest:' || $1, $2 from q
          ),
          p as (
            update public.devup_profile
-              set xp = xp + (select coalesce(sum(xp), 0) from q), updated_at = now()
+              set xp = xp + (select coalesce(sum((xp * $3)::int), 0) from q), updated_at = now()
             where id = $2
             returning xp
          )
-         select (select coalesce(sum(xp), 0) from q)::int as awarded,
+         select (select coalesce(sum((xp * $3)::int), 0) from q)::int as awarded,
                 (select xp from p)::int as xp`,
-        [data.id, PROFILE_ID],
+        [data.id, PROFILE_ID, boost],
       );
       const awarded = Number(rows[0]?.["awarded"] ?? 0);
       if (awarded === 0) return { ok: true }; // already done — nothing to award
@@ -292,15 +306,17 @@ export const gainXp = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<SaveResult> => {
     try {
       const PROFILE_ID = (await requireUser()).id;
+      const boost = await xpBoost(PROFILE_ID);
+      const amount = Math.round(data.amount * boost);
       const { results } = await neonExecute<{ results: any[] }>([
         {
           query: "insert into public.devup_xp_event (amount, reason, user_id) values ($1, $2, $3)",
-          params: [data.amount, data.reason, PROFILE_ID],
+          params: [amount, data.reason, PROFILE_ID],
         },
         {
           query:
             "update public.devup_profile set xp = xp + $1, updated_at = now() where id = $2 returning xp",
-          params: [data.amount, PROFILE_ID],
+          params: [amount, PROFILE_ID],
         },
       ]);
       return { ok: true, xp: Number(results[1]?.rows?.[0]?.xp ?? 0) };

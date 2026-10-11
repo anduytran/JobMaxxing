@@ -42,6 +42,8 @@ export const ACHIEVEMENTS = [
 type Game = {
   name: string; title: string; xp: number; level: number; levelXp: number;
   quests: Quest[]; roast: boolean; reducedMotion: boolean; lastGain: { amount: number; key: number } | null;
+  activeTitle: string | null; activeTheme: string;
+  setActiveTitle: (t: string | null) => void; setActiveTheme: (t: string) => void;
   setProfile: (n: string, t: string) => Promise<boolean>;
   completeQuest: (id: string) => void;
   addQuest: (q: Omit<Quest, "done">) => void;
@@ -74,6 +76,8 @@ export function GameProvider({
   const [quests, setQuests] = useState<Quest[]>(loaded?.quests ?? FALLBACK_QUESTS);
   const [roast, setRoastState] = useState(false);
   const [reducedMotion, setReducedMotionState] = useState(loaded?.reducedMotion ?? false);
+  const [activeTitle, setActiveTitle] = useState<string | null>(loaded?.activeTitle ?? null);
+  const [activeTheme, setActiveTheme] = useState(loaded?.activeTheme ?? "default");
   const [details, setDetails] = useState<Details>({
     skills: loaded?.skills ?? [], student: loaded?.student ?? {}, jobPrefs: loaded?.jobPrefs ?? {}, resume: loaded?.resume ?? null,
   });
@@ -88,6 +92,12 @@ export function GameProvider({
   useEffect(() => {
     document.documentElement.classList.toggle("reduce-motion", reducedMotion);
   }, [reducedMotion]);
+
+  // Store-bought dashboard theme.
+  useEffect(() => {
+    if (activeTheme === "default") document.documentElement.removeAttribute("data-theme");
+    else document.documentElement.setAttribute("data-theme", activeTheme);
+  }, [activeTheme]);
 
   // Writes go to Neon optimistically; a rejected write rolls the screen back.
   const rejected = (res: SaveResult | undefined, rollback: () => void) => {
@@ -111,6 +121,7 @@ export function GameProvider({
 
   const value: Game = {
     name, title, xp, quests, roast, reducedMotion, lastGain,
+    activeTitle, activeTheme, setActiveTitle, setActiveTheme,
     level: Math.floor(xp / XP_PER_LEVEL) + 1,
     levelXp: xp % XP_PER_LEVEL,
     setProfile: async (n, t) => {
