@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Check, Copy, Loader2, Mic, MicOff, Phone, PhoneOff, Send, ShieldAlert, Square, Timer, Users, Video, VideoOff } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Max } from "@/components/Max";
+import { WornMax } from "@/components/Wearables";
 import { PageHeader } from "@/components/AppShell";
 import { FriendsPanel } from "@/components/FriendsPanel";
 import { SkillText } from "@/components/skill-text";
@@ -210,7 +210,7 @@ function Page() {
       {stage === "intro" && (
         <div className="grid gap-4 md:grid-cols-2">
           <section className="panel flex flex-col items-center px-6 py-16 text-center">
-            <Max pose="dap" className="mascot-float h-24 w-24" />
+            <WornMax pose="dap" className="mascot-float h-24 w-24" />
             <h2 className="mt-6 text-2xl font-bold">Host a session</h2>
             <p className="mt-3 max-w-sm text-sm text-muted-foreground">
               Paste a job description, get a question plan, and share a code with a friend. Pick whether you answer or interview.
@@ -292,7 +292,7 @@ function Page() {
       {stage === "lobby" && (
         <div className="mx-auto grid max-w-4xl gap-4 md:grid-cols-[1fr_20rem]">
           <section className="panel flex flex-col items-center px-6 py-20 text-center">
-            <Max pose="wave" className="mascot-float h-24 w-24" />
+            <WornMax pose="wave" className="mascot-float h-24 w-24" />
             <h2 className="mt-6 text-2xl font-bold">Waiting for your friend…</h2>
             <p className="mt-2 text-sm text-muted-foreground">Share this code, or invite a friend directly — they'll get a pop-up to join.</p>
             <div className="mt-6 flex items-center gap-3">

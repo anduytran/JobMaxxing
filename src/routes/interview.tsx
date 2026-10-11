@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Captions, Keyboard, Loader2, Mic, RotateCcw, Send, Square, Volume2, VolumeX } from "lucide-react";
 import { InterviewVoicePresence, type InterviewVoiceState } from "@/components/InterviewVoicePresence";
 import { InterviewMicrophoneCheck } from "@/components/InterviewMicrophoneCheck";
-import { Max } from "@/components/Max";
+import { WornMax } from "@/components/Wearables";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { AcknowledgeDisclosure, InterviewDisclosure } from "@/components/InterviewDisclosure";
@@ -288,7 +288,7 @@ function Interview() {
       {stage === "intro" && (
         <section className="panel">
           <div className="flex flex-col items-center px-6 py-24 text-center">
-            <Max pose="interview" className="mascot-float h-28 w-28" />
+            <WornMax pose="interview" className="mascot-float h-28 w-28" />
             <h2 className="mt-8 text-3xl font-bold md:text-4xl">Confidence comes with practice.</h2>
             <p className="mt-4 max-w-lg text-muted-foreground">Practice personalized technical or behavioral questions and get a sample feedback report.</p>
             <Button size="lg" className="mt-8 px-7 py-6 text-base" onClick={() => setStage("setup")}>Start practicing</Button>
