@@ -45,7 +45,7 @@ export type PeerSession = {
   meIsHost: boolean;
 };
 
-const TYPES = ["technical", "behavioral", "mixed"] as const;
+const TYPES = ["technical", "behavioral", "mixed", "resume"] as const;
 const LENS = ["quick", "short", "standard", "long"] as const;
 const CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 
@@ -367,7 +367,7 @@ export const peerGrade = createServerFn({ method: "POST" })
       );
       // Save the session to both users' Career history.
       const jobTitle = s.job?.title ?? null;
-      const peerType = s.questions.some((q) => q.kind === "technical") ? (s.questions.every((q) => q.kind === "technical") ? "technical" : "mixed") : "behavioral";
+      const peerType = (TYPES as readonly string[]).includes(s.type) ? s.type : s.questions.some((q) => q.kind === "technical") ? (s.questions.every((q) => q.kind === "technical") ? "technical" : "mixed") : "behavioral";
       await Promise.all([
         candidateId && neonExecute(
           `insert into public.devup_interview (user_id, job, type, overall, grade, transcript) values ($1, $2, $3, $4, $5::jsonb, $6::jsonb)`,

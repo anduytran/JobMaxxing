@@ -254,7 +254,7 @@ function Interview() {
     if (!job) return;
     setStage("grading");
     try {
-      const g = await gradeInterviewTranscript({ data: { transcript: turns, job, plan: questions, sessionId: savedId } });
+      const g = await gradeInterviewTranscript({ data: { transcript: turns, job, plan: questions, sessionId: savedId, type } });
       setGrade(g);
       setRatings(g.ratings ?? []);
       setStage("report");
@@ -350,7 +350,7 @@ function Interview() {
           <h2 className="font-display text-xl">3 · Interview options{job.title ? ` — ${job.title}` : ""}</h2>
           <div className="grid gap-4 md:grid-cols-2">
             <Choice label="Interview type" value={type} onChange={setType}
-              options={[["mixed", "Mixed"], ["technical", "Technical"], ["behavioral", "Behavioral"]]} />
+              options={[["mixed", "Mixed"], ["technical", "Technical"], ["behavioral", "Behavioral"], ["resume", "Resume"]]} />
             <Choice label="Length" value={length} onChange={setLength}
               options={(Object.keys(LENGTHS) as InterviewLength[]).map((k) => [k, LENGTHS[k].label])} />
           </div>

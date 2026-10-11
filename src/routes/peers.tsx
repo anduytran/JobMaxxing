@@ -271,7 +271,7 @@ function Page() {
           <h2 className="font-display text-xl">3 · Session options{job.title ? ` — ${job.title}` : ""}</h2>
           <div className="grid gap-4 md:grid-cols-3">
             <Choice label="Interview type" value={type} onChange={setType}
-              options={[["mixed", "Mixed"], ["technical", "Technical"], ["behavioral", "Behavioral"]]} />
+              options={[["mixed", "Mixed"], ["technical", "Technical"], ["behavioral", "Behavioral"], ["resume", "Resume"]]} />
             <Choice label="Length" value={length} onChange={setLength}
               options={(Object.keys(LENGTHS) as InterviewLength[]).map((k) => [k, LENGTHS[k].label])} />
             <Choice label="Your role" value={role} onChange={setRole}

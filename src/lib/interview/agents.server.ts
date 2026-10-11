@@ -193,7 +193,7 @@ const probeFor = (text: string): string | null =>
 
 /** The kind each plan position must have: mixed = two behavioral per technical, opening behavioral. */
 const wantedKind = (type: InterviewType, i: number): "technical" | "behavioral" =>
-  type === "technical" ? "technical" : type === "behavioral" ? "behavioral" : i % 3 === 2 ? "technical" : "behavioral";
+  type === "technical" ? "technical" : type === "behavioral" || type === "resume" ? "behavioral" : i % 3 === 2 ? "technical" : "behavioral";
 
 const stacksFor = (job: ParsedJob) =>
   [...new Set((job.skills ?? []).flatMap((s) => STACK_MAP.filter(([re]) => re.test(s)).map(([, tags]) => tags).flat()))];
@@ -232,9 +232,10 @@ function enforceMix(qs: InterviewQuestion[], type: InterviewType, job: ParsedJob
   return out;
 }
 
-export async function generateQuestions(job: ParsedJob, type: InterviewType, length: InterviewLength, roast: boolean) {
+export async function generateQuestions(job: ParsedJob, type: InterviewType, length: InterviewLength, roast: boolean, resumeText?: string) {
   const count = LENGTHS[length].questions;
-  const ai = await askRaia<{ questions: InterviewQuestion[] }>(ENV.questions, JSON.stringify(job),
+  const payload = resumeText ? JSON.stringify({ ...job, resumeText: resumeText.slice(0, 6000) }) : JSON.stringify(job);
+  const ai = await askRaia<{ questions: InterviewQuestion[] }>(ENV.questions, payload,
     `You are the recruiter for this role. Generate ${count} ${type} interview questions for this job. ${typeFocus(type)} Tone: ${roast ? "tough, blunt" : "friendly"}. ` +
     `Draw your questions from your question bank knowledge base where records fit the role's skills and track; use each record's Probe as the follow-up when an answer is thin. ${GUARDRAILS} ` +
     `Reply JSON {questions:[{id,kind:"technical"|"behavioral",text,skill}]}.`);
@@ -360,7 +361,9 @@ const typeFocus = (t: InterviewType) =>
     ? "Ask behavioral questions only (past experiences, STAR-style: situation, action, result) — no technical quizzes."
     : t === "mixed"
       ? "Prioritize behavioral questions: roughly two behavioral questions for every technical one, and open with a behavioral question."
-      : "Focus on technical questions about the listed skills, with one behavioral question if time allows.";
+      : t === "resume"
+        ? "This is a resume deep-dive: ask questions that probe the candidate's own resume (provided as resumeText) — their projects, experience, impact, gaps, and choices. Reference specific lines from the resume; no generic technical quizzes."
+        : "Focus on technical questions about the listed skills, with one behavioral question if time allows.";
 
 export async function startInterviewConversation(opts: {
   userId: string; name: string; job: ParsedJob; type: InterviewType; length: InterviewLength; roast: boolean; plan: InterviewQuestion[];

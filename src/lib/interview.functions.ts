@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import type { InterviewLength, InterviewQuestion, InterviewType, ParsedJob, TranscriptTurn } from "./interview/types";
 
-const TYPES = ["technical", "behavioral", "mixed"] as const;
+const TYPES = ["technical", "behavioral", "mixed", "resume"] as const;
 const LENS = ["quick", "short", "standard", "long"] as const;
 
 export const getInterviewAgents = createServerFn({ method: "GET" }).handler(async () => {
@@ -78,7 +78,26 @@ export const generateInterviewQuestions = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data }) => {
     const { generateQuestions } = await import("./interview/agents.server");
-    return generateQuestions(data.job, data.type, data.length, data.roast);
+    let resumeText: string | undefined;
+    if (data.type === "resume") {
+      try {
+        const { currentUser } = await import("./auth.server");
+        const user = await currentUser();
+        if (user) {
+          const { neonExecute } = await import("./neon.server");
+          const r = await neonExecute(
+            `select sections from public.devup_resume_version where user_id = $1 order by version desc limit 1`,
+            [user.id],
+          );
+          const sections = (r.rows[0]?.["sections"] as { heading?: string; lines?: { text?: string }[] }[] | null) ?? [];
+          resumeText = sections
+            .map((s) => [s.heading ?? "", ...(s.lines ?? []).map((l) => l.text ?? "")].filter(Boolean).join("\n"))
+            .filter(Boolean)
+            .join("\n\n") || undefined;
+        }
+      } catch (e) { console.error("resume fetch for interview failed", e); }
+    }
+    return generateQuestions(data.job, data.type, data.length, data.roast, resumeText);
   });
 
 // Saves the interview the moment it starts (score 0, empty transcript) so it
@@ -102,10 +121,11 @@ export const saveSoloSession = createServerFn({ method: "POST" })
   });
 
 export const gradeInterviewTranscript = createServerFn({ method: "POST" })
-  .inputValidator((i: { transcript: TranscriptTurn[]; job: ParsedJob; plan?: InterviewQuestion[]; sessionId?: unknown }) => {
+  .inputValidator((i: { transcript: TranscriptTurn[]; job: ParsedJob; plan?: InterviewQuestion[]; sessionId?: unknown; type?: unknown }) => {
     if (!Array.isArray(i.transcript) || i.transcript.length > 200) throw new Error("Invalid transcript.");
     return {
       job: i.job,
+      type: (TYPES.includes(i.type as InterviewType) ? i.type : null) as InterviewType | null,
       sessionId: typeof i.sessionId === "string" && /^[0-9a-f-]{36}$/i.test(i.sessionId) ? i.sessionId : null,
       transcript: i.transcript.map((t) => ({ ...t, text: String(t.text).slice(0, 4000) })),
       plan: (Array.isArray(i.plan) ? i.plan.slice(0, 12) : []).map((q) => ({
@@ -134,7 +154,7 @@ export const gradeInterviewTranscript = createServerFn({ method: "POST" })
           strengths: grade.strengths, improvements: grade.improvements,
         });
         const { neonExecute } = await import("./neon.server");
-        const saveArgs = [user.id, data.job?.title ?? null, data.plan.some((q) => q.kind === "technical") ? (data.plan.every((q) => q.kind === "technical") ? "technical" : "mixed") : "behavioral",
+        const saveArgs = [user.id, data.job?.title ?? null, data.type ?? (data.plan.some((q) => q.kind === "technical") ? (data.plan.every((q) => q.kind === "technical") ? "technical" : "mixed") : "behavioral"),
           Math.round(Number(grade.overall) || 0), JSON.stringify(grade), JSON.stringify(data.transcript)];
         await (data.sessionId
           ? neonExecute(
