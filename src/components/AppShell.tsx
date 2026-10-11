@@ -17,11 +17,12 @@ const LEFT: Item[] = [
   { to: "/", label: "Home", icon: LayoutGrid },
   { to: "/quests", label: "Collection", icon: Swords },
 ];
+const LOCKIN: Item = { to: "/lock-in", label: "Lock In", icon: Zap };
 const RIGHT: Item[] = [
   { to: "/progress", label: "Career", icon: LineChart },
   { to: "/store", label: "Store", icon: Store },
 ];
-const ITEMS: Item[] = [...LEFT, ...RIGHT];
+const ITEMS: Item[] = [...LEFT, LOCKIN, ...RIGHT];
 
 export function Mascot({ className }: { className?: string }) {
   return <Max className={className} />;
@@ -56,6 +57,12 @@ export function AppShell({ children }: { children: ReactNode }) {
 
           <nav className="hidden flex-1 items-stretch justify-center gap-1 self-stretch lg:flex" aria-label="Main">
             {LEFT.map((it) => <TopTab key={it.to} item={it} active={loc.pathname === it.to} />)}
+            <Link to={LOCKIN.to}
+              className={cn("relative my-2 flex items-center gap-2 bg-primary px-6 text-[13px] font-bold uppercase tracking-[0.14em] text-primary-foreground transition-colors hover:bg-primary/90",
+                loc.pathname === LOCKIN.to && "ring-1 ring-primary-foreground/40")}>
+              <LOCKIN.icon className="h-4 w-4" />
+              {LOCKIN.label}
+            </Link>
             {RIGHT.map((it) => <TopTab key={it.to} item={it} active={loc.pathname === it.to} />)}
           </nav>
 
