@@ -201,7 +201,14 @@ export const scanResume = createServerFn({ method: "POST" })
       // Grader-suggested quests land on the board automatically; skip titles the
       // user already has so re-scans don't pile up duplicates.
       const questsAdded: string[] = [];
-      for (const q of review.questsNew ?? []) {
+      // If the grader offered no quest ideas and the board has no open resume quests,
+      // turn the grader's own top fixes into quests so there is always a goal to verify.
+      const ideas = review.questsNew?.length
+        ? review.questsNew
+        : data.openQuests.length
+          ? []
+          : review.suggestions.slice(0, 2).map((s) => ({ title: s.title.slice(0, 120), description: s.detail ?? "" }));
+      for (const q of ideas) {
         const slug = q.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40) || "goal";
         const id = `resume-ai-${slug}-${Math.random().toString(36).slice(2, 7)}`;
         try {
