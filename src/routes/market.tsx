@@ -127,7 +127,7 @@ function Market() {
   const dismissed = jobs?.filter((j) => j.status === "dismissed") ?? [];
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
+    <div className="mx-auto max-w-[1500px] space-y-6">
       <PageHeader eyebrow="Build your next chapter" title="Job Radar" sub="Roles matched to your resume and what you want next." pose="hunt" />
 
       {/* Preferences */}

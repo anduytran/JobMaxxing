@@ -328,14 +328,14 @@ function StorePage() {
 
   if (error) {
     return (
-      <div className="mx-auto max-w-6xl">
+      <div className="mx-auto max-w-[1500px]">
         <PageHeader eyebrow="Store" title="Store" sub={error} pose="dap" />
       </div>
     );
   }
   if (!state) {
     return (
-      <div className="mx-auto max-w-6xl">
+      <div className="mx-auto max-w-[1500px]">
         <PageHeader eyebrow="Store" title="Store" sub="Loading the shelves…" pose="dap" />
       </div>
     );
@@ -405,7 +405,7 @@ function StorePage() {
   };
 
   return (
-    <div className="mx-auto max-w-6xl">
+    <div className="mx-auto max-w-[1500px]">
       <PageHeader
         eyebrow="Spend your points"
         title="Store"

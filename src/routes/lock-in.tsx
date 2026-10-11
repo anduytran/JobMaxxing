@@ -31,7 +31,7 @@ function LockIn() {
   const { note, next } = useRandomMaxNote();
   return (
 
-    <div className="mx-auto max-w-6xl">
+    <div className="mx-auto max-w-[1500px]">
       <h1 className="text-4xl font-bold md:text-5xl">Choose your mode</h1>
       <MaxNote note={note} onCycle={next} className="mt-4" />
 
