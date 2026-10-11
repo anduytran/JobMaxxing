@@ -138,14 +138,21 @@ export function SkillRadar() {
       ) : (
         <p className="my-6 text-sm text-muted-foreground">Track at least 3 skills to draw the web.</p>
       )}
-      <div className="flex flex-wrap gap-2">
-        {rows.map((r) => (
-          <span key={r.skill} className="rounded-full border bg-card px-3 py-1 text-xs text-muted-foreground">
-            {r.skill} <b className="text-foreground">{"unrated" in r ? "—" : r.rating}</b>
-            {r.evidence ? <span className="ml-1 opacity-80">· {r.evidence}</span> : "unrated" in r ? <> · not rated yet</> : null}
-          </span>
-        ))}
-      </div>
+      {changes.length > 0 && (
+        <div className="mt-4 border-t pt-3">
+          <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Recent changes</div>
+          <ul className="mt-2 space-y-1">
+            {changes.map((c, i) => (
+              <li key={`${c.skill}-${i}`} className="flex items-baseline gap-2 text-sm">
+                <span className="font-medium text-foreground">{c.skill}</span>
+                <span className="font-semibold text-primary">+{c.delta}</span>
+                <span className="text-muted-foreground">→ {c.to}</span>
+                <span className="ml-auto text-xs text-muted-foreground">{formatDate(c.at)}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }
