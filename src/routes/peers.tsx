@@ -149,6 +149,14 @@ function Page() {
     } catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
   };
 
+  // Auto-join when arriving from an accepted invite (?join=CODE).
+  const autoJoined = useRef(false);
+  useEffect(() => {
+    if (!joinParam || autoJoined.current) return;
+    autoJoined.current = true;
+    void join(joinParam);
+  }, [joinParam]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const act = async (fn: () => Promise<unknown>) => {
     setBusy(true);
     try { await fn(); await refresh(); } catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
