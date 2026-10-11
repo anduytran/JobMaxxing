@@ -140,6 +140,21 @@ function Dashboard() {
   const featKey = featured?.category?.toLowerCase() ?? "interview";
   const featPose = MAX_ART[featKey] ?? "interview";
   const interviewQuest = open.find((q) => q.category.toLowerCase() === "interview");
+  // The Goals panel lists one quest per type — daily, weekly and one-time alike.
+  const panelQuests = (() => {
+    const byId = new Map<string, (typeof quests)[number]>();
+    for (const q of quests) {
+      const prev = byId.get(q.id);
+      if (!prev || (prev.done && !q.done)) byId.set(q.id, q);
+    }
+    const all = [...byId.values()];
+    const perType: (typeof quests)[number][] = [];
+    for (const q of all) {
+      if (perType.some((p) => p.category === q.category)) continue;
+      perType.push(all.find((o) => o.category === q.category && !o.done) ?? q);
+    }
+    return perType.sort((a, b) => Number(a.done) - Number(b.done)).slice(0, 6);
+  })();
   const reward = featured ? `+${featured.xp} XP` : interviewQuest ? `+${interviewQuest.xp} quest bonus · up to 400 XP by score` : "Up to 400 XP by score";
   const { ids: wornWearables, spots: wornSpots } = useOutfit();
   const destination = featKey === "interview" ? "/interview" : featKey === "setup" || featKey === "resume" ? "/setup" : featKey === "hunt" ? "/market" : "/quests/add";
@@ -259,7 +274,7 @@ function Dashboard() {
               </div>
             </div>
           </motion.div>
-          <aside aria-label="Quick overview" className="absolute right-20 top-1/2 z-10 hidden w-1/2 -translate-y-1/2 justify-end">
+          <aside aria-label="Quick overview" className="absolute right-20 top-1/2 z-10 hidden w-1/2 -translate-y-1/2 justify-end lg:flex">
             <div className="w-[min(32rem,calc(50vw_-_15svh_-_8rem))] max-w-full overflow-hidden rounded-md border border-border bg-card/95 text-card-foreground shadow-2xl ring-1 ring-foreground/10 backdrop-blur-xl">
               <p className="border-b border-border bg-muted/40 px-5 py-3 text-center text-xs font-bold uppercase tracking-[0.25em]">Goals</p>
               <ul className="divide-y divide-border">
