@@ -208,18 +208,6 @@ export const scanResume = createServerFn({ method: "POST" })
   });
 
 /**
- * Fixes can't be self-marked: they are only confirmed by uploading/re-scanning an
- * updated resume, where the grader checks them (see scanResume). Kept so old
- * clients get a clear message instead of a missing endpoint.
- */
-export const applyResumeSuggestion = createServerFn({ method: "POST" })
-  .inputValidator((i: { reviewId: unknown; suggestionId: unknown; sections?: unknown }) => i)
-  .handler(async (): Promise<Result<{ xp: number; awarded: number; version: number | null }>> => {
-    await requireUser();
-    return { ok: false, error: "Upload your updated resume to check this fix — the grader confirms it from the new version." };
-  });
-
-/**
  * Unlocks the next batch of fixes. It only opens once every suggestion on this
  * review is integrated — the check runs here, not in the browser, so the queue
  * can't be skipped — and the agent is told what it already said so the new

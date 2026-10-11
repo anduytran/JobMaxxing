@@ -42,7 +42,7 @@ const capitalize = (s: string) =>
   s.trim().replace(/\bi\b/g, "I").replace(/(^|[.!?]\s+)([a-z])/g, (_m, p: string, c: string) => p + c.toUpperCase());
 
 function Page() {
-  const { gainXp } = useGame();
+  const { claimInterviewXp } = useGame();
   const joinParam = Route.useSearch().join;
   const [stage, setStage] = useState<Stage>("intro");
   const [busy, setBusy] = useState(false);
@@ -116,8 +116,7 @@ function Page() {
   useEffect(() => {
     if (stage !== "report" || !session?.grade || !myRole || xpPaid.current === session.id) return;
     xpPaid.current = session.id;
-    const xp = myRole === "candidate" ? session.grade.xp : session.interviewerGrade?.xp ?? 0;
-    if (xp > 0) gainXp(xp, myRole === "candidate" ? "peer interview" : "peer interviewer");
+    claimInterviewXp("peer", session.id);
   }, [stage, session?.grade, myRole]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const analyze = async () => {

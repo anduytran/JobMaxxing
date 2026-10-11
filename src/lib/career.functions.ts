@@ -295,6 +295,8 @@ export const getCareerDashboard = createServerFn({ method: "GET" }).handler(asyn
           : reason.startsWith("radar:practice:") ? "Practiced for a saved role"
           : reason.startsWith("resume:") ? "Accepted a resume fix"
           : reason.startsWith("milestone:") ? "Milestone reached"
+          : reason.startsWith("iv:solo:") ? "Mock interview"
+          : reason.startsWith("iv:peer:") ? "Peer interview"
           : reason.startsWith("streak:") ? `${reason.slice(7)}-day streak bonus`
           : reason || "XP earned";
         return { label, amount: Number(r["amount"] ?? 0), at: String(r["at"] ?? "") };
