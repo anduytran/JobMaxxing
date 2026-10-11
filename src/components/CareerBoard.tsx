@@ -7,6 +7,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { Briefcase, Calendar, Flame, Mic, Snowflake, Trash2, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { levelTitle, XP_PER_LEVEL } from "@/lib/game";
+import { STREAK_BONUS_XP, nextStreakBonus } from "@/lib/streak.shared";
 import { trashInterview, type CareerDashboard, type SoloInterview } from "@/lib/career.functions";
 import { cn } from "@/lib/utils";
 
@@ -131,6 +132,16 @@ export function StreakCard({ streak }: { streak: CareerDashboard["streak"] }) {
       <p className="mt-4 text-sm text-muted-foreground">
         {streak.current > 0 ? "Clear one quest each day to keep it going." : "Clear one quest today to start a streak."} Best: <b className="text-foreground">{streak.longest} day{streak.longest === 1 ? "" : "s"}</b>.
       </p>
+      {(() => {
+        const next = nextStreakBonus(streak.current);
+        const left = next - streak.current;
+        return (
+          <p className="mt-2 text-xs text-muted-foreground">
+            {streak.bonusPaid > 0 && <span>Day {streak.bonusPaid} bonus paid (+{STREAK_BONUS_XP} XP). </span>}
+            {left} more day{left === 1 ? "" : "s"} to bank the next +{STREAK_BONUS_XP} XP.
+          </p>
+        );
+      })()}
     </section>
   );
 }

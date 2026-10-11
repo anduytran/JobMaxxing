@@ -5,6 +5,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { neonExecute, neonQuery } from "./neon.server";
 import { requireUser } from "./auth.server";
 import { DEFAULT_RATING } from "./mmr.shared";
+import { STREAK_BONUS_XP } from "./streak.shared";
 
 export const GOAL_LEVELS = ["internship", "new_grad", "experienced"] as const;
 export type GoalLevel = (typeof GOAL_LEVELS)[number];
@@ -42,9 +43,6 @@ export type SoloInterview = {
 export type XpEvent = { label: string; amount: number; at: string };
 
 const EMPTY_STREAK: StreakInfo = { current: 0, longest: 0, lastActivity: null, freezes: 0, bonusPaid: 0 };
-
-/** XP paid the first time a streak reaches each 7-day mark (7, 14, 21 …). */
-export const STREAK_BONUS_XP = 250;
 
 /** One row per active day. Yesterday continues the streak; one missed day burns a
  *  streak freeze; anything longer restarts at 1. Crossing a 7-day mark pays a bonus
