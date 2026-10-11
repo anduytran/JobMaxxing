@@ -82,7 +82,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <QuestMenu />
             <div className="relative hidden items-center gap-2 rounded-full border bg-card px-3.5 py-1.5 text-sm transition-shadow hover:shadow-md md:flex">
               <Flame className="animate-flame h-4 w-4 text-primary" />
-              <span className="font-semibold">5 day streak</span>
+              <span className="font-semibold">{streak > 0 ? `${streak} day streak` : "No streak yet"}</span>
               <AnimatePresence>
                 {lastGain && (
                   <motion.span key={lastGain.key} initial={{ opacity: 1, y: 0 }} animate={{ opacity: 0, y: -28 }} transition={{ duration: 1.6 }}
