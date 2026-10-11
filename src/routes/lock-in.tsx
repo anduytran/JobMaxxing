@@ -29,7 +29,7 @@ function ModeFolder({ m, recommended }: { m: (typeof MODES)[number]; recommended
   return (
     <div className={`folder ${m.folder} relative flex h-full flex-col`}>
       {recommended && (
-        <span className="absolute -top-3 left-1/2 z-20 -translate-x-1/2 -rotate-2 bg-primary px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-primary-foreground">
+        <span className="sticky-tag absolute -top-6 left-1/2 z-20 -translate-x-1/2 px-3 py-1.5 text-[13px] font-bold italic tracking-tight">
           Recommended
         </span>
       )}
