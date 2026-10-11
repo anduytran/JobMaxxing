@@ -135,6 +135,46 @@
 }
 
 @keyframes scan { 0% { top: 0% } 100% { top: 100% } }
+
+/* Voice presence is driven by actual capture, request and playback states. */
+.interview-voice-circle {
+  --voice-color: var(--primary);
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 200px;
+  aspect-ratio: 1;
+  flex-shrink: 0;
+  color: var(--voice-color);
+}
+.interview-voice-listening { --voice-color: var(--success); }
+.interview-voice-thinking, .interview-voice-grading { --voice-color: var(--accent); }
+.interview-voice-core {
+  display: grid;
+  place-items: center;
+  width: 72%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 2px solid var(--voice-color);
+  background: color-mix(in oklab, var(--voice-color) 14%, var(--card));
+}
+.interview-voice-ring {
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  border: 1px solid color-mix(in oklab, var(--voice-color) 40%, transparent);
+}
+.interview-voice-listening .interview-voice-core { animation: voice-breathe 1.4s ease-in-out infinite; }
+.interview-voice-speaking .interview-voice-core { animation: voice-breathe .65s ease-in-out infinite; }
+.interview-voice-thinking .interview-voice-ring, .interview-voice-preparing .interview-voice-ring,
+.interview-voice-grading .interview-voice-ring {
+  border-top: 3px solid var(--voice-color);
+  animation: voice-turn 2s linear infinite;
+}
+.interview-voice-listening .interview-voice-ring, .interview-voice-speaking .interview-voice-ring { animation: voice-ripple 1.8s ease-out infinite; }
+@keyframes voice-breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.07); } }
+@keyframes voice-ripple { from { transform: scale(.85); opacity: .8; } to { transform: scale(1.12); opacity: .15; } }
+@keyframes voice-turn { to { transform: rotate(360deg); } }
 @utility animate-scan { animation: scan 2.6s linear infinite alternate; }
 
 /* Hover motion system */

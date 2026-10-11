@@ -1,5 +1,10 @@
 # Roadmap
 
+## Interview voice presence
+- [ ] Replace the live chat bubbles with a pulsing circle for listening, thinking and speaking; preserve captions, typed fallback and report transcript.
+- [ ] Verify voice-state transitions and layout without changing interview agents or speech pickup.
+- [ ] Explain the current speech pickup process and offer selectable improvements.
+
 ## Quest titles always two lines
 - [x] Split each display quest title into two balanced lines for the featured headline and the top-bar quest menu; saved titles untouched.
 - [x] Verify representative titles render as exactly two lines with no clipping in a browser render; build clean.
