@@ -95,7 +95,10 @@ function Setup() {
   const runScan = async (payload: Parameters<typeof scanResume>[0]["data"]) => {
     setBusy("scan");
     try {
-      const res = await scanResume({ data: payload });
+      const isResumeQuest = (q: (typeof quests)[number]) =>
+        q.id === "resume" || q.id.startsWith("resume") || /resume/i.test(q.category) || /resume/i.test(q.title);
+      const openQuests = quests.filter((q) => !q.done && isResumeQuest(q)).map((q) => ({ id: q.id, title: q.title }));
+      const res = await scanResume({ data: { ...payload, openQuests } });
       if (!res.ok) return void toast.error(res.error);
       setXp(res.xp);
       const extra = [
@@ -104,13 +107,9 @@ function Setup() {
         res.awarded.integrated > 0 && `${res.awarded.integrated} fix${res.awarded.integrated === 1 ? "" : "es"} confirmed · +${res.awarded.fixes} XP`,
       ].filter(Boolean).join(" · ");
       toast.success(`Resume graded ${res.review.grade} · ${res.review.score}/100`, { description: extra || `${res.review.suggestions.length} fixes ready below.` });
-      // Auto-verify any open resume quest: the exact built-in id, custom ids
-      // starting with "resume", or anything filed under the Setup/Resume category.
-      for (const q of quests) {
-        if (q.done) continue;
-        const resumeQuest = q.id === "resume" || q.id.startsWith("resume") || /resume/i.test(q.category) || /resume/i.test(q.title);
-        if (resumeQuest) completeQuest(q.id);
-      }
+      // Only quests the resume grader confirmed (same grader conversation) complete.
+      for (const id of res.questsDone) completeQuest(id);
+      if (openQuests.length && !res.questsDone.length) toast.message("No resume quests confirmed yet", { description: "The grader didn't see those quest goals met in this version." });
       setPaste(false);
       setText("");
       await refresh();
