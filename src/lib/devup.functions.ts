@@ -35,6 +35,7 @@ export type GameState = {
   largeText: boolean;
   activeTitle: string | null;
   activeTheme: string;
+  avatarUrl: string | null;
   quests: Quest[];
 };
 
@@ -106,7 +107,7 @@ export const loadGame = createServerFn({ method: "GET" }).handler(
         },
         {
           query:
-            "select name, title, xp, roast, reduced_motion, large_text, skills, student, job_prefs, resume, active_title, active_theme " +
+            "select name, title, xp, roast, reduced_motion, large_text, skills, student, job_prefs, resume, active_title, active_theme, avatar_url " +
             "from public.devup_profile where id = $1 limit 1",
           params: [PROFILE_ID],
         },
@@ -134,6 +135,7 @@ export const loadGame = createServerFn({ method: "GET" }).handler(
         largeText: Boolean(profile?.large_text ?? false),
         activeTitle: profile?.active_title ? String(profile.active_title) : null,
         activeTheme: String(profile?.active_theme ?? "default"),
+        avatarUrl: profile?.avatar_url ? String(profile.avatar_url) : null,
         quests: (results[3]?.rows ?? []).map((r: any) => ({
           id: String(r.id),
           title: String(r.title),
