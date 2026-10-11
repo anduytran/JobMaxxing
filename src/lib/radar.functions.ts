@@ -463,6 +463,14 @@ export const getRadar = createServerFn({ method: "POST" })
           viewed: Boolean(r["viewed"]),
         });
       }
+      // Persist the live score so Career's tracker shows the same number as the radar.
+      const stale = jobs.filter((j) => Number((rows.find((r) => String(r["job_id"]) === j.id)?.["data"] as any)?.match) !== j.match);
+      if (stale.length) {
+        await neonExecute(stale.map((j) => ({
+          query: "update public.devup_job_radar set data = jsonb_set(data, '{match}', to_jsonb($3::int)) where user_id = $1 and job_id = $2",
+          params: [uid, j.id, j.match],
+        }))).catch((e) => console.error("radar match persist failed", e));
+      }
       jobs.sort((a, b) => (a.status === "dismissed" ? 1 : 0) - (b.status === "dismissed" ? 1 : 0) || b.match - a.match);
       return { ok: true, jobs, ...(fetchError ? { error: fetchError } : {}) };
     } catch (err) {

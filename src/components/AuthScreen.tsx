@@ -144,7 +144,7 @@ function DraggableMax({ bounds }: { bounds: React.RefObject<HTMLElement | null> 
 const QUESTS = [
   {
     tag: "Main quest",
-    xp: "+50 XP",
+    xp: "Up to 400 XP",
     icon: Mic,
     title: "AI mock interviews",
     text: "An interviewer that talks back. Answer out loud, then get graded on what you said and how clearly you said it.",
@@ -160,7 +160,7 @@ const QUESTS = [
   },
   {
     tag: "Co-op quest",
-    xp: "+40 XP each",
+    xp: "Up to 150 XP each",
     icon: Users,
     title: "Peer interviews",
     text: "Pair up with a friend over a live call. One of you runs the AI-written script, the other answers — then you swap.",
@@ -180,7 +180,7 @@ const STEPS: [string, string, string][] = [
   ["Upload your resume", "Max grades it and turns the weak spots into your first quests.", "+20 XP"],
   ["Clear daily quests", "Short tasks, like fixing two bullets or answering one interview question.", "+25 XP each"],
   ["Rank up", "XP raises your level. New levels earn titles you can show off.", "New title"],
-  ["Walk in ready", "Run full mock interviews for real Job Radar listings before the real thing.", "+50 XP"],
+  ["Walk in ready", "Run full mock interviews for real Job Radar listings before the real thing.", "Up to 400 XP"],
 ];
 
 const RANKS = [

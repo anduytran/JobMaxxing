@@ -20,7 +20,7 @@ export const Route = createFileRoute("/lock-in")({
 });
 
 const MODES = [
-  { to: "/interview" as const, title: "Interview", tag: "Main event", blurb: "Practice out loud with an AI recruiter or a friend, and get graded feedback.", icon: Mic, art: MAX_POSES.interview, tint: "bg-primary/15 text-primary", xp: "+150 XP" },
+  { to: "/interview" as const, title: "Interview", tag: "Main event", blurb: "Practice out loud with an AI recruiter or a friend, and get graded feedback.", icon: Mic, art: MAX_POSES.interview, tint: "bg-primary/15 text-primary", xp: "Up to 400 XP" },
   { to: "/setup" as const, title: "Resume Lab", tag: "Polish", blurb: "Grade your resume, accept fixes and level it past 80.", icon: FileText, art: MAX_POSES.resume, tint: "bg-accent/20 text-accent-foreground", xp: "+15 XP / fix" },
   { to: "/market" as const, title: "Job Radar", tag: "Hunt", blurb: "Find roles matched to your resume and track where you applied.", icon: Radar, art: MAX_POSES.hunt, tint: "bg-success/15 text-success", xp: "+25 XP / save" },
 ];
