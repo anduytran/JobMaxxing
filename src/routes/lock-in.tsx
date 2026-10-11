@@ -2,6 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, FileText, Mic, Radar } from "lucide-react";
 import { MAX_POSES } from "@/components/Max";
 import { useInterviewModePicker } from "@/components/InterviewModePicker";
+import { MaxNote, useRandomMaxNote } from "@/components/MaxNote";
+
 
 export const Route = createFileRoute("/lock-in")({
   head: () => ({
@@ -26,13 +28,13 @@ const MODES = [
 function LockIn() {
   // The Interview card opens the solo / peer popup instead of going straight in.
   const { openInterviewMode, interviewModeDialog } = useInterviewModePicker();
+  const { note, next } = useRandomMaxNote();
   return (
+
     <div className="mx-auto max-w-6xl">
       <h1 className="text-4xl font-bold md:text-5xl">Choose your mode</h1>
-      <p className="mt-3 max-w-xl text-lg text-muted-foreground">
-        &ldquo;You don't have to have it all figured out. You just have to take the next step.&rdquo;
-        <span className="ml-2 whitespace-nowrap text-sm font-semibold uppercase tracking-[0.18em] text-primary">— Max</span>
-      </p>
+      <MaxNote note={note} onCycle={next} className="mt-4" />
+
 
       <div className="mt-8 grid gap-5 md:grid-cols-3">
         {MODES.map((m, i) => {

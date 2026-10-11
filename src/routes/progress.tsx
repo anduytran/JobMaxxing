@@ -1,9 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, Check, FileText, Flame, LineChart, Mic } from "lucide-react";
-import { Mascot, PanelHead } from "@/components/AppShell";
+import { PanelHead } from "@/components/AppShell";
+import { MaxNote } from "@/components/MaxNote";
+import { maxNote, nextMaxNote } from "@/lib/max-notes";
+
 import { useGame } from "@/lib/game";
 import { useEffect, useState } from "react";
-import { motion, useReducedMotion } from "framer-motion";
 import { ResumeScoreCard } from "@/components/ResumeScoreCard";
 import { XpCareerCard } from "@/components/DashboardProgressCards";
 import { getLatestResumeReview } from "@/lib/resume.functions";
@@ -35,15 +37,9 @@ function Page() {
   const [reviewLoading, setReviewLoading] = useState(true);
   useEffect(() => { getLatestResumeReview().then((r) => { if (r.ok) setReview(r.review); }).catch(() => {}).finally(() => setReviewLoading(false)); }, []);
   const resumeScore = review?.score ?? (details.resume as { score?: number } | undefined)?.score;
-  const reducedMotion = useReducedMotion();
   const { data: career, reload } = useCareerDashboard();
   const [tip, setTip] = useState(0);
-  const tips = [
-    "You don't have to have it all figured out. You just have to take the next step.",
-    "A good interview is a conversation, not a performance. Take a breath. You've got this.",
-    "That thing you think is 'just part of the job'? It might be your best resume story.",
-    "Some days, one small step is plenty. Progress still counts.",
-  ];
+
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -52,13 +48,8 @@ function Page() {
           <div>
             <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">Let's make your next move count</p>
             <h1 className="mt-2 text-4xl font-bold md:text-5xl">Looking good, {first} <span className="text-accent">✦</span></h1>
-            <button type="button" onClick={() => setTip((t) => (t + 1) % tips.length)} aria-label="Another note from Max" title="Another note from Max" className="mt-4 flex max-w-xl items-start gap-3 rounded-2xl border bg-hero/60 px-4 py-3 text-left transition-shadow hover:shadow-md">
-              <Mascot className="h-11 w-11 shrink-0" />
-              <span className="min-w-0">
-                <span className="block text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Notes from Max</span>
-                <motion.span key={tip} initial={reducedMotion ? false : { opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className="block text-base text-muted-foreground" aria-live="polite">{tips[tip]}</motion.span>
-              </span>
-            </button>
+            <MaxNote note={maxNote(tip)} onCycle={() => setTip((t) => nextMaxNote(t))} className="mt-4" />
+
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <div className="panel flex items-center gap-3 px-5 py-3 text-sm transition-shadow hover:shadow-md">
