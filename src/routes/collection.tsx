@@ -122,7 +122,7 @@ function Collection() {
       {ownedWearables.length === 0 && (
         <div className="panel p-8 text-center sm:p-10">
           <motion.div
-            animate={reducedMotion ? undefined : { y: [0, 6, 0] }}
+            animate={reducedMotion ? false : { y: [0, 6, 0] }}
             transition={{ duration: 3.4, repeat: Infinity, ease: "easeInOut" }}
             className="mx-auto w-[170px] sm:w-[190px]"
           >
