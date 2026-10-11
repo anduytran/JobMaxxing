@@ -4,6 +4,7 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
   type ErrorComponentProps,
@@ -131,11 +132,15 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const initial = Route.useLoaderData();
+  const isDemo = useRouterState({ select: (st) => st.location.pathname.startsWith("/demo/") });
 
   return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      {initial && !initial.ok && "signedOut" in initial && initial.signedOut ? (
+      {isDemo ? (
+        // Public demo links run without an account or the app chrome.
+        <><Outlet /><Toaster /></>
+      ) : initial && !initial.ok && "signedOut" in initial && initial.signedOut ? (
         <><AuthScreen /><Toaster /></>
       ) : (
       <GameProvider initial={initial}>

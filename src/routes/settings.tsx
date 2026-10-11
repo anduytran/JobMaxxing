@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { AvatarPicker } from "@/components/AvatarPicker";
 import { TokenUsagePanel } from "@/components/TokenUsagePanel";
+import { DemoLinksPanel } from "@/components/DemoLinksPanel";
 import { useGame } from "@/lib/game";
 
 export const Route = createFileRoute("/settings")({
@@ -114,6 +115,7 @@ function SettingsPage() {
         </div>
       </div>
       <TokenUsagePanel />
+      <DemoLinksPanel />
     </div>
   );
 }

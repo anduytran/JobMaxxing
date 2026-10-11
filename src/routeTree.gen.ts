@@ -21,6 +21,7 @@ import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SetupRouteImport } from './routes/setup'
 import { Route as SkillsRouteImport } from './routes/skills'
 import { Route as StoreRouteImport } from './routes/store'
+import { Route as DemoTokenRouteImport } from './routes/demo.$token'
 import { Route as QuestsAddRouteImport } from './routes/quests.add'
 
 const IndexRoute = IndexRouteImport.update({
@@ -83,6 +84,11 @@ const StoreRoute = StoreRouteImport.update({
   path: '/store',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DemoTokenRoute = DemoTokenRouteImport.update({
+  id: '/demo/$token',
+  path: '/demo/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const QuestsAddRoute = QuestsAddRouteImport.update({
   id: '/quests/add',
   path: '/quests/add',
@@ -102,6 +108,7 @@ export interface FileRoutesByFullPath {
   '/setup': typeof SetupRoute
   '/skills': typeof SkillsRoute
   '/store': typeof StoreRoute
+  '/demo/$token': typeof DemoTokenRoute
   '/quests/add': typeof QuestsAddRoute
 }
 export interface FileRoutesByTo {
@@ -117,6 +124,7 @@ export interface FileRoutesByTo {
   '/setup': typeof SetupRoute
   '/skills': typeof SkillsRoute
   '/store': typeof StoreRoute
+  '/demo/$token': typeof DemoTokenRoute
   '/quests/add': typeof QuestsAddRoute
 }
 export interface FileRoutesById {
@@ -133,6 +141,7 @@ export interface FileRoutesById {
   '/setup': typeof SetupRoute
   '/skills': typeof SkillsRoute
   '/store': typeof StoreRoute
+  '/demo/$token': typeof DemoTokenRoute
   '/quests/add': typeof QuestsAddRoute
 }
 export interface FileRouteTypes {
@@ -150,6 +159,7 @@ export interface FileRouteTypes {
     | '/setup'
     | '/skills'
     | '/store'
+    | '/demo/$token'
     | '/quests/add'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -165,6 +175,7 @@ export interface FileRouteTypes {
     | '/setup'
     | '/skills'
     | '/store'
+    | '/demo/$token'
     | '/quests/add'
   id:
     | '__root__'
@@ -180,6 +191,7 @@ export interface FileRouteTypes {
     | '/setup'
     | '/skills'
     | '/store'
+    | '/demo/$token'
     | '/quests/add'
   fileRoutesById: FileRoutesById
 }
@@ -196,6 +208,7 @@ export interface RootRouteChildren {
   SetupRoute: typeof SetupRoute
   SkillsRoute: typeof SkillsRoute
   StoreRoute: typeof StoreRoute
+  DemoTokenRoute: typeof DemoTokenRoute
   QuestsAddRoute: typeof QuestsAddRoute
 }
 
@@ -285,6 +298,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StoreRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/demo/$token': {
+      id: '/demo/$token'
+      path: '/demo/$token'
+      fullPath: '/demo/$token'
+      preLoaderRoute: typeof DemoTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/quests/add': {
       id: '/quests/add'
       path: '/quests/add'
@@ -308,6 +328,7 @@ const rootRouteChildren: RootRouteChildren = {
   SetupRoute: SetupRoute,
   SkillsRoute: SkillsRoute,
   StoreRoute: StoreRoute,
+  DemoTokenRoute: DemoTokenRoute,
   QuestsAddRoute: QuestsAddRoute,
 }
 export const routeTree = rootRouteImport
