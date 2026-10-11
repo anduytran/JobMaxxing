@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { neonExecute } from "./neon.server";
 import { requireUser } from "./auth.server";
+import { ROLL_COST, WEARABLES, WEARABLE_IDS, slotsConflict } from "./wearables";
 
 // ---------------------------------------------------------------------------
 // Store economy: spendable points = lifetime XP earned minus points spent.
@@ -11,7 +12,7 @@ export type StoreItem = {
   id: string;
   name: string;
   description: string;
-  category: "consumable" | "customization" | "content_pack";
+  category: "consumable" | "customization" | "content_pack" | "wearable";
   cost: number;
   badgeColor: string;
 };
@@ -25,6 +26,8 @@ export type StoreState = {
   boosterExpiresAt: string | null;
   activeTitle: string | null;
   activeTheme: string;
+  ownedWearables: string[];
+  activeWearables: string[];
 };
 
 export type StoreResult =
