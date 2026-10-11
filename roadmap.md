@@ -102,9 +102,10 @@
 - [x] Verify on the live signed-in dashboard that every slide's tab is square-cornered, flush to the card's top edge, clear of the eyebrow, Max and the arrows, and carries that quest's destination; temporary sign-in removed, build clean.
 
 ## Lock In in the nav
-- [x] Move the `Lock In` button to the far left of the top nav, straight after the brand, with the section tabs centred behind it.
+- [x] Keep `Lock In` as the nav's one loud button and the leftmost option, with the section tabs centred behind it.
 - [x] Take the hanging `Lock In` tab off the featured card and drop the now-unused card helpers (`LOCK_IN_TAB`, `QUEST_LINK`, `featLink`), restoring the card's original top padding.
-- [x] Verify on the live signed-in dashboard that the nav reads Lock In · Home · Collection · Career · Store left to right, that no `Lock In` control remains inside the card, and that `/lock-in` still opens the mode picker; temporary sign-in removed, build clean.
 - [x] Make the button a hard-edged rectangle that fills the nav's whole height with a right arrow at its end, drop the lightning bolt, and keep its label centred against the other tabs.
-- [x] Verify on the live signed-in dashboard that the button's box spans the nav edge to edge (64px of the 64px bar), that it is the leftmost option after the brand and flush with the tabs' tops, that its only icon is `ArrowRight`, and that hover nudges the arrow; temporary sign-in removed.
+- [x] Move it inside the centred tab group so it sits immediately left of `Home`, giving the order Lock In · Home · Collection · Career · Store.
+- [x] Verify on the live signed-in dashboard that the button is the first item of the tab group (Lock In ends 4px before Home begins), spans the nav's full 64px height flush with the tabs, carries only `ArrowRight`, and that `/lock-in` still opens the mode picker; temporary sign-in removed, build clean.
+
 

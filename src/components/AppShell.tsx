@@ -56,15 +56,14 @@ export function AppShell({ children }: { children: ReactNode }) {
             <span className="font-display text-xl font-bold">JobMaxxing<span className="text-primary">.</span></span>
           </Link>
 
-          {/* Lock In is the one loud button: hard left, full nav height, arrow to the right. */}
-          <Link to={LOCKIN.to}
-            className={cn("group relative flex shrink-0 items-center gap-3 self-stretch bg-primary px-6 text-[13px] font-bold uppercase tracking-[0.14em] text-primary-foreground transition-colors hover:bg-primary/90",
-              loc.pathname === LOCKIN.to && "ring-1 ring-inset ring-primary-foreground/40")}>
-            {LOCKIN.label}
-            <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" />
-          </Link>
-
           <nav className="hidden flex-1 items-stretch justify-center gap-1 self-stretch lg:flex" aria-label="Main">
+            {/* Lock In is the one loud button: the leftmost option, straight left of Home, full nav height. */}
+            <Link to={LOCKIN.to}
+              className={cn("group relative flex shrink-0 items-center gap-3 bg-primary px-6 text-[13px] font-bold uppercase tracking-[0.14em] text-primary-foreground transition-colors hover:bg-primary/90",
+                loc.pathname === LOCKIN.to && "ring-1 ring-inset ring-primary-foreground/40")}>
+              {LOCKIN.label}
+              <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" />
+            </Link>
             {LEFT.map((it) => <TopTab key={it.to} item={it} active={loc.pathname === it.to} />)}
             {RIGHT.map((it) => <TopTab key={it.to} item={it} active={loc.pathname === it.to} />)}
           </nav>
