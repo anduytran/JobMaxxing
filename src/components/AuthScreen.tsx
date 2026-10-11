@@ -513,7 +513,7 @@ export function AuthScreen() {
                   <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Your next step</span>
                   <h2 className="mt-1 font-display text-xl font-bold">{mode === "in" ? "Good to see you again." : "Your next chapter starts here."}</h2>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    {mode === "in" ? "Pick up where you left off." : "Sign-ups are invite-only for now. You can add your resume right after."}
+                    {mode === "in" ? "Pick up where you left off." : "Create your account. You can add your resume right after."}
                   </p>
                 </div>
                 <button aria-label="Close dialog" className="rounded-full p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground" onClick={() => setAuthOpen(false)}>

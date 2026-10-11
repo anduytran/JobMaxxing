@@ -18,22 +18,12 @@ const fail = (err: unknown): AuthResult => {
   return { ok: false, error: "Something went wrong. Try again." };
 };
 
-// Private beta: only these emails may create an account.
-const SIGNUP_ALLOWLIST = new Set([
-  "taigajason@gmail.com",
-  "anya.roselin@gmail.com",
-  "kaitopowell@gmail.com",
-]);
-
 export const signUp = createServerFn({ method: "POST" })
   .inputValidator(creds)
   .handler(async ({ data }): Promise<AuthResult> => {
     const { hashPassword, startSession } = await import("./auth.server");
     const { neonExecute } = await import("./neon.server");
     try {
-      if (!SIGNUP_ALLOWLIST.has(data.email)) {
-        return { ok: false, error: "Sign-ups are invite-only right now." };
-      }
       const hash = await hashPassword(data.password);
       // One transaction: user + profile + a copy of the starter quests.
       const { results } = await neonExecute<{ results: any[] }>([
