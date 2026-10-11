@@ -196,7 +196,7 @@ function Dashboard() {
               ) : (
                 <h2 className="min-h-[2.2em] break-words text-foreground text-3xl font-bold leading-[1.1] sm:text-4xl lg:text-5xl"><span className="block">Practice your</span><span className="block">mock interview</span></h2>
               )}
-              <p ref={subRef} className="mt-5 max-w-lg text-lg text-muted-foreground">{scene.blurb}</p>
+              <p ref={subRef} className="mt-5 max-w-md text-lg text-muted-foreground">{scene.blurb}</p>
               {featured ? (
                 <div className="mt-8 flex flex-wrap items-center gap-3">
                   <Button asChild className="h-auto rounded-xl px-8 py-4 text-base"><Link to={featLink}>
