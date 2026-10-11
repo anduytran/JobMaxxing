@@ -13,6 +13,7 @@ import {
   type StoreState,
 } from "@/lib/store.functions";
 import { WEARABLES, slotsConflict } from "@/lib/wearables";
+import { refreshWearables } from "@/lib/use-wearables";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/collection")({
