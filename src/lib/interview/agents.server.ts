@@ -773,7 +773,11 @@ export async function reviewResume(input: {
   const textBody = input.sections?.length
     ? `RESUME (line ids in brackets — reuse them as-is in sections and lineId):\n${sectionsText(input.sections)}`
     : (input.text ?? "").trim().length >= 80 ? `RESUME:\n${input.text}` : null;
-  const ctx = `${RESUME_TASK}${RESUME_RUBRIC} ${RESUME_GUARDRAILS} ${CHECK_TASK}${RESUME_SCHEMA}`;
+  // The schema line says "JSON only: {...}", so the check keys must be spelled out
+  // after it or the grader drops them.
+  const ctx = `${RESUME_TASK}${RESUME_RUBRIC} ${RESUME_GUARDRAILS} ${CHECK_TASK}${RESUME_SCHEMA}` +
+    ' The same JSON object MUST also contain these top-level keys: "integrated":["fix ids"],"questsDone":["quest ids from OPEN QUESTS"],' +
+    '"questsNew":[{"title":"4-8 word goal","description":"one sentence"}]. Use empty arrays when none apply.';
   let ai: Record<string, unknown> | null = null;
   if (textBody) {
     ai = await askResumeConversation<Record<string, unknown>>(input.owner,
