@@ -485,7 +485,6 @@ export function InterviewFlow({ agents, api, radar, profileSkills = [], captions
                 </Button>
               </span>
             </div>
-            <span>{stage === "live" ? `Question ${qi + 1} of ${questions.length}` : stage === "grading" ? "Reviewing interview" : "Your questions"}</span>
           </div>
         </section>
       )}
@@ -499,65 +498,57 @@ export function InterviewFlow({ agents, api, radar, profileSkills = [], captions
           ["Your questions", grade.metrics.candidateQuestions],
           ...(grade.metrics.tone ? [["Tone", grade.metrics.tone] as [string, { score: number; feedback: string }]] : []),
         ];
-        const work = grade.improvements.slice(0, 3);
+        const answers = pairAnswers(turns);
+        const well = grade.strengths.slice(0, 3).map((n) => ({ n, a: matchAnswer(n, answers) }));
+        const next = grade.improvements.slice(0, 3).map((n) => ({ n, a: matchAnswer(n, answers) }));
+        const changed = ratings.filter((r) => r.after !== r.before);
         return (
-          <section className="space-y-6">
-            <div className="flex flex-wrap items-end justify-between gap-3">
+          <section className="mx-auto max-w-4xl space-y-8">
+            <header>
+              <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                {job?.title ?? "Mock interview"} · {Math.min(asked, questions.length)} questions · {Math.floor(used / 60)}m {used % 60}s
+              </div>
+              <h1 className="mt-3 font-display text-3xl font-bold leading-tight tracking-tight sm:text-4xl">{summaryLine(grade)}</h1>
+              {grade.metrics.quality.feedback && <p className="mt-3 max-w-2xl text-muted-foreground">{grade.metrics.quality.feedback}</p>}
+            </header>
+
+            <div className="grid gap-8 rounded-2xl border bg-card p-6 md:grid-cols-2 md:gap-0 md:divide-x">
+              <CoachNotes title="What went well" tone="good" notes={well} empty="Finishing the session is a win. Next round, we'll find a specific strength." />
+              <CoachNotes title="Try next time" tone="next" notes={next} empty="Nothing major — keep doing what you did." className="md:pl-6" />
+            </div>
+
+            <div className="grid gap-6 md:grid-cols-[1fr_auto]">
               <div>
-                <h1 className="font-display text-4xl font-bold tracking-tight sm:text-5xl">Interview complete. {grade.overall}%.</h1>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  {job?.title ?? "Mock interview"}. {Math.min(asked, questions.length)} questions in {Math.floor(used / 60)} minutes {used % 60} seconds.
-                </p>
-              </div>
-              {!demo && <span className="inline-flex items-center gap-1.5 rounded-full bg-accent px-3 py-1 text-xs font-semibold text-accent-foreground">
-                <span className="text-primary">◆</span> +{grade.xp} XP earned
-              </span>}
-            </div>
-            <div className={cn("grid gap-4", metrics.length === 4 ? "md:grid-cols-4" : "md:grid-cols-3")}>
-              {metrics.map(([l, m]) => <Metric key={l} label={l} m={m} />)}
-            </div>
-            {!demo && ratings.some((r) => r.after !== r.before) && (
-              <div className="flex flex-wrap gap-2">
-                {ratings.filter((r) => r.after !== r.before).map((r) => {
-                  const d = r.after - r.before;
-                  return (
-                    <span key={r.skill} className="rounded-full border bg-card px-3 py-1 text-xs">
-                      <b>{r.skill}</b> {r.after} <span className={d >= 0 ? "text-success" : "text-primary"}>{d >= 0 ? "+" : ""}{d}</span>
-                    </span>
-                  );
-                })}
-              </div>
-            )}
-            <div className="grid gap-4 md:grid-cols-[1.6fr_1fr]">
-              <div className="rounded-2xl border bg-card p-6">
-                <h2 className="font-display text-2xl font-bold">What to work on</h2>
-                <ol className="mt-4 space-y-3">
-                  {work.map((s, i) => (
-                    <li key={s} className="flex gap-3 rounded-xl bg-muted p-4">
-                      <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-primary/15 text-xs font-semibold text-primary">{i + 1}</span>
-                      <span className="text-sm">{s}</span>
-                    </li>
+                <div className="mb-3 flex items-baseline justify-between">
+                  <h2 className="text-sm font-semibold">Scores</h2>
+                  <span className="text-xs text-muted-foreground">Overall {grade.overall}%{!demo && ` · +${grade.xp} XP`}</span>
+                </div>
+                <dl className="divide-y border-y">
+                  {metrics.map(([l, m]) => (
+                    <div key={l} className="grid grid-cols-[8rem_1fr_3rem] items-center gap-3 py-2.5 text-sm">
+                      <dt className="text-muted-foreground">{l}</dt>
+                      <div className="h-1 overflow-hidden rounded-full bg-muted"><div className={cn("h-full", m.score >= 80 ? "bg-success" : "bg-primary")} style={{ width: `${m.score}%` }} /></div>
+                      <dd className="text-right font-mono tabular-nums">{m.score}</dd>
+                    </div>
                   ))}
-                  {!work.length && <li className="text-sm text-muted-foreground">Nothing major — keep it up.</li>}
-                </ol>
-                {grade.strengths.length > 0 && (
-                  <>
-                    <h3 className="mt-6 text-sm font-semibold">What went well</h3>
-                    <ul className="mt-2 space-y-1 text-sm text-muted-foreground">{grade.strengths.map((s) => <li key={s}>✓ {s}</li>)}</ul>
-                  </>
+                </dl>
+                {!demo && changed.length > 0 && (
+                  <p className="mt-3 text-xs text-muted-foreground">
+                    Skills moved: {changed.map((r, i) => <span key={r.skill}>{i > 0 && ", "}<b className="text-foreground">{r.skill}</b> {r.after} (+{r.after - r.before})</span>)}
+                  </p>
                 )}
               </div>
-              <div className="flex flex-col items-start gap-3 rounded-2xl border bg-card p-6">
-                <h2 className="font-display text-2xl font-bold">{demo ? "Try another round" : "Keep the streak going"}</h2>
-                <p className="text-sm text-muted-foreground">Another session on the same role is the fastest way to lift your weakest score.</p>
-                <Button onClick={reset} className="mt-1">New interview</Button>
-                <details className="w-full text-sm">
-                  <summary className="inline-flex cursor-pointer list-none rounded-md border bg-background px-4 py-2 font-medium">Read full transcript</summary>
-                  <div className="mt-3 max-h-80 space-y-2 overflow-y-auto">{turns.map((t, i) => <p key={i}><b>{t.speaker === "interviewer" ? "Interviewer" : "You"}:</b> {t.text}</p>)}</div>
-                </details>
-                {!demo && <Link to="/" className="px-4 py-2 text-sm font-medium">Back to Home</Link>}
+              <div className="flex flex-col items-start gap-2 md:w-56">
+                <Button onClick={reset} className="w-full">{demo ? "Try another round" : "Practice again"}</Button>
+                {!demo && <Button asChild variant="ghost" className="w-full"><Link to="/">Back to Home</Link></Button>}
+                <p className="text-xs text-muted-foreground">Another round on the same role is the fastest way to lift your weakest score.</p>
               </div>
             </div>
+
+            <details className="text-sm">
+              <summary className="cursor-pointer font-medium text-muted-foreground hover:text-foreground">Read full transcript</summary>
+              <div className="mt-3 max-h-80 space-y-2 overflow-y-auto border-l pl-4">{turns.map((t, i) => <p key={i}><b>{t.speaker === "interviewer" ? "Interviewer" : "You"}:</b> {t.text}</p>)}</div>
+            </details>
             {reportExtra?.(grade)}
           </section>
         );
